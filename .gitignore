@@ -1,3 +1,7 @@
+# Special ignore files
+GameResources/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
