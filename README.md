@@ -20,8 +20,7 @@ SoraTranslator/
 ├── Translators/
 ├── GameResources/
 │   ├── OriginalFiles/
-│   ├── OriginalText/
-│   ├── TranslatedText/
+│   ├── Texts/
 │   ├── TranslatedFiles/
 ```
 
@@ -48,6 +47,6 @@ The parser, no matter how it works, should output the text in a uniform format, 
 
 #### Workflow
 
-1. **Extraction**: The integrator accesses the `OriginalFiles` directory, extracting and parsing game text into a readable format in the `OriginalText` folder.
-2. **Translation**: Utilizing the Translator module, the text in `OriginalText` is then translated, with the results stored in `TranslatedText`.
-3. **Reintegration**: Finally, the integrator takes the `TranslatedText` and repackages it into the game's format, saving these files in the `TranslatedFiles` directory for use in the game.
+1. **Extraction**: The integrator accesses the `OriginalFiles` directory, extracting and parsing game text into a readable format in the `Texts` folder.
+2. **Translation**: Utilizing the Translator module, the text in `Texts` is then translated, with the results stored in the same file.
+3. **Reintegration**: Finally, the integrator takes the translated text in `Texts` and repackages it into the game's format, saving these files in the `TranslatedFiles` directory for use in the game.
