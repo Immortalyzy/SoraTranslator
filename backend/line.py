@@ -2,9 +2,10 @@
 
 from datetime import datetime
 
+
 def default_parser(raw_content):
-    """ 
-    Default parser for the line class. 
+    """
+    Default parser for the line class.
     Return a tuple of (
         content,
         speaker,
@@ -15,21 +16,22 @@ def default_parser(raw_content):
     )
     All other parsers defined in the Integrators should have the same return format.
     """
-    return (raw_content, None, None, None)
+    return (raw_content, None, None, None, None, None)
 
 
 class Line:
-    """ 
-    Line class stores the content and the information of a line of text in game. 
+    """
+    Line class stores the content and the information of a line of text in game.
     In a game it should normaly displayed without break.
     A line class contains following attributes:
         - content: the content of the line
         - translated_content: the translated content of the line
 
-        - speaker: the untranslated speaker of the line 
+        - speaker: the untranslated speaker of the line
         - translated_speaker: the translated speaker of the line
 
-        - line_number_in_file: the line number of the line in the file
+        - start_line_number_in_file: the first line number of the raw_content of the line in the file
+        - end_line_number_in_file: the last line number of the raw_content of the line in the file
         - file_name: the name of the file
 
         - line_number_in_block: the line number of the line in the block
@@ -37,44 +39,62 @@ class Line:
         - block_name: the name of the block
 
         - start_end_position_in_raw_line: the start and end position of the line in the raw line
-            This should be a tuple of two integers, this will be used to repalce the translated files 
+            This should be a tuple of two integers, this will be used to repalce the translated files
         - speaker_start_end_position_in_raw_line: the start and end position of the speaker in the raw line
 
-        - is_translated: Ture if the line is translated, False if not, 
-            this bool could be used if the user is not satisfied with the translation 
+        - is_translated: Ture if the line is translated, False if not,
+            this bool could be used if the user is not satisfied with the translation
             and want to mark it as not translated even if a translated_content is present
 
     """
 
-    def __init__(
-        self, 
-    ):
-        self.is_translated = False
+    def __init__(self):
+        self.content = ""
+        self.translated_content = ""
 
+        self.speaker = ""
+        self.translated_speaker = ""
+
+        self.line_number_in_file = 0
+        self.file_name = ""
+
+        self.line_number_in_block = 0
+        self.speaker_line_number_in_block = 0
+        self.block_name = ""
+
+        self.start_end_position_in_raw_line = (0, 0)
+        self.speaker_start_end_position_in_raw_line = (0, 0)
+
+        self.is_translated = False
 
     @classmethod
     def from_raw(cls, raw_content, parser=default_parser):
-        """ Create a line object from raw content. """
-        (cls.content, cls.speaker, cls.line_number_in_file, cls.line_number_in_block,) = parser(raw_content=raw_content)
+        """Create a line object from raw content."""
+        instance = cls()
+        (
+            instance.content,
+            instance.speaker,
+            instance.line_number_in_file,
+            instance.line_number_in_block,
+        ) = parser(raw_content=raw_content)
 
-        return cls
+        return instance
 
     @classmethod
     def from_csv_row(cls, csv_row):
-        """ Create a line object from csv row. """
+        """Create a line object from csv row."""
         pass
 
-
     def get_content(self):
-        """ Return the content of the line. """
+        """Return the content of the line."""
         return self.content
 
     def get_speaker(self):
-        """ Return the speaker of the line. """
+        """Return the speaker of the line."""
         return self.speaker
 
     def translate(self, translator=None):
-        """ translating a single line without context is an unrecommended behavior """
+        """translating a single line without context is an unrecommended behavior"""
         if translator != None:
             self.translated_content = translator.translate(self.content)
         else:
@@ -82,5 +102,5 @@ class Line:
         pass
 
     def get_translated_content(self):
-        """ Return the translated content of the line. """
-        return self.translated_content if 
+        """Return the translated content of the line."""
+        return self.translated_content if self.is_translated else ""
