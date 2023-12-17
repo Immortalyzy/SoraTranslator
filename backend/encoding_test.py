@@ -1,29 +1,22 @@
 """ debug encoding_fix.py  """
-import Integrators.Chaos_R.Extractor.encoding_fix as enc_fix
+import Integrators.Chaos_R.encoding_fix as enc_fix
+import Integrators.Chaos_R.chaosr_game as chaosr_game
+import Integrators.utils.utilities as util
 
 # test the from_file_list method
 python_file = "D:\\Work\\SoraTranslator\\GameResources\\OriginalFiles\\file_path.py"
 
-# create an EncodingFix object from a python file, this will read files to unpack
-encoding_fix = enc_fix.EncodingFix.from_pythonfile(python_file)
+# create a game instance
+game = chaosr_game.ChaosRGame.from_pythonfile(python_file)
 
-# print info
-print(f"Read {len(encoding_fix.xp3_file_list)} files from {encoding_fix.directory}")
+xp3_unpacker = util.XP3_UPK
+game.set_unpacker(xp3_unpacker)
+game.unpack_allfiles()
 
-# test the unpacker
-import Integrators.utils.utilities as util
+# fix the encoding of all files
+enc_fix.fix_allfiles(game)
 
-print(util.XP3_UPK)
+# repack the game
+game.repackallfiles()
 
-encoding_fix.set_unpacker(util.XP3_UPK)
-encoding_fix.create_temp_unpack_directory()
-encoding_fix.unpack_allfiles()
-
-encoding_fix.original_encoding = "cp932"
-encoding_fix.target_encoding = "utf_16"
-
-encoding_fix.fix_allfiles()
-encoding_fix.re_packallfiles()
-
-# end debug
-print("Done.")
+print("Done")

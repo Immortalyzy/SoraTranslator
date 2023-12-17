@@ -8,4 +8,4 @@ DEFAULT_TRANSLATED_FILES_FOLDER = (
     "D:/Work/SoraTranslator/GameResources/TranslatedFiles/"
 )
 
-DEFAULT_XP3_UNPACKER = "D:/Work/SoraTranslator/Integrators/utils/xp3_upk.exe"
+DEFAULT_XP3_UNPACKER = "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
