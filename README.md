@@ -13,15 +13,18 @@ The project is organized as follows:
 
 ```
 SoraTranslator/
-├── Integrators/
-│   ├── GameName/
-│       ├── Extractor/
-│       ├── Parser/
-├── Translators/
-├── GameResources/
-│   ├── OriginalFiles/
-│   ├── Texts/
-│   ├── TranslatedFiles/
+|─── backend/
+|    |── Integrators/
+│       ├── GameName/
+│           ├── Extractor/
+│           ├── Parser/
+|    |── Translators/
+|    |── GameResources/
+│       ├── OriginalFiles/
+│       ├── RawText/
+│       ├── Text/
+│       ├── TranslatedFiles/
+|─── frontend/
 ```
 
 Each directory is designed to handle a different stage of the translation process:
