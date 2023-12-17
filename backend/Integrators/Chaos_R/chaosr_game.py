@@ -5,8 +5,10 @@ import os
 import shutil
 from ...constants import DEFAULT_GAME_RESOURCES_DIRECTORY
 from ...constants import DEFAULT_XP3_UNPACKER
+from ...constants import DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY
 from ...game import Game
-from ...gamefile import GameFile
+from ...scriptfile import ScriptFile, update_script_filelist
+from .encoding_fix import fix_allfiles
 
 
 class ChaosRGame(Game):
@@ -16,6 +18,7 @@ class ChaosRGame(Game):
         super().__init__("Chaos_R")
         # Game Resources directory, no matter the original file directory the output will be put under RawText of this folder
         self.game_resources_directory = DEFAULT_GAME_RESOURCES_DIRECTORY
+        self.raw_text_directory = DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY
         self.unpacker = DEFAULT_XP3_UNPACKER
         # extensions of the script files
         self.script_extensions = [
@@ -31,18 +34,20 @@ class ChaosRGame(Game):
         # default values for Chaos_R
         self.original_encoding = "cp932"
         self.target_encoding = "utf_16"
+        self.is_encoding_fixed = False # if the encoding of the files are fixed set to True
 
         # directory
         self.directory = ""
-        # xp3 file list
+        # xp3 file list, stores string of FULL file path
         self.xp3_file_list = []
-        # script file list
+        # script file list, stores ScriptFile instances
         self.script_file_list = []
-        # to_translate file list
+        # to_translate file list, stores ScriptFile instances
         self.to_translate_file_list = []
 
-        # temp unpack directory
+        # temp file info storage
         self.temp_unpack_directory = ""
+        self.script_file_list_file = ""
 
         # configurations
         # patching mode includes:
@@ -132,15 +137,40 @@ class ChaosRGame(Game):
 
     def post_init(self):
         """Post init."""
-        self.temp_unpack_directory = self.directory + "\\temp_unpack"
+        self.temp_unpack_directory = os.path.join(self.directory, "SoraTranslatorTemp")
         # create temp unpack directory
         self.create_temp_unpack_directory(clear=False)
+        # initiate script file list file path
+        self.script_file_list_file = os.path.join(
+            self.temp_unpack_directory, "script_file_list.csv"
+        )
 
     # ==== high level methods ===============================
-    def prepare_raw_text(self):
+    def prepare_raw_text(self, replace=False):
         """
         Prepare the raw text for Chaos_R games. This method will put all script files into the GameResources/RawText folder.
         """
+        # unpack files
+        self.unpack_allfiles(replace=False)
+
+        # read script files
+        self.read_script_files()
+
+        # fix encoding
+        self.fix_encoding()
+
+        # copy script files to the RawText folder
+        for scriptfile in self.script_file_list:
+            target_file = os.path.join(self.raw_text_directory, scriptfile.script_file_path)
+            # check if the file already exists
+            if os.path.exists(target_file):
+                if replace:
+                    os.remove(target_file)
+                else:
+                    print(f"Skipping {scriptfile.script_file_path} since it already exists.")
+                    continue
+            shutil.copy(scriptfile.script_file_path, self.raw_text_directory)
+
         pass
 
     def integrate_from_text(self, text):
@@ -148,7 +178,7 @@ class ChaosRGame(Game):
         pass
 
     # ==== methods for packeging ==================================================================
-    def unpack_allfiles(self):
+    def unpack_allfiles(self, replace=False):
         """unpack all files in the file list to temp_unpack_directory"""
         # unpack all files
         for file in self.xp3_file_list:
@@ -159,17 +189,25 @@ class ChaosRGame(Game):
 
             # move the files to the temp_unpack_directory
             ## get file name without extension
-            file_name = os.path.splitext(os.path.basename(file))[0]
+            base_file_name = os.path.splitext(os.path.basename(file))[0]
             ## join the name with its directory
-            file_name = os.path.join(self.directory, file_name)
+            file_path = os.path.join(self.directory, base_file_name)
             ## !! this moves the entire directory with the name file_name
-            shutil.move(file_name, self.temp_unpack_directory)
+            # check if target directory exists to avoid overwriting
+            after_file_name = os.path.join(self.temp_unpack_directory, base_file_name)
+            if os.path.exists(after_file_name):
+                if replace:
+                    shutil.rmtree(after_file_name)
+                else:
+                    print(f"Skipping {file_path} since it already exists.")
+                    continue
+            shutil.move(file_path, self.temp_unpack_directory)
 
         # now all the files are unpacked and stored in the temp_unpack_directory
         return
 
     def repackallfiles(self):
-        """repack all files in the temp_unpack_directory"""
+        """repack all files in the temp_unpack_directory, results files will be put under that directory"""
 
         # fix the encoding of these files
         for file in self.xp3_file_list:
@@ -182,6 +220,7 @@ class ChaosRGame(Game):
 
     def pack_patchxp3(self):
         """instead of packing all files back, create a patch.xp3 file"""
+        # collect all files in the GameResources/TranslatedFiles directory
         # todo: implement this
         pass
 
@@ -189,6 +228,12 @@ class ChaosRGame(Game):
         """Set the unpacker."""
         self.unpacker = unpacker
         return
+
+    def fix_encoding(self):
+        """ fix the encoding of the script files for the game, can only be called after unpacking the collection of the script files """
+        fix_allfiles(self.script_file_list, replace=True)
+        self.is_encoding_fixed = True
+
 
     # ==== methods for script files management ====================================================
     def create_temp_unpack_directory(self, clear=False):
@@ -217,22 +262,24 @@ class ChaosRGame(Game):
     def read_script_files(self):
         """select script files from the temp_unpack_directory"""
         # get all files with the given extensions
-        script_file_list = self.select_files(
-            self.temp_unpack_directory, self.extensions
+        script_filepath_list = []
+        for xp3_file in self.xp3_file_list:
+            base_xp3_file_name = os.path.splitext(os.path.basename(xp3_file))[0]
+            path_of_unpacked_xp3 = os.path.join(
+                self.temp_unpack_directory, base_xp3_file_name)
+            script_filepath_list += self.select_files(
+                path_of_unpacked_xp3, self.script_extensions
+            )
+        self.select_files(
+            self.temp_unpack_directory, self.script_extensions
         )
-        # create instances of GameFile for each file
+        # create instances of ScriptFile for each file
+        for filepath in script_filepath_list:
+            scriptfile = ScriptFile.from_originalfile(filepath)
+            self.script_file_list.append(scriptfile)
 
         # save the script file list to a .csv file under the temp_unpack_directory
-        # create the file path
-        script_file_list_file = os.path.join(
-            self.temp_unpack_directory, "script_file_list.csv"
-        )
-
-        # write the file list to the file
-        with open(script_file_list_file, "w", encoding="utf_8") as f:
-            for file in self.script_file_list:
-                f.write(file + "\n")
-
+        update_script_filelist(self.script_file_list_file, self.script_file_list)
         return
 
     def update_script_file_list(self):

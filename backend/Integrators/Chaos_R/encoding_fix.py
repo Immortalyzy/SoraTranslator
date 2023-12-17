@@ -7,8 +7,8 @@ import os
 
 
 def fix_encoding(
-    input_file,
-    output_file,
+    input_file_path,
+    output_file_path,
     original_encoding="cp932",
     target_encoding="utf_8",
 ):
@@ -16,33 +16,34 @@ def fix_encoding(
     Fix the encoding of the text content of the games of Chaos-R.
     """
     # read and change the encoding from Shift-JIS to UTF-8
-    with open(input_file, "r", encoding=original_encoding) as f:
+    with open(input_file_path, "r", encoding=original_encoding) as f:
         content = f.read()
 
     # write the content back to the file
-    with open(output_file, "w", encoding=target_encoding) as f:
+    with open(output_file_path, "w", encoding=target_encoding) as f:
         f.write(content)
     return
 
 
 def fix_allfiles(
-    file_list, replace=False, original_encoding="cp932", target_encoding="utf_8"
+    scriptfile_list, replace=False, original_encoding="cp932", target_encoding="utf_8"
 ):
     """fix all files of a game instance"""
     # get all files with the given extensions
 
     # fix the encoding of these files
-    for file in file_list:
+    for scriptfile in scriptfile_list:
+        file = scriptfile.script_file_path
         # print status
         print(
-            f"Fixing encoding of {file}, {file_list.index(file) + 1}/{len(file_list)}"
+            f"Fixing encoding of {scriptfile.script_file_path}, {scriptfile_list.index(scriptfile) + 1}/{len(scriptfile_list)}"
         )
         # create the output file path
         output_file = file + "new_encoding"
         # fix the encoding
         fix_encoding(
-            input_file=file,
-            output_file=output_file,
+            input_file_path=file,
+            output_file_path=output_file,
             original_encoding=original_encoding,
             target_encoding=target_encoding,
         )
