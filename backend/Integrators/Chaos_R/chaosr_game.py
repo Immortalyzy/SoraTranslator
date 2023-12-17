@@ -3,10 +3,10 @@
 import importlib.util
 import os
 import shutil
-from constants import DEFAULT_GAME_RESOURCES_DIRECTORY
-from constants import DEFAULT_XP3_UNPACKER
-from game import Game
-from gamefile import GameFile
+from ...constants import DEFAULT_GAME_RESOURCES_DIRECTORY
+from ...constants import DEFAULT_XP3_UNPACKER
+from ...game import Game
+from ...gamefile import GameFile
 
 
 class ChaosRGame(Game):
