@@ -280,16 +280,14 @@ class ChaosRGame(Game):
             base_xp3_file_name = os.path.splitext(os.path.basename(xp3_file))[0]
             path_of_unpacked_xp3 = os.path.join(
                 self.temp_unpack_directory, base_xp3_file_name)
-            script_filepath_list += self.select_files(
+            script_filepath_list_xp3 = self.select_files(
                 path_of_unpacked_xp3, self.script_extensions
             )
-        self.select_files(
-            self.temp_unpack_directory, self.script_extensions
-        )
-        # create instances of ScriptFile for each file
-        for filepath in script_filepath_list:
-            scriptfile = ScriptFile.from_originalfile(filepath)
-            self.script_file_list.append(scriptfile)
+            # create instances of ScriptFile for each file, note the original package
+            for filepath in script_filepath_list_xp3:
+                scriptfile = ScriptFile.from_originalfile(filepath)
+                scriptfile.original_package = base_xp3_file_name
+                self.script_file_list.append(scriptfile)
 
         # save the script file list to a .csv file under the temp_unpack_directory
         update_script_filelist(self.script_file_list_file, self.script_file_list)

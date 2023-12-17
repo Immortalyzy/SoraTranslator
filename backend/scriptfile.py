@@ -17,6 +17,7 @@ class ScriptFile:
 
         # file type
         self.file_type = "content"
+        self.original_package = ""  # the package the file is in
 
         # set to true if ALL the text in the file is translated
         self.is_translated = False
@@ -47,6 +48,7 @@ class ScriptFile:
         entry += self.text_file_path + ", "
         entry += self.file_type + ", "
         entry += str(int(self.is_translated)) + ", "
+        entry += self.original_package + ", "
 
 
         entry += str(self.read_date) + "\n"
@@ -71,7 +73,7 @@ def initiate_script_filelist(listfilepath, replace=False):
             return
 
     with open(listfilepath, "w", encoding="utf_16") as file:
-        file.write("script_file_path, text_file_path, file_type, is_translated, read_date\n")
+        file.write("script_file_path, text_file_path, file_type, is_translated, original_package, read_date\n")
 
 def update_script_filelist(listfilepath, filelist):
     """update the script file list"""
