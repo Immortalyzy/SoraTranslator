@@ -159,17 +159,30 @@ class ChaosRGame(Game):
         # fix encoding
         self.fix_encoding()
 
-        # copy script files to the RawText folder
+        # copy script files to the RawText folder (KEEPING the directory structure)
         for scriptfile in self.script_file_list:
-            target_file = os.path.join(self.raw_text_directory, scriptfile.script_file_path)
+            # duplicate directory structure of temp_unpack_directory in the RawText directory
+            # get the relative path of the script file
+            relative_path = os.path.relpath(
+                scriptfile.script_file_path, self.temp_unpack_directory
+            )
+
+            full_desitnation_path = os.path.join(self.raw_text_directory, relative_path)
+            destination_directory = os.path.dirname(full_desitnation_path)
+            # create the directory if it does not exist
+            if not os.path.exists(destination_directory):
+                os.makedirs(destination_directory, exist_ok=True)
+
+
             # check if the file already exists
-            if os.path.exists(target_file):
+            if os.path.exists(full_desitnation_path):
                 if replace:
-                    os.remove(target_file)
+                    os.remove(full_desitnation_path)
                 else:
                     print(f"Skipping {scriptfile.script_file_path} since it already exists.")
                     continue
-            shutil.copy(scriptfile.script_file_path, self.raw_text_directory)
+            shutil.copy2(scriptfile.script_file_path, full_desitnation_path)
+
 
         pass
 
@@ -231,7 +244,7 @@ class ChaosRGame(Game):
 
     def fix_encoding(self):
         """ fix the encoding of the script files for the game, can only be called after unpacking the collection of the script files """
-        fix_allfiles(self.script_file_list, replace=True)
+        fix_allfiles(self.script_file_list, replace=True, original_encoding=self.original_encoding, target_encoding=self.target_encoding)
         self.is_encoding_fixed = True
 
 
