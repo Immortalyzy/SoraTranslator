@@ -121,6 +121,11 @@ class EncodingFix:
         # read and change the encoding from Shift-JIS to UTF-8
         with open(input_file, "r", encoding=original_encoding) as f:
             content = f.read()
+
+        ### todo!! debug code
+        if input_file.endswith("Config.tjs"):
+            print(content)
+
         # write the content back to the file
         with open(output_file, "w", encoding=target_encoding) as f:
             f.write(content)
@@ -167,8 +172,20 @@ class EncodingFix:
         """
         # create temp unpack directory
         self.temp_unpack_directory = os.path.join(self.directory, "temp_unpack")
+        # if exists delete it
+        self.clean_temp_unpack_directory()
+        # create empty directory
         if not os.path.exists(self.temp_unpack_directory):
             os.makedirs(self.temp_unpack_directory)
+        return
+
+    def clean_temp_unpack_directory(self):
+        """
+        Clean the temp_unpack_directory.
+        """
+        # clean temp unpack directory
+        if os.path.exists(self.temp_unpack_directory):
+            shutil.rmtree(self.temp_unpack_directory)
         return
 
     def unpack_allfiles(self):
@@ -226,7 +243,12 @@ class EncodingFix:
             # create the output file path
             output_file = file + "new_encoding"
             # fix the encoding
-            self.fix_encoding(file, output_file)
+            self.fix_encoding(
+                input_file=file,
+                output_file=output_file,
+                original_encoding=self.original_encoding,
+                target_encoding=self.target_encoding,
+            )
             # delete the original file
             os.remove(file)
             # rename the new file
