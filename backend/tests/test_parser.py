@@ -9,10 +9,11 @@ test_blocks_start = (107, 132)
 def test_parser():
     """ test the parser of chaosr games"""
     script_file = ScriptFile.from_originalfile(test_file)
-    blocks = parse_file(script_file)
+    blocks, _, _ = parse_file(script_file)
 
-    for i in range(5):
-        i += 1
-        parse_block(blocks[i])
+    for i in range(4):
+        blocks[i].parse(parse_block_function=parse_block)
+        print(blocks[i].speaker_original, blocks[i].speaker_line, blocks[i].speaker_start_end)
+        print(blocks[i].text_original, blocks[i].text_line, blocks[i].text_start_end)
 
     return 0

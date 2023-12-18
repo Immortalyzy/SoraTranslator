@@ -2,17 +2,25 @@
 
 import datetime
 import os
-import importlib.util
+from .logger import log_message
+from .constants import DEFAULT_GAME_RESOURCES_TEXT_FOLDER
 
 
 class ScriptFile:
     """The GameFile class defines a script file and info around it, the class provides a framework for integration actions defined in the game folders"""
+
+    # a list of blocks in the file, will be filled when parsing
+    blocks = []
+    # these two are used to record the non-block content in the file
+    non_block_string_between_blocks = []
+    block_number_for_non_block_string = []
 
     def __init__(self, file_path):
 
         self.original_file_path = file_path
         self.script_file_path = file_path # this avoids error when forgot to use from_originalfile
         self.text_file_path = ""  # the path of the text file in .csv
+        self.translated_script_file_path = ""
 
         self.read_date = datetime.datetime.now()
 
@@ -24,7 +32,6 @@ class ScriptFile:
         self.is_translated = False
 
         # if file type is content, then it should content following variables for eaiser integration
-        self.translated_script_file_path = ""
         # at the end of certain files there will be a "jump" action that indicates the name of next file
         self.next_script_file_name = ""
 
@@ -42,6 +49,7 @@ class ScriptFile:
         """create a game file instance from a file path"""
         game_file = cls(file_path)
         game_file.text_file_path = file_path
+        # todo: read blocks
         return game_file
 
     def create_entry_in_scriptlistcsv(self):
@@ -57,13 +65,63 @@ class ScriptFile:
         entry += str(self.read_date) + "\n"
         return entry
 
-    def generate_textfile(self, parser_file):
-        """generate the text file"""
-        # load the functions from the parser file
-        spec = importlib.util.spec_from_file_location("module.name", parser_file)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        # todo: complete
+    def parse(self, parse_file_function, parse_block_function):
+        """ parse the script file """
+        # parse the file and save the blocks
+        self.blocks, self.non_block_string_between_blocks, self.block_number_for_non_block_string = parse_file_function(self)
+
+        # parse all the blocks
+        for block in self.blocks:
+            block.parse(parse_block_function)
+
+    def generate_textfile(self, text_file_path="", replace=False, update=False):
+        """
+        Generate a text file based on the script file using the provided parser file.
+
+        Args:
+            parser_file (str): The path to the parser python (.py) file.
+            text_file_path (str, optional): The path to the text file. If not provided, a default path will be generated based on the script file path. Defaults to "".
+            replace (bool, optional): Whether to replace an existing text file if it already exists. Defaults to False.
+            update (bool, optional): Whether to update an existing text file if it already exists. Defaults to False.
+
+        Returns:
+            bool: True if the text file was generated successfully, False otherwise.
+        """
+
+        # Create the text filepath if not provided
+        if text_file_path == "":
+            # get the base name of the file without the extension
+            file_name = os.path.basename(self.script_file_path)
+            file_name = os.path.splitext(file_name)[0]
+            relative_path = os.path.relpath(self.script_file_path, self.original_package)
+            text_file_path = os.path.join(DEFAULT_GAME_RESOURCES_TEXT_FOLDER, relative_path)
+
+        # get the directory of the text file
+        destination_directory = os.path.dirname(text_file_path)
+        if not os.path.exists(destination_directory):
+            os.makedirs(destination_directory, exist_ok=True)
+
+        lines_wroten = 0
+        # create the text file
+        with open(self.text_file_path, "w", encoding="utf_16") as file:
+            for block in self.blocks:
+                if not block.is_empty():
+                    lines_wroten += 1
+                    file.write(block.create_entry_in_textfile())
+
+        log_message(f"Text file {self.text_file_path} created, {lines_wroten} lines wroten")
+        return lines_wroten == 0
+    
+    def update_from_textfile(self):
+        """ update the content (translationi) of the script file from the text file """
+        # implement verification (total lines, etc.)
+
+        # record the translation information in the text file and write them to blocks
+
+    def generate_translated_file(self):
+        """ generate a translated file form exsiting information """
+        translated_text = ""
+        # recreate the rawtext structure, inserting non-block content
 
     def is_system_file(self):
         """ return if is system file""" 

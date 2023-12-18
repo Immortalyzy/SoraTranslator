@@ -3,10 +3,10 @@
 
 from typing import List
 import re
-from ...scriptfile import ScriptFile
-from ...block import Block
 from ...logger import log_message
 from ...constants import LogLevel
+from ...scriptfile import ScriptFile
+from ...block import Block
 
 def parse_file(script_file: ScriptFile) -> List[Block]:
     """ this function will parse a script file to blocks, this parser will omit the text at the beging of file outside of any blocks """
@@ -17,8 +17,12 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
     except FileNotFoundError:
         log_message(f"File {file_path} not found for parsing", log_level=LogLevel.WARNING)
 
-    block_list = [] # list of all blocks in this file
-    block_name = ""
+    # list of all blocks in this file
+    block_list = []
+    non_block_string_between_blocks = []
+    block_number_for_non_block_string = []
+
+    block_name = "start_of_file"
     block_content = [] # a list of lines
 
     for line in lines:
@@ -46,31 +50,44 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
         block_list.append(block)
 
     log_message(f"File {file_path} parsed, {len(block_list)} blocks found", log_level=LogLevel.INFO)
-    return block_list
+    return block_list, non_block_string_between_blocks, block_number_for_non_block_string
 
 
-def parse_block(block: Block) -> (str, str):
+def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     """parse the block"""
     speaker = "narration"
-    content = ""
+    speaker_line = 0
+    speaker_start_end = (0, 0)
+    text = ""
+    text_line = 0
+    text_start_end = (0, 0)
     marco_indicator = r'\[.*?\]'
-    for line in block.block_content:
+
+    # this only works when there is only one text in one line
+    for i, line in enumerate(block.block_content):
         clean_block = re.sub(marco_indicator, '', line)
-        content += clean_block.strip()
+        text += clean_block.strip()
+        if text != "":
+            found_text = re.search(text, line)
+            if found_text:
+                text_line = i
+                text_start_end = found_text.span()
 
     # find the speaker if any
     search_pattern = r"\[【(.*?)】\]"
     found_speakers = []
-    for line in block.block_content:
+    for i, line in enumerate(block.block_content):
         # check if the line contains the [【speaker】]
         found_speaker = re.search(search_pattern, line)
         if found_speaker:
             found_speakers.append(found_speaker.group(1))
+            speaker_line = i
+            speaker_start_end = found_speaker.span(1)
 
     if len(found_speakers) > 1:
         log_message(f"Multiple speakers found in block {block.block_name}, using the first one", log_level=LogLevel.WARNING)
     if len(found_speakers) > 0:
         speaker = found_speakers[0]
 
-    log_message(f"Block {block.block_name} parsed, speaker: {speaker}, content: {content}", log_level=LogLevel.DEBUG)
-    return speaker, content
+    log_message(f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}", log_level=LogLevel.DEBUG)
+    return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
