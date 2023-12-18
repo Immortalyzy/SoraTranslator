@@ -22,5 +22,6 @@ class LogLevel(Enum):
     WARNING = 1
     INFO = 2
     DEBUG = 3
+    VERBOSE = 4
 
 DEFAULT_LOG_LEVEL = LogLevel.DEBUG

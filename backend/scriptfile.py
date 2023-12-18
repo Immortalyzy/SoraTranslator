@@ -2,6 +2,7 @@
 
 import datetime
 import os
+import importlib.util
 
 
 class ScriptFile:
@@ -10,7 +11,7 @@ class ScriptFile:
     def __init__(self, file_path):
 
         self.original_file_path = file_path
-        self.script_file_path = ""
+        self.script_file_path = file_path # this avoids error when forgot to use from_originalfile
         self.text_file_path = ""  # the path of the text file in .csv
 
         self.read_date = datetime.datetime.now()
@@ -24,6 +25,8 @@ class ScriptFile:
 
         # if file type is content, then it should content following variables for eaiser integration
         self.translated_script_file_path = ""
+        # at the end of certain files there will be a "jump" action that indicates the name of next file
+        self.next_script_file_name = ""
 
         # ordinary info, will add here as generally needed
 
@@ -53,6 +56,14 @@ class ScriptFile:
 
         entry += str(self.read_date) + "\n"
         return entry
+
+    def generate_textfile(self, parser_file):
+        """generate the text file"""
+        # load the functions from the parser file
+        spec = importlib.util.spec_from_file_location("module.name", parser_file)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # todo: complete
 
     def is_system_file(self):
         """ return if is system file""" 
