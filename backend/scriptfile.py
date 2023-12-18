@@ -3,7 +3,7 @@
 import datetime
 import os
 from .logger import log_message
-from .constants import DEFAULT_GAME_RESOURCES_TEXT_FOLDER
+from .constants import DEFAULT_GAME_RESOURCES_TEXT_FOLDER, RAW_TEXT_DIRECTORY
 
 
 class ScriptFile:
@@ -93,11 +93,15 @@ class ScriptFile:
             # get the base name of the file without the extension
             file_name = os.path.basename(self.script_file_path)
             file_name = os.path.splitext(file_name)[0]
-            relative_path = os.path.relpath(self.script_file_path, self.original_package)
+            # remove file extension from original package
+            relative_path = os.path.relpath(self.script_file_path, RAW_TEXT_DIRECTORY)
             text_file_path = os.path.join(DEFAULT_GAME_RESOURCES_TEXT_FOLDER, relative_path)
+            # change the extension to .csv
+            text_file_path = os.path.splitext(text_file_path)[0] + ".csv"
+            self.text_file_path = text_file_path
 
         # get the directory of the text file
-        destination_directory = os.path.dirname(text_file_path)
+        destination_directory = os.path.dirname(self.text_file_path)
         if not os.path.exists(destination_directory):
             os.makedirs(destination_directory, exist_ok=True)
 
@@ -105,9 +109,8 @@ class ScriptFile:
         # create the text file
         with open(self.text_file_path, "w", encoding="utf_16") as file:
             for block in self.blocks:
-                if not block.is_empty():
-                    lines_wroten += 1
-                    file.write(block.create_entry_in_textfile())
+                lines_wroten += 1
+                file.write("\t".join(block.to_csv_line()) + "\n")
 
         log_message(f"Text file {self.text_file_path} created, {lines_wroten} lines wroten")
         return lines_wroten == 0

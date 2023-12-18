@@ -25,3 +25,7 @@ class LogLevel(Enum):
     VERBOSE = 4
 
 DEFAULT_LOG_LEVEL = LogLevel.DEBUG
+
+
+# log config, after project.py is implemented, this should be moved to project.py
+RAW_TEXT_DIRECTORY = "D:/Work/SoraTranslator/GameResources/RawText/"

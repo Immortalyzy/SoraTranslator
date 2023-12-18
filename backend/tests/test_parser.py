@@ -17,3 +17,9 @@ def test_parser():
         print(blocks[i].text_original, blocks[i].text_line, blocks[i].text_start_end)
 
     return 0
+
+def test_text_fiel():
+    """ test text file generation and reading """
+    script_file = ScriptFile.from_originalfile(test_file)
+    script_file.parse(parse_file_function=parse_file, parse_block_function=parse_block)
+    script_file.generate_textfile()

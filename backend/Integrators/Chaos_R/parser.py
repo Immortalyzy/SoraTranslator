@@ -88,6 +88,9 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
         log_message(f"Multiple speakers found in block {block.block_name}, using the first one", log_level=LogLevel.WARNING)
     if len(found_speakers) > 0:
         speaker = found_speakers[0]
+    if text == "":
+        # empty block
+        speaker = ""
 
     log_message(f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}", log_level=LogLevel.DEBUG)
     return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
