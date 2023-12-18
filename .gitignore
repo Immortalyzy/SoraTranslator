@@ -1,5 +1,6 @@
 # Special ignore files
 GameResources/
+config.json
 
 
 # Byte-compiled / optimized / DLL files
