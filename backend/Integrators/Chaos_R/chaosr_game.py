@@ -275,7 +275,6 @@ class ChaosRGame(Game):
     def read_script_files(self):
         """select script files from the temp_unpack_directory"""
         # get all files with the given extensions
-        script_filepath_list = []
         for xp3_file in self.xp3_file_list:
             base_xp3_file_name = os.path.splitext(os.path.basename(xp3_file))[0]
             path_of_unpacked_xp3 = os.path.join(
