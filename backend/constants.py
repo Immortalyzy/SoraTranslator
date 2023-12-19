@@ -4,28 +4,56 @@ from enum import Enum
 # Path specific
 DEFAULT_GAME_RESOURCES_DIRECTORY = "D:/Work/SoraTranslator/GameResources/"
 DEFAULT_ENCODING_OUTPUT = "D:/Work/SoraTranslator/GameResources/RawText/"
-DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = "D:/Work/SoraTranslator/GameResources/RawText/"
-DEFAULT_GAME_RESOURCES_TEXT_FOLDER = "D:/Work/SoraTranslator/GameResources/Text/"
+DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = (
+    "D:/Work/SoraTranslator/GameResources/RawText/"
+)
+DEFAULT_GAME_RESOURCES_TEXT_FOLDER = (
+    "D:/Work/SoraTranslator/GameResources/Text/"
+)
 DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_FOLDER = (
     "D:/Work/SoraTranslator/GameResources/TranslatedFiles/"
 )
 
-DEFAULT_XP3_UNPACKER = "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
-
+DEFAULT_XP3_UNPACKER = (
+    "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
+)
 
 
 # Log file
 LOG_FILE = "D:/Work/SoraTranslator/backend/log.txt"
+
+
 class LogLevel(Enum):
     """ log level """
+
     ERROR = 0
     WARNING = 1
     INFO = 2
     DEBUG = 3
     VERBOSE = 4
 
+
 DEFAULT_LOG_LEVEL = LogLevel.DEBUG
 
 
 # log config, after project.py is implemented, this should be moved to project.py
 RAW_TEXT_DIRECTORY = "D:/Work/SoraTranslator/GameResources/RawText/"
+
+
+### Configurations ============================================================
+class Config:
+    """ configuraion class for the backend, saving default configurations """
+
+    log_level = DEFAULT_LOG_LEVEL
+
+    def __init__(self):
+        pass
+
+    @classmethod
+    def from_json(cls, json_file):
+        """ load config from json """
+        # todo: implement this
+
+    def to_json(self, json_file, replace=True):
+        """ save config to json """
+        # todo:implement this
