@@ -57,4 +57,4 @@ The parser, no matter how it works, should output the text in a uniform format, 
 #### To-Do
 - [ ] Write frontend
 - [ ] GPT API could use fake examples to remember one's style, implement a function to fine-tune the translation
-- [ ] Task 3
+- [ ] Add support for local LLM models for the translation of unallowed content
