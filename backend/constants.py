@@ -1,5 +1,6 @@
 """ contants that are used in the backend """
 from enum import Enum
+import json
 
 # Path specific
 DEFAULT_GAME_RESOURCES_DIRECTORY = "D:/Work/SoraTranslator/GameResources/"
@@ -20,7 +21,13 @@ DEFAULT_XP3_UNPACKER = (
 
 
 # Log file
-LOG_FILE = "D:/Work/SoraTranslator/backend/log.txt"
+DEFAULT_LOG_FILE = "D:/Work/SoraTranslator/backend/log.txt"
+DEFAULT_CONFIG_FILE = "D:/Work/SoraTranslator/config.json"
+
+# GPT API
+DEFAULT_INITIATION_PROMPT = [{"role":"system", "content":"You are a translator."}, {"role":"user", "content":"Translate from {} to {}"}]
+
+
 
 
 class LogLevel(Enum):
@@ -31,6 +38,31 @@ class LogLevel(Enum):
     INFO = 2
     DEBUG = 3
     VERBOSE = 4
+
+class SuccessStatus(Enum):
+    """ success status """
+
+    # if 100% translated
+    SUCCESS = 0
+    # if >=80% translated
+    ALMOST_SUCCESS = 1
+    # if >=50% <80% translated
+    PARTIAL_SUCCESS = 2
+    # if < 50% translated
+    ERROR = 3
+
+    @staticmethod
+    def status_from_ratio(ratio):
+        """ get the status from the ratio """
+        if ratio >= 0.999:
+            return SuccessStatus.SUCCESS
+        elif ratio >= 0.8:
+            return SuccessStatus.ALMOST_SUCCESS
+        elif ratio >= 0.5:
+            return SuccessStatus.PARTIAL_SUCCESS
+        else:
+            return SuccessStatus.ERROR
+
 
 
 DEFAULT_LOG_LEVEL = LogLevel.DEBUG
@@ -44,16 +76,55 @@ RAW_TEXT_DIRECTORY = "D:/Work/SoraTranslator/GameResources/RawText/"
 class Config:
     """ configuraion class for the backend, saving default configurations """
 
+    # see above LogLevel class
     log_level = DEFAULT_LOG_LEVEL
 
+    # gpt translation settings
+    openai_api_key = "sk-xxx"
+    # context number of blocks
+    ## set to 1 for no context
+    ## set to 0 for no limit (will use maximum number of blocks calculated based on maximum token allowed)
+    gpt_context_block_count = 0
+    gpt_max_tokens = 16000
+    gpt_completion_max_tokens = 500
+    gpt_model="gpt-3.5-turbo-16k"
+    gpt_temperature = 0.3
+
+    # success status
+    failure_keywords = ["无法提供翻译", "不能提供翻译"]
+    record_failure_text = True
+
+    # language settings
+    original_language = "Japanese"
+    target_language = "Chinese"
+
     def __init__(self):
-        pass
+        self.gpt_prompt = DEFAULT_INITIATION_PROMPT
 
     @classmethod
     def from_json(cls, json_file):
         """ load config from json """
-        # todo: implement this
+        # read all variables from json file if it exists
+        instance = cls()
+        with open(json_file, "r") as file:
+            json_object = json.load(file)
+        for key, value in json_object.items():
+            setattr(instance, key, value)
+
+        # post init
+        instance.post_init()
+        return instance
+
+    def post_init(self):
+        """ do post init actions """
+        # set the default prompt based on the language configuration
+        self.gpt_prompt = DEFAULT_INITIATION_PROMPT
+        self.gpt_prompt[1]["content"] = self.gpt_prompt[1]["content"].format(self.original_language, self.target_language)
+        pass
+
 
     def to_json(self, json_file, replace=True):
         """ save config to json """
         # todo:implement this
+
+default_config = Config()
