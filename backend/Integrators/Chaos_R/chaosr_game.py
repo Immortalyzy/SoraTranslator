@@ -3,9 +3,7 @@
 import importlib.util
 import os
 import shutil
-from ...constants import DEFAULT_GAME_RESOURCES_DIRECTORY
 from ...constants import DEFAULT_XP3_UNPACKER
-from ...constants import DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY
 from ...game import Game
 from ...scriptfile import ScriptFile, update_script_filelist
 from .encoding_fix import fix_allfiles
@@ -16,9 +14,6 @@ class ChaosRGame(Game):
 
     def __init__(self):
         super().__init__("Chaos_R")
-        # Game Resources directory, no matter the original file directory the output will be put under RawText of this folder
-        self.game_resources_directory = DEFAULT_GAME_RESOURCES_DIRECTORY
-        self.raw_text_directory = DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY
         self.unpacker = DEFAULT_XP3_UNPACKER
         # extensions of the script files
         self.script_extensions = [
@@ -31,23 +26,16 @@ class ChaosRGame(Game):
             ".tjs",
         ]
 
-        # default values for Chaos_R
+        # encoding fix for Chaos_R
         self.original_encoding = "cp932"
         self.target_encoding = "utf_16"
         self.is_encoding_fixed = False # if the encoding of the files are fixed set to True
 
-        # directory
-        self.directory = ""
         # xp3 file list, stores string of FULL file path
         self.xp3_file_list = []
-        # script file list, stores ScriptFile instances
-        self.script_file_list = []
-        # to_translate file list, stores ScriptFile instances
-        self.to_translate_file_list = []
 
         # temp file info storage
         self.temp_unpack_directory = ""
-        self.script_file_list_file = ""
 
         # configurations
         # patching mode includes:
@@ -141,7 +129,7 @@ class ChaosRGame(Game):
         # create temp unpack directory
         self.create_temp_unpack_directory(clear=False)
         # initiate script file list file path
-        self.script_file_list_file = os.path.join(
+        self.scriptfile_list_file = os.path.join(
             self.temp_unpack_directory, "script_file_list.csv"
         )
 
@@ -289,7 +277,7 @@ class ChaosRGame(Game):
                 self.script_file_list.append(scriptfile)
 
         # save the script file list to a .csv file under the temp_unpack_directory
-        update_script_filelist(self.script_file_list_file, self.script_file_list)
+        update_script_filelist(self.scriptfile_list_file, self.script_file_list)
         return
 
     def update_script_file_list(self):

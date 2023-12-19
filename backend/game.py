@@ -4,6 +4,10 @@ All child classes should have these functions declared in this class as abstract
 """
 
 from abc import ABC, abstractmethod
+from .constants import (
+    DEFAULT_GAME_RESOURCES_DIRECTORY,
+    DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY,
+)
 
 
 class Game(ABC):
@@ -12,9 +16,20 @@ class Game(ABC):
     def __init__(self, name):
         self.name = name
 
-        # encodings for encoding fix and text integration
-        self.original_encoding = None
-        self.target_encoding = None
+        # Game Resources directory, no matter the original file directory the output will be put under RawText of this folder
+        self.game_resources_directory = DEFAULT_GAME_RESOURCES_DIRECTORY
+        self.raw_text_directory = DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY
+
+        # directory
+        self.directory = ""
+        # script file list, stores ScriptFile instances
+        self.script_file_list = []
+        self.scriptfile_list_file = ""
+        # to_translate file list, stores ScriptFile instances
+        self.to_translate_file_list = []
+
+        # temp file info storage
+        self.temp_unpack_directory = ""
 
     @abstractmethod
     def prepare_raw_text(self):
