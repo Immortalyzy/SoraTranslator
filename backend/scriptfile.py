@@ -4,6 +4,7 @@ import datetime
 import os
 from .logger import log_message
 from .constants import DEFAULT_GAME_RESOURCES_TEXT_FOLDER, RAW_TEXT_DIRECTORY
+from .block import Block
 
 
 class ScriptFile:
@@ -40,17 +41,34 @@ class ScriptFile:
     @classmethod
     def from_originalfile(cls, file_path):
         """create a game file instance from a file path"""
-        game_file = cls(file_path)
-        game_file.script_file_path = file_path
-        return game_file
+        scriptfile = cls(file_path)
+        scriptfile.script_file_path = file_path
+        return scriptfile
 
     @classmethod
     def from_textfile(cls, file_path):
         """create a game file instance from a file path"""
-        game_file = cls(file_path)
-        game_file.text_file_path = file_path
-        # todo: read blocks
-        return game_file
+        scriptfile = cls(file_path)
+        # the script file path is undefined if it is read from a text file, this is usually used for translators
+        scriptfile.script_file_path = "undefined"
+        scriptfile.text_file_path = file_path
+        # the file type is content if it is read from a text file
+        scriptfile.file_type = "content"
+        # the original package is the directory name of the file (only the last part)
+        scriptfile.original_package = os.path.basename(os.path.dirname(file_path))
+        # check file existence
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Text file {file_path} does not exist")
+        with open(file_path, "r", encoding="utf_16") as file:
+            lines = file.readlines()
+        for line in lines:
+            scriptfile.blocks.append(Block.from_csv_line(line))
+
+        # verifications
+        # if all the blocks are translated, then the file is translated
+        scriptfile.is_translated = all(block.is_translated for block in scriptfile.blocks)
+
+        return scriptfile
 
     def create_entry_in_scriptlistcsv(self):
         """create a entry in the scriptlist.csv"""
@@ -89,7 +107,7 @@ class ScriptFile:
         """
 
         # Create the text filepath if not provided
-        if text_file_path == "":
+        if text_file_path == "" or self.text_file_path == "":
             # get the base name of the file without the extension
             file_name = os.path.basename(self.script_file_path)
             file_name = os.path.splitext(file_name)[0]
@@ -106,20 +124,37 @@ class ScriptFile:
             os.makedirs(destination_directory, exist_ok=True)
 
         lines_wroten = 0
+        # check if the file exists
+        if os.path.exists(self.text_file_path):
+            if replace:
+                os.remove(self.text_file_path)
+            if update:
+                if self.check_coherence_with_textfile():
+                    self.update_from_textfile()
+                else:
+                    log_message(f"Text file {self.text_file_path} is not coherent with the script file, cannot update")
+                    return 1 # error
+
+
         # create the text file
         with open(self.text_file_path, "w", encoding="utf_16") as file:
             for block in self.blocks:
                 lines_wroten += 1
-                file.write("\t".join(block.to_csv_line()) + "\n")
+                file.write(block.to_csv_line() + "\n")
 
         log_message(f"Text file {self.text_file_path} created, {lines_wroten} lines wroten")
         return lines_wroten == 0
-    
+
     def update_from_textfile(self):
-        """ update the content (translationi) of the script file from the text file """
+        """ update the content (translation) of the script file from the text file """
         # implement verification (total lines, etc.)
 
         # record the translation information in the text file and write them to blocks
+
+    def check_coherence_with_textfile(self, text_file_path = None):
+        """ check if the script file is coherent with the text file """
+        text_file_path = self.text_file_path if text_file_path is None else text_file_path
+        return True
 
     def generate_translated_file(self):
         """ generate a translated file form exsiting information """
@@ -127,10 +162,10 @@ class ScriptFile:
         # recreate the rawtext structure, inserting non-block content
 
     def is_system_file(self):
-        """ return if is system file""" 
+        """ return if is system file"""
         return self.file_type == "system"
     def is_content_file(self):
-        """ return if is content file""" 
+        """ return if is content file"""
         return self.file_type == "content"
 
 

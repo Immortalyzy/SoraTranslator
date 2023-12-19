@@ -1,6 +1,8 @@
 """ define the Block class """
+#!! csv sperator used is tab "\t"
 
-from .logger import log_message, LogLevel
+from .logger import log_message
+from .constants import LogLevel
 
 class Block:
     """ A block is a unit of text in a script file that controls the text that is shown at one time """
@@ -36,7 +38,7 @@ class Block:
         # check if csv_line is a list
         if not isinstance(csv_line, list):
             # if not, split it
-            csv_line = csv_line.split(",")
+            csv_line = csv_line.split("\t")
         # check csv line length
         if len(csv_line) < 3:
             raise ValueError("CSV line length not correct")
@@ -45,6 +47,8 @@ class Block:
         # when reading from csv file, the block content will not be read
         block_content = "not specified"
         block = cls(block_name, block_content)
+        # a block read from csv file is always parsed
+        block.is_parsed = True
 
         block.speaker_original = csv_line[1]
         block.text_original = csv_line[2]
@@ -71,7 +75,7 @@ class Block:
         csv_line.append(is_translated_text)
         csv_line.append(self.translation_date)
         csv_line.append(self.translation_engine)
-        return csv_line
+        return "\t".join(csv_line)
 
     def parse(self, parse_block_function):
         """ parse the block """
