@@ -4,7 +4,7 @@ from ..Integrators.utils import utilities as util
 from ..Integrators.Chaos_R.chaosr_game import ChaosRGame
 
 
-def test_integration():
+def test_extraction():
     """test the encoding_fix.py module"""
     # test the from_file_list method
     python_file = "D:\\Work\\SoraTranslator\\GameResources\\OriginalFiles\\file_path.py"
@@ -25,3 +25,7 @@ def test_integration():
 
     print("Done")
     return 0
+
+def test_integration():
+    """ test the function of putting files back to its places """
+    

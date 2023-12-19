@@ -18,8 +18,11 @@ def test_parser():
 
     return 0
 
-def test_text_fiel():
+def test_text_file():
     """ test text file generation and reading """
     script_file = ScriptFile.from_originalfile(test_file)
     script_file.parse(parse_file_function=parse_file, parse_block_function=parse_block)
     script_file.generate_textfile()
+
+def test_text_rebuild():
+    """ test the function of putting translated text back to its places """
