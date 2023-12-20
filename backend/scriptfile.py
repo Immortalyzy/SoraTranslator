@@ -107,7 +107,7 @@ class ScriptFile:
         """
 
         # Create the text filepath if not provided
-        if text_file_path == "" or self.text_file_path == "":
+        if text_file_path.strip() == "" and self.text_file_path.strip() == "":
             # get the base name of the file without the extension
             file_name = os.path.basename(self.script_file_path)
             file_name = os.path.splitext(file_name)[0]

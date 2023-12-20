@@ -1,4 +1,4 @@
-""" a test script to check if the parser works """ 
+""" a test script to check if the parser works """
 
 from ..Integrators.Chaos_R.parser import parse_file, parse_block
 from ..scriptfile import ScriptFile
@@ -22,7 +22,7 @@ def test_text_file():
     """ test text file generation and reading """
     script_file = ScriptFile.from_originalfile(test_file)
     script_file.parse(parse_file_function=parse_file, parse_block_function=parse_block)
-    script_file.generate_textfile()
+    script_file.generate_textfile(replace=True)
 
 def test_text_rebuild():
     """ test the function of putting translated text back to its places """

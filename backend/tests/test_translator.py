@@ -20,7 +20,7 @@ def test_gpt_translator():
     script_file = ScriptFile.from_textfile(test_file)
 
     # translate
-    success = translator.translate(script_file)
+    success = translator.translate_file_whole(script_file)
 
     # save translated file
     script_file.generate_textfile(replace=True)

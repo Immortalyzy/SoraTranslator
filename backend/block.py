@@ -26,6 +26,7 @@ class Block:
     # for translation record
     translation_date = ""
     translation_engine = "Undefined or manual"
+    translation_status = "stop"
 
 
     def __init__(self, block_name, block_content):
@@ -103,6 +104,13 @@ class Block:
         """ return if the block is empty """
         return self.is_parsed and self.text_original == ""
 
+    def text_to_translate(self, add_speaker: bool =False):
+        """ return the text to translate """
+        text = ""
+        if add_speaker:
+            text += f"{self.speaker_original} : "
+        text += self.text_original
+        return text
 
     def __str__(self):
         return f"Block {self.block_name} with {len(self.block_content)} lines"

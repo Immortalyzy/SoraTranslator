@@ -25,7 +25,8 @@ DEFAULT_LOG_FILE = "D:/Work/SoraTranslator/backend/log.txt"
 DEFAULT_CONFIG_FILE = "D:/Work/SoraTranslator/config.json"
 
 # GPT API
-DEFAULT_INITIATION_PROMPT = [{"role":"system", "content":"You are a translator."}, {"role":"user", "content":"Translate from {} to {}"}]
+LINE_BREAKER = "||"
+DEFAULT_INITIATION_PROMPT = [{"role":"system", "content":"You are a translator."}, {"role":"user", "content":"Translate from {} to {}, keep the line breaker " + LINE_BREAKER + " in the translated text."}]
 
 
 
@@ -84,19 +85,19 @@ class Config:
     # context number of blocks
     ## set to 1 for no context
     ## set to 0 for no limit (will use maximum number of blocks calculated based on maximum token allowed)
-    gpt_context_block_count = 0
+    gpt_context_block_count = 4
     gpt_max_tokens = 16000
-    gpt_completion_max_tokens = 500
+    gpt_completion_max_tokens = 8000
     gpt_model="gpt-3.5-turbo-16k"
     gpt_temperature = 0.3
 
     # success status
-    failure_keywords = ["无法提供翻译", "不能提供翻译"]
     record_failure_text = True
 
     # language settings
     original_language = "Japanese"
     target_language = "Chinese"
+    if_translate_with_speaker = False
 
     def __init__(self):
         self.gpt_prompt = DEFAULT_INITIATION_PROMPT
