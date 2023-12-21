@@ -3,7 +3,8 @@
 import datetime
 import os
 from .logger import log_message
-from .constants import DEFAULT_GAME_RESOURCES_TEXT_FOLDER, RAW_TEXT_DIRECTORY
+from .constants import DEFAULT_GAME_RESOURCES_TEXT_FOLDER, RAW_TEXT_DIRECTORY, DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_FOLDER
+from .constants import LogLevel
 from .block import Block
 
 
@@ -128,11 +129,14 @@ class ScriptFile:
         if os.path.exists(self.text_file_path):
             if replace:
                 os.remove(self.text_file_path)
-            if update:
-                if self.check_coherence_with_textfile():
-                    self.update_from_textfile()
+            else:
+                if update:
+                    if self.check_coherence_with_textfile():
+                        self.update_from_textfile()
+                    else:
+                        log_message(f"Text file {self.text_file_path} is not coherent with the script file, cannot update")
+                        return 1 # error
                 else:
-                    log_message(f"Text file {self.text_file_path} is not coherent with the script file, cannot update")
                     return 1 # error
 
 
@@ -145,21 +149,79 @@ class ScriptFile:
         log_message(f"Text file {self.text_file_path} created, {lines_wroten} lines wroten")
         return lines_wroten == 0
 
-    def update_from_textfile(self):
+    def update_from_textfile(self) -> bool:
         """ update the content (translation) of the script file from the text file """
+        # check if the file exists
+        if not os.path.exists(self.text_file_path):
+            log_message(f"Text file {self.text_file_path} does not exist, cannot update", log_level=LogLevel.ERROR)
+            return False
+        with open(self.text_file_path, "r", encoding="utf_16") as file:
+            lines = file.readlines()
         # implement verification (total lines, etc.)
-
+        if len(lines) != len(self.blocks):
+            log_message(f"Text file {self.text_file_path} is not coherent with the script file, cannot update", log_level=LogLevel.ERROR)
+            return False
         # record the translation information in the text file and write them to blocks
+        for i, line in enumerate(lines):
+            block = Block.from_csv_line(line)
+            # verify line information
+            if block.text_original != self.blocks[i].text_original:
+                log_message(f"Line {i+1} in text file {self.text_file_path} does not match the script file, cannot update", log_level=LogLevel.ERROR)
+                return False
+            self.blocks[i].text_translated = block.text_translated
+            self.blocks[i].speaker_translated = block.speaker_translated if block.speaker_translated != "" else self.blocks[i].speaker_original
+
+        return True
+
 
     def check_coherence_with_textfile(self, text_file_path = None):
         """ check if the script file is coherent with the text file """
         text_file_path = self.text_file_path if text_file_path is None else text_file_path
         return True
 
-    def generate_translated_file(self):
-        """ generate a translated file form exsiting information """
-        translated_text = ""
+    def generate_translated_rawfile(self, replace=False):
+        """ generate a translated file from memory """
+        # if no translated file path is provided, generate one
+        if self.translated_script_file_path == "":
+            # get the base name of the file without the extension
+            file_name = os.path.basename(self.script_file_path)
+            file_name = os.path.splitext(file_name)[0]
+            # remove file extension from original package
+            relative_path = os.path.relpath(self.script_file_path, RAW_TEXT_DIRECTORY)
+            translated_script_file_path = os.path.join(DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_FOLDER, relative_path)
+            self.translated_script_file_path = translated_script_file_path
+
         # recreate the rawtext structure, inserting non-block content
+        # todo: implement non-block string
+        for block in self.blocks:
+            block.generate_full_rawblock()
+            # write to file
+
+        # get the directory of the text file
+        destination_directory = os.path.dirname(self.translated_script_file_path)
+        if not os.path.exists(destination_directory):
+            os.makedirs(destination_directory, exist_ok=True)
+
+        lines_wroten = 0
+        # check if the file exists
+        if os.path.exists(self.translated_script_file_path):
+            if replace:
+                os.remove(self.translated_script_file_path)
+            else:
+                log_message(f"Translated script file {self.translated_script_file_path} already exists, skip creation", log_level=LogLevel.WARNING)
+                return 1
+
+        # create the text file
+        with open(self.translated_script_file_path, "w", encoding="utf_16") as file:
+            for block in self.blocks:
+                lines_wroten += 1
+                file.write("\n".join(block.block_content_translated) + "\n")
+
+        log_message(f"Text file {self.translated_script_file_path} created, {lines_wroten} lines wroten")
+        return lines_wroten == 0
+
+
+
 
     def is_system_file(self):
         """ return if is system file"""
@@ -167,6 +229,9 @@ class ScriptFile:
     def is_content_file(self):
         """ return if is content file"""
         return self.file_type == "content"
+    def is_to_translate(self):
+        """ return if is to translate file"""
+        return self.is_content_file() and not self.is_translated
 
 
 def initiate_script_filelist(listfilepath, replace=False):

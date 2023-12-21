@@ -147,6 +147,12 @@ class ChaosRGame(Game):
         # fix encoding
         self.fix_encoding()
 
+        # copy raw text
+        self.copy_raw_text(replace=replace)
+
+    def copy_raw_text(self, replace=False):
+        """ copy the raw text from the temp_unpack_directory to the RawText directory """
+
         # copy script files to the RawText folder (KEEPING the directory structure)
         for scriptfile in self.script_file_list:
             # duplicate directory structure of temp_unpack_directory in the RawText directory
@@ -168,8 +174,11 @@ class ChaosRGame(Game):
                     os.remove(full_desitnation_path)
                 else:
                     print(f"Skipping {scriptfile.script_file_path} since it already exists.")
+                    scriptfile.script_file_path = full_desitnation_path
                     continue
             shutil.copy2(scriptfile.script_file_path, full_desitnation_path)
+            # update the script file information
+            scriptfile.script_file_path = full_desitnation_path
 
 
         pass
@@ -207,7 +216,7 @@ class ChaosRGame(Game):
         # now all the files are unpacked and stored in the temp_unpack_directory
         return
 
-    def repackallfiles(self):
+    def repack_all_files(self):
         """repack all files in the temp_unpack_directory, results files will be put under that directory"""
 
         # fix the encoding of these files
@@ -281,7 +290,8 @@ class ChaosRGame(Game):
         return
 
     def update_script_file_list(self):
-        """update the script file list from the temp_unpack_directory"""
+        """update the script file list to the local from memory """
+        update_script_filelist(self.scriptfile_list_file, self.script_file_list)
 
     # ==== utility methods =========================================================================
     @staticmethod

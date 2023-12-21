@@ -16,6 +16,7 @@ class Block:
     speaker_translated = ""
     text_original = ""
     text_translated = ""
+    block_name_line = ""
 
     # for integration
     speaker_line = 0
@@ -32,10 +33,11 @@ class Block:
     def __init__(self, block_name, block_content):
         self.block_name = block_name
         self.block_content = block_content
+        self.block_content_translated = ""
 
     @classmethod
     def from_csv_line(cls, csv_line):
-        """create a block instance from a csv line"""
+        """create a block instance from a csv line, note this can only be used for translation"""
         # check if csv_line is a list
         if not isinstance(csv_line, list):
             # if not, split it
@@ -46,7 +48,7 @@ class Block:
 
         block_name = csv_line[0]
         # when reading from csv file, the block content will not be read
-        block_content = "not specified"
+        block_content = ""
         block = cls(block_name, block_content)
         # a block read from csv file is always parsed
         block.is_parsed = True
@@ -92,9 +94,31 @@ class Block:
         if text == "":
             self.is_translated = True
 
-    def generate_full_translated_content(self):
+    def generate_full_rawblock(self):
         """ generate the full translated content, to be replaced in the script file """
         # todo: implement
+        # check translation status and check block_content
+
+        if self.block_content == "":
+            #raise RuntimeError("Cannot generate full translated content for a block that has no original content (read from csv, verify the code)")
+            return 1
+
+        # block content is a list of lines
+        temp_block_content = self.block_content
+        # replace the speaker if not empty
+        if self.speaker_original != "" and self.speaker_original != "narration":
+            temp_block_content[self.speaker_line] = temp_block_content[self.speaker_line][:self.speaker_start_end[0]] + self.speaker_translated + temp_block_content[self.speaker_line][self.speaker_start_end[1]:]
+
+        # replace the text
+        if self.text_original != "":
+            temp_block_content[self.text_line] = temp_block_content[self.text_line][:self.text_start_end[0]] + self.text_translated + temp_block_content[self.text_line][self.text_start_end[1]:]
+
+        # note the result
+        self.block_content_translated = temp_block_content
+        self.is_translated = True
+        return self.block_content_translated
+
+
 
     def is_narration(self):
         """ return if the block is narration """

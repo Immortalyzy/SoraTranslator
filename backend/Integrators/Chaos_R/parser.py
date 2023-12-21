@@ -3,6 +3,7 @@
 
 from typing import List
 import re
+import os
 from ...logger import log_message
 from ...constants import LogLevel
 from ...scriptfile import ScriptFile
@@ -40,6 +41,7 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
                 block_content = []
             # Save the new block name
             block_name = line[1:].strip()  # remove '*' and strip whitespace
+            block_content.append(line)
         else:
             # Add line to the current block's content
             block_content.append(line)
@@ -65,6 +67,9 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
 
     # this only works when there is only one text in one line
     for i, line in enumerate(block.block_content):
+        # skip the block name line
+        if "*" in line:
+            continue
         clean_block = re.sub(marco_indicator, '', line)
         text += clean_block.strip()
         if text != "":
@@ -78,6 +83,8 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     found_speakers = []
     for i, line in enumerate(block.block_content):
         # check if the line contains the [【speaker】]
+        if "*" in line:
+            continue
         found_speaker = re.search(search_pattern, line)
         if found_speaker:
             found_speakers.append(found_speaker.group(1))
@@ -94,3 +101,19 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
 
     log_message(f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}", log_level=LogLevel.DEBUG)
     return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
+
+def guess_file_type(script_file: ScriptFile) -> str:
+    """guess the file type based on the file name"""
+    # get the file extension
+    file_extension = os.path.splitext(script_file.script_file_path)[1]
+
+    if file_extension != ".ks":
+        return "system"
+
+    # get the file basename
+    file_basename = os.path.basename(script_file.script_file_path)
+    # if the file basename starts with "luna", then it is a "content" file
+    if file_basename.startswith("luna"):
+        return "content"
+
+    return "other"
