@@ -174,6 +174,24 @@ class GPT_Translator:
                     f"Translation of file {script_file.text_file_path} failed. (Translation count mismatch)",
                     log_level=LogLevel.ERROR,
                 )
+                # still save the results
+                translation_index = 0
+                for block in script_file.blocks:
+                    if block.is_translated or block.is_empty():
+                        continue
+                    # record the translation
+                    block.text_translated = translations[translation_index]
+                    translation_index += 1
+
+                    # update the translation info
+                    block.is_translated = False
+                    block.translation_date = datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                    block.translation_engine = self.config.gpt_model
+
+                    if translation_index >= len(translations):
+                        break
                 return success.ERROR
 
             for block in script_file.blocks:
