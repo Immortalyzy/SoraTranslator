@@ -81,11 +81,11 @@ class ScriptFile:
     def create_entry_in_scriptlistcsv(self):
         """create a entry in the scriptlist.csv"""
         entry = ""
-        entry += self.script_file_path + ", "
-        entry += self.text_file_path + ", "
-        entry += self.file_type + ", "
-        entry += str(int(self.is_translated)) + ", "
-        entry += self.original_package + ", "
+        entry += self.script_file_path + "\t"
+        entry += self.text_file_path + "\t"
+        entry += self.file_type + "\t"
+        entry += str(int(self.is_translated)) + "\t"
+        entry += self.original_package + "\t"
 
         entry += str(self.read_date) + "\n"
         return entry
@@ -278,6 +278,10 @@ class ScriptFile:
         """return if is to translate file"""
         return self.is_content_file() and not self.is_translated
 
+    def is_dangerous(self):
+        """return if is dangerous file"""
+        return self.file_type == "Hcontent"
+
 
 def initiate_script_filelist(listfilepath, replace=False):
     """initiate the script file list"""
@@ -295,11 +299,39 @@ def initiate_script_filelist(listfilepath, replace=False):
         )
 
 
-def update_script_filelist(listfilepath, filelist):
+def update_script_filelist(listfilepath, filelist, replace=True):
     """update the script file list"""
+    if replace:
+        # remove the old file
+        if os.path.exists(listfilepath):
+            os.remove(listfilepath)
     if not os.path.exists(listfilepath):
         print("script file list does not exist, creating a new one")
         initiate_script_filelist(listfilepath)
     for gamefile in filelist:
         with open(listfilepath, "a", encoding="utf_16") as file:
             file.write(gamefile.create_entry_in_scriptlistcsv())
+
+
+def from_script_filelist(listfilepath: str) -> list:
+    """create a list of script files from a script file list"""
+    script_file_list = []
+    with open(listfilepath, "r", encoding="utf_16") as file:
+        lines = file.readlines()
+    for line in lines:
+        if line.startswith("script_file_path"):
+            continue
+        line = line.strip()
+        if line == "":
+            continue
+        line = line.split("\t")
+        script_file = ScriptFile.from_originalfile(line[0])
+        script_file.text_file_path = line[1]
+        script_file.file_type = line[2]
+        script_file.is_translated = bool(int(line[3]))
+        script_file.original_package = line[4]
+        script_file.read_date = datetime.datetime.strptime(
+            line[5], "%Y-%m-%d %H:%M:%S.%f"
+        )
+        script_file_list.append(script_file)
+    return script_file_list
