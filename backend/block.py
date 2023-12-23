@@ -118,7 +118,7 @@ class Block:
         # block content is a list of lines
         temp_block_content = self.block_content
         # replace the speaker if not empty
-        if self.speaker_original != "" and self.speaker_original != "narration":
+        if self.speaker_original.strip() != "":
             temp_block_content[self.speaker_line] = (
                 temp_block_content[self.speaker_line][: self.speaker_start_end[0]]
                 + self.speaker_translated
@@ -140,7 +140,7 @@ class Block:
 
     def is_narration(self):
         """return if the block is narration"""
-        return self.speaker_original == "narration"
+        return self.speaker_original == "" or self.speaker_original == "narration"
 
     def is_empty(self):
         """return if the block is empty"""

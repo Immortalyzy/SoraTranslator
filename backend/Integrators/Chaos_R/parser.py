@@ -67,7 +67,7 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
 
 def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     """parse the block"""
-    speaker = "narration"
+    speaker = ""
     speaker_line = 0
     speaker_start_end = (0, 0)
     text = ""
