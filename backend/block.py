@@ -33,6 +33,8 @@ class Block:
     def __init__(self, block_name, block_content):
         self.block_name = block_name
         self.block_content = block_content
+        # replace all \t with a space to avoid problems when generating csv
+        self.block_content = [line.replace("\t", "  ") for line in self.block_content]
         self.block_content_translated = ""
 
     @classmethod
