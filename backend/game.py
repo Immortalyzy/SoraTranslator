@@ -10,6 +10,7 @@ from .constants import (
     DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY,
     DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY,
 )
+from pickle import dump, load
 
 
 class Game(ABC):
@@ -58,3 +59,8 @@ class Game(ABC):
         This generalized function should provide a combination of operations that take the text from the GameResources/Text folder and integrate it into the game.
         """
         pass
+
+    def save_game(self, file_path):
+        """save the game instance to a file"""
+        with open(file_path, "wb") as file:
+            dump(self, file)

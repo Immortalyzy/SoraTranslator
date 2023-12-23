@@ -3,6 +3,8 @@
 from ..scriptfile import ScriptFile
 from ..Translators.ChatGPT_API.chatgpt_api import GPT_Translator
 from ..constants import Config, DEFAULT_CONFIG_FILE
+from ..Integrators.Chaos_R.chaosr_game import ChaosRGame
+from pickle import dump, load
 
 test_file = (
     "D:\\Work\\SoraTranslator\\GameResources\\Text\\k_scenario\\01本編\\dakr001.csv"
@@ -37,17 +39,24 @@ def test_translate_all_files():
     config = Config.from_json(DEFAULT_CONFIG_FILE)
     translator = GPT_Translator(config)
 
+    game = load(open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb"))
+
+    testing_translate_list = game.to_translate_file_list[:10]
+
     print("Testing GPT Translator")
     print("model name:", translator.model)
-    print("api key:", translator.client.api_key)
 
-    # load script file
-    script_file = ScriptFile.from_textfile(test_file)
+    for script_file in testing_translate_list:
+        # translate
+        success = translator.translate_file_whole(script_file)
 
-    # translate
-    success = translator.translate_file_whole(script_file)
+        # save translated file
+        script_file.generate_textfile(replace=True)
 
-    # save translated file
-    script_file.generate_textfile(replace=True)
+    # save game
+    game.update_script_file_list()
+    game.update_to_translate_file_list()
+
+    game.save_game("D:\\Work\\SoraTranslator\\GameResources\\game.pkl")
 
     return success
