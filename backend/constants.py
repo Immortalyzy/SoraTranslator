@@ -29,12 +29,11 @@ DEFAULT_CONFIG_FILE = "D:/Work/SoraTranslator/config.json"
 # GPT API
 LINE_BREAKER = "||"
 DEFAULT_INITIATION_PROMPT = [
-    {"role": "system", "content": "You are a translator."},
     {
-        "role": "user",
-        "content": "Translate from {} to {}, keep the line breaker "
+        "role": "system",
+        "content": 'You are a translator. Translate from {} to {}, KEEP the line breaker "'
         + LINE_BREAKER
-        + " in the translated text.",
+        + '" in the translated text exactly where they were.',
     },
 ]
 
@@ -128,7 +127,7 @@ class Config:
         """do post init actions"""
         # set the default prompt based on the language configuration
         self.gpt_prompt = DEFAULT_INITIATION_PROMPT
-        self.gpt_prompt[1]["content"] = self.gpt_prompt[1]["content"].format(
+        self.gpt_prompt[0]["content"] = self.gpt_prompt[0]["content"].format(
             self.original_language, self.target_language
         )
         pass
