@@ -202,12 +202,8 @@ class ScriptFile:
                     log_level=LogLevel.ERROR,
                 )
                 return False
-            self.blocks[i].text_translated = block.text_translated
-            self.blocks[i].speaker_translated = (
-                block.speaker_translated
-                if block.speaker_translated != ""
-                else self.blocks[i].speaker_original
-            )
+            # update the block
+            self.blocks[i] = block
 
         return True
 
@@ -295,7 +291,7 @@ def initiate_script_filelist(listfilepath, replace=False):
 
     with open(listfilepath, "w", encoding="utf_16") as file:
         file.write(
-            "script_file_path, text_file_path, file_type, is_translated, original_package, read_date\n"
+            "script_file_path\ttext_file_path\tfile_type\tis_translated\toriginal_package\tread_date\n"
         )
 
 
