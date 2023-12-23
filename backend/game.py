@@ -22,7 +22,9 @@ class Game(ABC):
         self.game_resources_directory = DEFAULT_GAME_RESOURCES_DIRECTORY
         self.rawtext_directory = DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY
         self.text_directory = DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY
-        self.translated_files_directory = DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY
+        self.translated_files_directory = (
+            DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY
+        )
 
         # directory
         self.directory = ""

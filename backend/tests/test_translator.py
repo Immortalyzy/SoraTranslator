@@ -4,10 +4,13 @@ from ..scriptfile import ScriptFile
 from ..Translators.ChatGPT_API.chatgpt_api import GPT_Translator
 from ..constants import Config, DEFAULT_CONFIG_FILE
 
-test_file = "D:\\Work\\SoraTranslator\\GameResources\\Text\\k_scenario\\01本編\\dakr001.csv"
+test_file = (
+    "D:\\Work\\SoraTranslator\\GameResources\\Text\\k_scenario\\01本編\\dakr001.csv"
+)
+
 
 def test_gpt_translator():
-    """ test gpt translator """
+    """test gpt translator"""
     # load config
     config = Config.from_json(DEFAULT_CONFIG_FILE)
     translator = GPT_Translator(config)
@@ -27,8 +30,9 @@ def test_gpt_translator():
 
     return success
 
+
 def test_translate_all_files():
-    """ !! this test has real usage, consumes tokens and must be run only once """
+    """!! this test has real usage, consumes tokens and must be run only once"""
     # load config
     config = Config.from_json(DEFAULT_CONFIG_FILE)
     translator = GPT_Translator(config)

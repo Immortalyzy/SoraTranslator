@@ -1,6 +1,6 @@
-""" 
-This script provides the encoding fix functions for the games of Chaos-R. 
-The encoding of the text content of the games of Chaos-R is Shift-JIS. 
+"""
+This script provides the encoding fix functions for the games of Chaos-R.
+The encoding of the text content of the games of Chaos-R is Shift-JIS.
 In order to run it directly without using Locale Emulator, we need to convert the encoding of the text content from Shift-JIS to UTF-8 (or UTF-16LF).
 """
 import os

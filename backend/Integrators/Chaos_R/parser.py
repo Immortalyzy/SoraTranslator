@@ -9,14 +9,17 @@ from ...constants import LogLevel
 from ...scriptfile import ScriptFile
 from ...block import Block
 
+
 def parse_file(script_file: ScriptFile) -> List[Block]:
-    """ this function will parse a script file to blocks, this parser will omit the text at the beging of file outside of any blocks """
+    """this function will parse a script file to blocks, this parser will omit the text at the beging of file outside of any blocks"""
     file_path = script_file.script_file_path
     try:
         with open(file_path, "r", encoding="utf_16") as file:
             lines = file.readlines()
     except FileNotFoundError:
-        log_message(f"File {file_path} not found for parsing", log_level=LogLevel.WARNING)
+        log_message(
+            f"File {file_path} not found for parsing", log_level=LogLevel.WARNING
+        )
 
     # list of all blocks in this file
     block_list = []
@@ -24,14 +27,14 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
     block_number_for_non_block_string = []
 
     block_name = "start_of_file"
-    block_content = [] # a list of lines
+    block_content = []  # a list of lines
 
     for line in lines:
         # check if is a comment line
-        if line.startswith(';'):
+        if line.startswith(";"):
             continue
         # Check if the line is the start of a block
-        if line.startswith('*'):
+        if line.startswith("*"):
             # If there is an ongoing block, save its content first
             if block_content:
                 # if there is a block being recorded, save it to the block list
@@ -51,8 +54,15 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
         block = Block(block_name, block_content)
         block_list.append(block)
 
-    log_message(f"File {file_path} parsed, {len(block_list)} blocks found", log_level=LogLevel.INFO)
-    return block_list, non_block_string_between_blocks, block_number_for_non_block_string
+    log_message(
+        f"File {file_path} parsed, {len(block_list)} blocks found",
+        log_level=LogLevel.INFO,
+    )
+    return (
+        block_list,
+        non_block_string_between_blocks,
+        block_number_for_non_block_string,
+    )
 
 
 def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
@@ -63,14 +73,14 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     text = ""
     text_line = 0
     text_start_end = (0, 0)
-    marco_indicator = r'\[.*?\]'
+    marco_indicator = r"\[.*?\]"
 
     # this only works when there is only one text in one line
     for i, line in enumerate(block.block_content):
         # skip the block name line
         if "*" in line:
             continue
-        clean_block = re.sub(marco_indicator, '', line)
+        clean_block = re.sub(marco_indicator, "", line)
         text += clean_block.strip()
         if text != "":
             found_text = re.search(text, line)
@@ -92,15 +102,22 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
             speaker_start_end = found_speaker.span(1)
 
     if len(found_speakers) > 1:
-        log_message(f"Multiple speakers found in block {block.block_name}, using the first one", log_level=LogLevel.WARNING)
+        log_message(
+            f"Multiple speakers found in block {block.block_name}, using the first one",
+            log_level=LogLevel.WARNING,
+        )
     if len(found_speakers) > 0:
         speaker = found_speakers[0]
     if text == "":
         # empty block
         speaker = ""
 
-    log_message(f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}", log_level=LogLevel.DEBUG)
+    log_message(
+        f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}",
+        log_level=LogLevel.DEBUG,
+    )
     return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
+
 
 def guess_file_type(script_file: ScriptFile) -> str:
     """guess the file type based on the file name"""

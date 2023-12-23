@@ -4,14 +4,15 @@
 from .logger import log_message
 from .constants import LogLevel
 
+
 class Block:
-    """ A block is a unit of text in a script file that controls the text that is shown at one time """
+    """A block is a unit of text in a script file that controls the text that is shown at one time"""
 
     # basic info
     is_parsed = False
 
     # for translation
-    is_translated = False # will also be set to true if the block is empty
+    is_translated = False  # will also be set to true if the block is empty
     speaker_original = ""
     speaker_translated = ""
     text_original = ""
@@ -28,7 +29,6 @@ class Block:
     translation_date = ""
     translation_engine = "Undefined or manual"
     translation_status = "stop"
-
 
     def __init__(self, block_name, block_content):
         self.block_name = block_name
@@ -59,7 +59,10 @@ class Block:
         block.text_translated = csv_line[4]
 
         if csv_line[5] != "Yes" and csv_line[5] != "No":
-            log_message(f"CSV line {csv_line} has incompatible is_translated entry record. (Accepted record is \"Yes\" or \"No\")", log_level=LogLevel.WARNING)
+            log_message(
+                f'CSV line {csv_line} has incompatible is_translated entry record. (Accepted record is "Yes" or "No")',
+                log_level=LogLevel.WARNING,
+            )
 
         block.is_translated = csv_line[5] == "Yes"
         block.translation_date = csv_line[6]
@@ -67,7 +70,7 @@ class Block:
         return block
 
     def to_csv_line(self):
-        """ return a csv line """
+        """return a csv line"""
         csv_line = []
         csv_line.append(self.block_name)
         csv_line.append(self.speaker_original)
@@ -81,8 +84,15 @@ class Block:
         return "\t".join(csv_line)
 
     def parse(self, parse_block_function):
-        """ parse the block """
-        (speaker, text, speaker_line, speak_start_end, text_line, text_start_end) = parse_block_function(self)
+        """parse the block"""
+        (
+            speaker,
+            text,
+            speaker_line,
+            speak_start_end,
+            text_line,
+            text_start_end,
+        ) = parse_block_function(self)
         self.speaker_original = speaker
         self.text_original = text
         self.speaker_line = speaker_line
@@ -95,41 +105,47 @@ class Block:
             self.is_translated = True
 
     def generate_full_rawblock(self):
-        """ generate the full translated content, to be replaced in the script file """
+        """generate the full translated content, to be replaced in the script file"""
         # todo: implement
         # check translation status and check block_content
 
         if self.block_content == "":
-            #raise RuntimeError("Cannot generate full translated content for a block that has no original content (read from csv, verify the code)")
+            # raise RuntimeError("Cannot generate full translated content for a block that has no original content (read from csv, verify the code)")
             return 1
 
         # block content is a list of lines
         temp_block_content = self.block_content
         # replace the speaker if not empty
         if self.speaker_original != "" and self.speaker_original != "narration":
-            temp_block_content[self.speaker_line] = temp_block_content[self.speaker_line][:self.speaker_start_end[0]] + self.speaker_translated + temp_block_content[self.speaker_line][self.speaker_start_end[1]:]
+            temp_block_content[self.speaker_line] = (
+                temp_block_content[self.speaker_line][: self.speaker_start_end[0]]
+                + self.speaker_translated
+                + temp_block_content[self.speaker_line][self.speaker_start_end[1] :]
+            )
 
         # replace the text
         if self.text_original != "":
-            temp_block_content[self.text_line] = temp_block_content[self.text_line][:self.text_start_end[0]] + self.text_translated + temp_block_content[self.text_line][self.text_start_end[1]:]
+            temp_block_content[self.text_line] = (
+                temp_block_content[self.text_line][: self.text_start_end[0]]
+                + self.text_translated
+                + temp_block_content[self.text_line][self.text_start_end[1] :]
+            )
 
         # note the result
         self.block_content_translated = temp_block_content
         self.is_translated = True
         return self.block_content_translated
 
-
-
     def is_narration(self):
-        """ return if the block is narration """
+        """return if the block is narration"""
         return self.speaker_original == "narration"
 
     def is_empty(self):
-        """ return if the block is empty """
+        """return if the block is empty"""
         return self.is_parsed and self.text_original == ""
 
-    def text_to_translate(self, add_speaker: bool =False):
-        """ return the text to translate """
+    def text_to_translate(self, add_speaker: bool = False):
+        """return the text to translate"""
         text = ""
         if add_speaker:
             text += f"{self.speaker_original} : "

@@ -5,7 +5,7 @@ import os
 
 
 class Project:
-    """ A project defines a translation work, storing information and configuration """
+    """A project defines a translation work, storing information and configuration"""
 
     # game specific
     original_file_type = ".py"
@@ -32,18 +32,14 @@ class Project:
         self.name = ""
 
     def create_project(self, **kwargs):
-        """ create a new project, with most basic information """
+        """create a new project, with most basic information"""
         self.game_engine = kwargs.get("game_engine", None)
         self.open_game(kwargs.get("game_path", None))
-        self.original_language = kwargs.get(
-            "original_language", self.original_language
-        )
-        self.target_language = kwargs.get(
-            "target_language", self.target_language
-        )
+        self.original_language = kwargs.get("original_language", self.original_language)
+        self.target_language = kwargs.get("target_language", self.target_language)
 
     def open_game(self, game_path):
-        """ open a game in the project """
+        """open a game in the project"""
         # analyse the path type
         # if it is a file
         if os.path.isfile(game_path):
@@ -59,5 +55,5 @@ class Project:
             pass
 
     def load_project(self, project_path):
-        """ load a project from a project file """
+        """load a project from a project file"""
         pass

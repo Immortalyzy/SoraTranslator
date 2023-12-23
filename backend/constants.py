@@ -8,20 +8,17 @@ DEFAULT_ENCODING_OUTPUT = "D:/Work/SoraTranslator/GameResources/RawText/"
 DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = (
     "D:/Work/SoraTranslator/GameResources/RawText/"
 )
-DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY = (
-    "D:/Work/SoraTranslator/GameResources/Text/"
-)
+DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY = "D:/Work/SoraTranslator/GameResources/Text/"
 DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY = (
     "D:/Work/SoraTranslator/GameResources/TranslatedFiles/"
 )
 
-DEFAULT_XP3_UNPACKER = (
-    "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
-)
+DEFAULT_XP3_UNPACKER = "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
 
-def create_game_resources_directory(game_resources_directory: str) -> () :
-    """ create the game resources directory, generating the subfolders """
-    #todo: implement this
+
+def create_game_resources_directory(game_resources_directory: str) -> ():
+    """create the game resources directory, generating the subfolders"""
+    # todo: implement this
     pass
 
 
@@ -31,13 +28,19 @@ DEFAULT_CONFIG_FILE = "D:/Work/SoraTranslator/config.json"
 
 # GPT API
 LINE_BREAKER = "||"
-DEFAULT_INITIATION_PROMPT = [{"role":"system", "content":"You are a translator."}, {"role":"user", "content":"Translate from {} to {}, keep the line breaker " + LINE_BREAKER + " in the translated text."}]
-
-
+DEFAULT_INITIATION_PROMPT = [
+    {"role": "system", "content": "You are a translator."},
+    {
+        "role": "user",
+        "content": "Translate from {} to {}, keep the line breaker "
+        + LINE_BREAKER
+        + " in the translated text.",
+    },
+]
 
 
 class LogLevel(Enum):
-    """ log level """
+    """log level"""
 
     ERROR = 0
     WARNING = 1
@@ -45,8 +48,9 @@ class LogLevel(Enum):
     DEBUG = 3
     VERBOSE = 4
 
+
 class SuccessStatus(Enum):
-    """ success status """
+    """success status"""
 
     # if 100% translated
     SUCCESS = 0
@@ -59,7 +63,7 @@ class SuccessStatus(Enum):
 
     @staticmethod
     def status_from_ratio(ratio):
-        """ get the status from the ratio """
+        """get the status from the ratio"""
         if ratio >= 0.999:
             return SuccessStatus.SUCCESS
         elif ratio >= 0.8:
@@ -68,7 +72,6 @@ class SuccessStatus(Enum):
             return SuccessStatus.PARTIAL_SUCCESS
         else:
             return SuccessStatus.ERROR
-
 
 
 DEFAULT_LOG_LEVEL = LogLevel.DEBUG
@@ -80,7 +83,7 @@ RAW_TEXT_DIRECTORY = "D:/Work/SoraTranslator/GameResources/RawText/"
 
 ### Configurations ============================================================
 class Config:
-    """ configuraion class for the backend, saving default configurations """
+    """configuraion class for the backend, saving default configurations"""
 
     # see above LogLevel class
     log_level = DEFAULT_LOG_LEVEL
@@ -93,7 +96,7 @@ class Config:
     gpt_context_block_count = 4
     gpt_max_tokens = 16000
     gpt_completion_max_tokens = 8000
-    gpt_model="gpt-3.5-turbo-16k"
+    gpt_model = "gpt-3.5-turbo-16k"
     gpt_temperature = 0.3
 
     # success status
@@ -109,7 +112,7 @@ class Config:
 
     @classmethod
     def from_json(cls, json_file):
-        """ load config from json """
+        """load config from json"""
         # read all variables from json file if it exists
         instance = cls()
         with open(json_file, "r") as file:
@@ -122,15 +125,17 @@ class Config:
         return instance
 
     def post_init(self):
-        """ do post init actions """
+        """do post init actions"""
         # set the default prompt based on the language configuration
         self.gpt_prompt = DEFAULT_INITIATION_PROMPT
-        self.gpt_prompt[1]["content"] = self.gpt_prompt[1]["content"].format(self.original_language, self.target_language)
+        self.gpt_prompt[1]["content"] = self.gpt_prompt[1]["content"].format(
+            self.original_language, self.target_language
+        )
         pass
 
-
     def to_json(self, json_file, replace=True):
-        """ save config to json """
+        """save config to json"""
         # todo:implement this
+
 
 default_config = Config()
