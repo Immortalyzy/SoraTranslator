@@ -161,6 +161,10 @@ class ScriptFile:
                         )
                         return 1  # error
                 else:
+                    log_message(
+                        f"Skipping {self.text_file_path} as it already exists",
+                        log_level=LogLevel.WARNING,
+                    )
                     return 1  # error
 
         # create the text file
@@ -202,8 +206,20 @@ class ScriptFile:
                     log_level=LogLevel.ERROR,
                 )
                 return False
-            # update the block
-            self.blocks[i] = block
+            # update the block, cannot copy because there is no parsing information in "block"
+            self.blocks[i].text_translated = block.text_translated
+            self.blocks[i].speaker_translated = (
+                block.speaker_translated
+                if block.speaker_translated != ""
+                else self.blocks[i].speaker_original
+            )
+            # update tanslation information
+            self.blocks[i].is_translated = (
+                True if block.text_translated != "" else False
+            )
+            if self.blocks[i].is_translated:
+                self.blocks[i].translation_date = block.translation_date
+                self.blocks[i].translation_engine = block.translation_engine
 
         return True
 
@@ -214,10 +230,10 @@ class ScriptFile:
         )
         return True
 
-    def generate_translated_rawfile(self, replace=False):
+    def generate_translated_rawfile(self, dest="", replace=False):
         """generate a translated file from memory"""
         # if no translated file path is provided, generate one
-        if self.translated_script_file_path == "":
+        if self.translated_script_file_path == "" and dest == "":
             # get the base name of the file without the extension
             file_name = os.path.basename(self.script_file_path)
             file_name = os.path.splitext(file_name)[0]
@@ -227,6 +243,10 @@ class ScriptFile:
                 DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY, relative_path
             )
             self.translated_script_file_path = translated_script_file_path
+
+        # todo: add dest usage,
+        # check if dest is a file path or a directory
+        # if dest is a directory, then generate a file path based on the original file path
 
         # recreate the rawtext structure, inserting non-block content
         # todo: implement non-block string
@@ -243,6 +263,10 @@ class ScriptFile:
         # check if the file exists
         if os.path.exists(self.translated_script_file_path):
             if replace:
+                log_message(
+                    f"Replacing translated script file {self.translated_script_file_path}",
+                    log_level=LogLevel.WARNING,
+                )
                 os.remove(self.translated_script_file_path)
             else:
                 log_message(
@@ -251,7 +275,7 @@ class ScriptFile:
                 )
                 return 1
 
-        # create the text file
+        # create the raw file
         with open(self.translated_script_file_path, "w", encoding="utf_16") as file:
             for block in self.blocks:
                 lines_wroten += 1
