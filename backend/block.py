@@ -126,7 +126,7 @@ class Block:
             )
 
         # replace the text
-        if self.text_original != "":
+        if self.text_original != "" and self.text_translated.strip() != "":
             temp_block_content[self.text_line] = (
                 temp_block_content[self.text_line][: self.text_start_end[0]]
                 + self.text_translated
