@@ -28,13 +28,19 @@ class Game(ABC):
 
         # directory
         self.directory = ""
-        # script file list, stores ScriptFile instances
+
+        # script file list, stores all script files
         self.script_file_list = []
         self.scriptfile_list_file = ""
+
         # to_translate file list, stores ScriptFile instances
         self.to_translate_file_list = []
-        # to_translate file list file
         self.to_translate_file_list_file = ""
+
+        # for H game, there should be a list of dangerous files
+        # dangerous files cannot be directly translated by openAI GPT
+        self.dangerous_file_list = []
+        self.dangerous_file_list_file = ""
 
         # temp file info storage
         self.temp_unpack_directory = ""

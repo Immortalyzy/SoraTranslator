@@ -3,11 +3,12 @@
 import importlib.util
 import os
 import shutil
-from ...constants import DEFAULT_XP3_UNPACKER
+from ...constants import DEFAULT_XP3_UNPACKER, LogLevel
 from ...game import Game
 from ...scriptfile import ScriptFile, update_script_filelist
 from .encoding_fix import fix_allfiles
 from .parser import guess_file_type, parse_file, parse_block
+from ...logger import log_message
 
 
 class ChaosRGame(Game):
@@ -173,6 +174,15 @@ class ChaosRGame(Game):
                 self.to_translate_file_list.append(script_file)
         self.update_to_translate_filelist()
 
+        for script_file in self.to_translate_file_list:
+            if script_file.is_dangerous():
+                self.dangerous_file_list.append(script_file)
+
+        log_message(
+            f"Indentified {len(self.to_translate_file_list)} files to translate. ",
+            log_level=LogLevel.INFO,
+        )
+
         # generate text files for all to_translate files
         for script_file in self.to_translate_file_list:
             # parsing
@@ -214,8 +224,10 @@ class ChaosRGame(Game):
             shutil.copy2(scriptfile.script_file_path, full_desitnation_path)
             # update the script file information
             scriptfile.script_file_path = full_desitnation_path
-
-        pass
+        log_message(
+            f"{len(self.script_file_list):d} raw text files are copied to {self.rawtext_directory}.",
+            log_level=LogLevel.INFO,
+        )
 
     def integrate_from_text(self, text):
         """Integrate the text into the game."""

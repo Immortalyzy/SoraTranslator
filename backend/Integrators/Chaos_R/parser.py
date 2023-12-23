@@ -131,6 +131,8 @@ def guess_file_type(script_file: ScriptFile) -> str:
     file_basename = os.path.basename(script_file.script_file_path)
     # if the file basename starts with "luna", then it is a "content" file
     if file_basename.startswith("luna") or file_basename.startswith("dakr"):
+        if file_basename.endswith("H.ks"):
+            return "Hcontent"
         return "content"
 
     return "other"
