@@ -7,6 +7,7 @@ from ...constants import DEFAULT_XP3_UNPACKER
 from ...game import Game
 from ...scriptfile import ScriptFile, update_script_filelist
 from .encoding_fix import fix_allfiles
+from .parser import guess_file_type, parse_file, parse_block
 
 
 class ChaosRGame(Game):
@@ -29,7 +30,9 @@ class ChaosRGame(Game):
         # encoding fix for Chaos_R
         self.original_encoding = "cp932"
         self.target_encoding = "utf_16"
-        self.is_encoding_fixed = False # if the encoding of the files are fixed set to True
+        self.is_encoding_fixed = (
+            False  # if the encoding of the files are fixed set to True
+        )
 
         # xp3 file list, stores string of FULL file path
         self.xp3_file_list = []
@@ -153,8 +156,36 @@ class ChaosRGame(Game):
         # copy raw text
         self.copy_raw_text(replace=replace)
 
+    def prepare_translation(self, replace=False):
+        """
+        This function will generate all the files that are required by the translation process.
+        The function must be run after the raw text is prepared.
+        """
+        # guess file types (chaos-R only)
+        # chaos-R game permits the auto detection of file types
+        for scriptfile in self.script_file_list:
+            scriptfile.file_type = guess_file_type(scriptfile.script_file_path)
+        self.update_script_filelist()
+
+        # update to_translate_file_list
+        for script_file in self.script_file_list:
+            if script_file.is_to_translate():
+                self.to_translate_file_list.append(script_file)
+        self.update_to_translate_filelist()
+
+        # generate text files for all to_translate files
+        for script_file in self.to_translate_file_list:
+            # parsing
+            script_file.parse(
+                parse_file_function=parse_file, parse_block_function=parse_block
+            )
+            # generate text file
+            script_file.generate_textfile(self.text_directory, replace=replace)
+
     def copy_raw_text(self, replace=False):
-        """ copy the raw text from the temp_unpack_directory to the RawText directory """
+        """copy the raw text from the temp_unpack_directory to the RawText directory
+        after running this function, the script_file_path of the ScriptFile instances will be updated to the new location
+        """
 
         # copy script files to the RawText folder (KEEPING the directory structure)
         for scriptfile in self.script_file_list:
@@ -170,19 +201,19 @@ class ChaosRGame(Game):
             if not os.path.exists(destination_directory):
                 os.makedirs(destination_directory, exist_ok=True)
 
-
             # check if the file already exists
             if os.path.exists(full_desitnation_path):
                 if replace:
                     os.remove(full_desitnation_path)
                 else:
-                    print(f"Skipping {scriptfile.script_file_path} since it already exists.")
+                    print(
+                        f"Skipping {scriptfile.script_file_path} since it already exists."
+                    )
                     scriptfile.script_file_path = full_desitnation_path
                     continue
             shutil.copy2(scriptfile.script_file_path, full_desitnation_path)
             # update the script file information
             scriptfile.script_file_path = full_desitnation_path
-
 
         pass
 
@@ -232,9 +263,8 @@ class ChaosRGame(Game):
             self.repack_xp3(self.unpacker, directory_name)
 
     def replace_translated_rawfiles(self):
-        """ this method will copy the translated raw files to the SoratranslatorTemp directory """
+        """this method will copy the translated raw files to the SoratranslatorTemp directory"""
         # read the to_translate_file_list
-
 
     def pack_patchxp3(self):
         """instead of packing all files back, create a patch.xp3 file"""
@@ -248,10 +278,14 @@ class ChaosRGame(Game):
         return
 
     def fix_encoding(self):
-        """ fix the encoding of the script files for the game, can only be called after unpacking the collection of the script files """
-        fix_allfiles(self.script_file_list, replace=True, original_encoding=self.original_encoding, target_encoding=self.target_encoding)
+        """fix the encoding of the script files for the game, can only be called after unpacking the collection of the script files"""
+        fix_allfiles(
+            self.script_file_list,
+            replace=True,
+            original_encoding=self.original_encoding,
+            target_encoding=self.target_encoding,
+        )
         self.is_encoding_fixed = True
-
 
     # ==== methods for script files management ====================================================
     def create_temp_unpack_directory(self, clear=False):
@@ -283,7 +317,8 @@ class ChaosRGame(Game):
         for xp3_file in self.xp3_file_list:
             base_xp3_file_name = os.path.splitext(os.path.basename(xp3_file))[0]
             path_of_unpacked_xp3 = os.path.join(
-                self.temp_unpack_directory, base_xp3_file_name)
+                self.temp_unpack_directory, base_xp3_file_name
+            )
             script_filepath_list_xp3 = self.select_files(
                 path_of_unpacked_xp3, self.script_extensions
             )
@@ -298,15 +333,16 @@ class ChaosRGame(Game):
         return
 
     def update_script_filelist(self):
-        """update the script file list to the local from memory """
+        """update the script file list to the local from memory"""
         # ! warning: this function is loaded only when scriptfile.py is loaded,
         # ! possiblity of not having this function in memory when this function is called
         update_script_filelist(self.scriptfile_list_file, self.script_file_list)
 
-    def updat_to_translate_filelist(self):
-        """ update the to_translate_file_list to the local from memory """
-        update_script_filelist(self.to_translate_file_list_file, self.to_translate_file_list)
-
+    def update_to_translate_filelist(self):
+        """update the to_translate_file_list to the local from memory"""
+        update_script_filelist(
+            self.to_translate_file_list_file, self.to_translate_file_list
+        )
 
     # ==== utility methods =========================================================================
     @staticmethod
