@@ -132,6 +132,9 @@ class ChaosRGame(Game):
         self.scriptfile_list_file = os.path.join(
             self.temp_unpack_directory, "script_file_list.csv"
         )
+        self.to_translate_file_list_file = os.path.join(
+            self.temp_unpack_directory, "to_translate_file_list.csv"
+        )
 
     # ==== high level methods ===============================
     def prepare_raw_text(self, replace=False):
@@ -161,7 +164,7 @@ class ChaosRGame(Game):
                 scriptfile.script_file_path, self.temp_unpack_directory
             )
 
-            full_desitnation_path = os.path.join(self.raw_text_directory, relative_path)
+            full_desitnation_path = os.path.join(self.rawtext_directory, relative_path)
             destination_directory = os.path.dirname(full_desitnation_path)
             # create the directory if it does not exist
             if not os.path.exists(destination_directory):
@@ -228,6 +231,11 @@ class ChaosRGame(Game):
             # pack the directory
             self.repack_xp3(self.unpacker, directory_name)
 
+    def replace_translated_rawfiles(self):
+        """ this method will copy the translated raw files to the SoratranslatorTemp directory """
+        # read the to_translate_file_list
+
+
     def pack_patchxp3(self):
         """instead of packing all files back, create a patch.xp3 file"""
         # collect all files in the GameResources/TranslatedFiles directory
@@ -289,9 +297,16 @@ class ChaosRGame(Game):
         update_script_filelist(self.scriptfile_list_file, self.script_file_list)
         return
 
-    def update_script_file_list(self):
+    def update_script_filelist(self):
         """update the script file list to the local from memory """
+        # ! warning: this function is loaded only when scriptfile.py is loaded,
+        # ! possiblity of not having this function in memory when this function is called
         update_script_filelist(self.scriptfile_list_file, self.script_file_list)
+
+    def updat_to_translate_filelist(self):
+        """ update the to_translate_file_list to the local from memory """
+        update_script_filelist(self.to_translate_file_list_file, self.to_translate_file_list)
+
 
     # ==== utility methods =========================================================================
     @staticmethod

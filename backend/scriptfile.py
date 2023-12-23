@@ -3,7 +3,7 @@
 import datetime
 import os
 from .logger import log_message
-from .constants import DEFAULT_GAME_RESOURCES_TEXT_FOLDER, RAW_TEXT_DIRECTORY, DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_FOLDER
+from .constants import DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY, RAW_TEXT_DIRECTORY, DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY
 from .constants import LogLevel
 from .block import Block
 
@@ -114,7 +114,7 @@ class ScriptFile:
             file_name = os.path.splitext(file_name)[0]
             # remove file extension from original package
             relative_path = os.path.relpath(self.script_file_path, RAW_TEXT_DIRECTORY)
-            text_file_path = os.path.join(DEFAULT_GAME_RESOURCES_TEXT_FOLDER, relative_path)
+            text_file_path = os.path.join(DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY, relative_path)
             # change the extension to .csv
             text_file_path = os.path.splitext(text_file_path)[0] + ".csv"
             self.text_file_path = text_file_path
@@ -188,7 +188,7 @@ class ScriptFile:
             file_name = os.path.splitext(file_name)[0]
             # remove file extension from original package
             relative_path = os.path.relpath(self.script_file_path, RAW_TEXT_DIRECTORY)
-            translated_script_file_path = os.path.join(DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_FOLDER, relative_path)
+            translated_script_file_path = os.path.join(DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY, relative_path)
             self.translated_script_file_path = translated_script_file_path
 
         # recreate the rawtext structure, inserting non-block content

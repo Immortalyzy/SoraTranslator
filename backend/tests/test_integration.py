@@ -69,7 +69,7 @@ def test_prepare_all_text_files():
     # guess all the files types
     for script_file in game.script_file_list:
         script_file.file_type = guess_file_type(script_file)
-    game.update_script_file_list()
+    game.update_script_filelist()
 
     # count the number of files to be translated
     num_files_to_translate = 0

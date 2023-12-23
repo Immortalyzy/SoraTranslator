@@ -8,16 +8,21 @@ DEFAULT_ENCODING_OUTPUT = "D:/Work/SoraTranslator/GameResources/RawText/"
 DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = (
     "D:/Work/SoraTranslator/GameResources/RawText/"
 )
-DEFAULT_GAME_RESOURCES_TEXT_FOLDER = (
+DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY = (
     "D:/Work/SoraTranslator/GameResources/Text/"
 )
-DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_FOLDER = (
+DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY = (
     "D:/Work/SoraTranslator/GameResources/TranslatedFiles/"
 )
 
 DEFAULT_XP3_UNPACKER = (
     "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
 )
+
+def create_game_resources_directory(game_resources_directory: str) -> () :
+    """ create the game resources directory, generating the subfolders """
+    #todo: implement this
+    pass
 
 
 # Log file

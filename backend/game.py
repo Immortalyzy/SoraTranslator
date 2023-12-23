@@ -1,5 +1,5 @@
-""" 
-This script defines the Game class that contains almost all the gama integration top-level functions. 
+"""
+This script defines the Game class that contains almost all the gama integration top-level functions.
 All child classes should have these functions declared in this class as abstract methods.
 """
 
@@ -7,6 +7,8 @@ from abc import ABC, abstractmethod
 from .constants import (
     DEFAULT_GAME_RESOURCES_DIRECTORY,
     DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY,
+    DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY,
+    DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY,
 )
 
 
@@ -18,7 +20,9 @@ class Game(ABC):
 
         # Game Resources directory, no matter the original file directory the output will be put under RawText of this folder
         self.game_resources_directory = DEFAULT_GAME_RESOURCES_DIRECTORY
-        self.raw_text_directory = DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY
+        self.rawtext_directory = DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY
+        self.text_directory = DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY
+        self.translated_files_directory = DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY
 
         # directory
         self.directory = ""
@@ -27,6 +31,8 @@ class Game(ABC):
         self.scriptfile_list_file = ""
         # to_translate file list, stores ScriptFile instances
         self.to_translate_file_list = []
+        # to_translate file list file
+        self.to_translate_file_list_file = ""
 
         # temp file info storage
         self.temp_unpack_directory = ""
