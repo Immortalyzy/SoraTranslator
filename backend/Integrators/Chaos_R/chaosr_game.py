@@ -165,7 +165,7 @@ class ChaosRGame(Game):
         # guess file types (chaos-R only)
         # chaos-R game permits the auto detection of file types
         for scriptfile in self.script_file_list:
-            scriptfile.file_type = guess_file_type(scriptfile.script_file_path)
+            scriptfile.file_type = guess_file_type(scriptfile)
         self.update_script_filelist()
 
         # update to_translate_file_list
@@ -190,7 +190,10 @@ class ChaosRGame(Game):
                 parse_file_function=parse_file, parse_block_function=parse_block
             )
             # generate text file
-            script_file.generate_textfile(self.text_directory, replace=replace)
+            script_file.generate_textfile(
+                text_file_directory=self.text_directory, replace=replace
+            )
+        self.update_script_filelist()
 
     def copy_raw_text(self, replace=False):
         """copy the raw text from the temp_unpack_directory to the RawText directory
