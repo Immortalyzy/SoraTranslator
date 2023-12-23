@@ -74,6 +74,8 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     text_line = 0
     text_start_end = (0, 0)
     marco_indicator = r"\[.*?\]"
+    # indicator for "other" speakers
+    marco_indicator2 = r"\[ns\].*?\[nse\]"
 
     # this only works when there is only one text in one line
     for i, line in enumerate(block.block_content):
@@ -81,6 +83,7 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
         if "*" in line:
             continue
         clean_block = re.sub(marco_indicator, "", line)
+        clean_block = re.sub(marco_indicator2, "", clean_block)
         text += clean_block.strip()
         if text != "":
             found_text = re.search(text, line)
@@ -90,16 +93,26 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
 
     # find the speaker if any
     search_pattern = r"\[【(.*?)】\]"
+    # this marks the "other" speakers (other than heroines)
+    search_pattern2 = r"\[ns\](.*?)\[nse\]"
     found_speakers = []
     for i, line in enumerate(block.block_content):
         # check if the line contains the [【speaker】]
         if "*" in line:
             continue
         found_speaker = re.search(search_pattern, line)
+        found_speaker2 = re.search(search_pattern2, line)
+        if found_speaker2:
+            found_speakers.append(found_speaker2.group(1))
+            speaker_line = i
+            speaker_start_end = found_speaker2.span(1)
+            break
         if found_speaker:
             found_speakers.append(found_speaker.group(1))
             speaker_line = i
             speaker_start_end = found_speaker.span(1)
+            break
+        # ! warning: if both exist, only the second one will be used
 
     if len(found_speakers) > 1:
         log_message(
