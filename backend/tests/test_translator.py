@@ -39,13 +39,16 @@ def test_translate_all_files():
     config = Config.from_json(DEFAULT_CONFIG_FILE)
     translator = GPT_Translator(config)
 
-    game = load(open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb"))
+    game: ChaosRGame = load(
+        open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb")
+    )
 
-    testing_translate_list = game.to_translate_file_list[:10]
+    testing_translate_list = game.to_translate_file_list[:100]
 
     print("Testing GPT Translator")
     print("model name:", translator.model)
 
+    translated_count = 0
     for script_file in testing_translate_list:
         # translate
         success = translator.translate_file_whole(script_file)
@@ -53,9 +56,16 @@ def test_translate_all_files():
         # save translated file
         script_file.generate_textfile(replace=True)
 
+        # update count
+        translated_count += 1
+
+        print(
+            f"Translated {translated_count:d} files out of {len(testing_translate_list):d} files."
+        )
+
     # save game
-    game.update_script_file_list()
-    game.update_to_translate_file_list()
+    game.update_script_filelist()
+    game.update_to_translate_filelist()
 
     game.save_game("D:\\Work\\SoraTranslator\\GameResources\\game.pkl")
 

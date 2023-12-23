@@ -54,9 +54,11 @@ def test_all():
 
 def test_integration():
     """test the function of putting files back to its places"""
-    game = load(open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb"))
+    game: ChaosRGame = load(
+        open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb")
+    )
 
-    for script_file in game.to_translate_file_list[:10]:
+    for script_file in game.to_translate_file_list[:100]:
         script_file.update_from_textfile()
 
         # regenerate the script file, this will be save to translated_files folder
