@@ -9,6 +9,9 @@ from ...constants import LogLevel
 from ...scriptfile import ScriptFile
 from ...block import Block
 
+marco_indicator = r"\[ns\].*?\[nse\]"
+macro_indicator2 = r"\[([^\[\]]*)\]"
+
 
 def parse_file(script_file: ScriptFile) -> List[Block]:
     """this function will parse a script file to blocks, this parser will omit the text at the beging of file outside of any blocks"""
@@ -31,7 +34,7 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
 
     for line in lines:
         # check if is a comment line
-        if line.startswith(";"):
+        if line.strip().startswith(";"):
             continue
         # Check if the line is the start of a block
         if line.startswith("*"):
@@ -74,8 +77,6 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     text_line = 0
     text_start_end = (0, 0)
     # indicator for "other" speakers, this MUST be kept in this order
-    marco_indicator = r"\[ns\].*?\[nse\]"
-    macro_indicator2 = r"\[([^\[\]]*)\]"
     # Keep replacing innermost brackets until there are none left
 
     # this only works when there is only one text in one line
@@ -89,32 +90,41 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
             if count == 0:
                 break
         text += clean_block.strip()
-        if text != "":
-            found_text = re.search(text, line)
+
+    if text == "":
+        # empty block
+        return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
+
+    for i, line in enumerate(block.block_content):
+        found_text = re.search(text, line)
+        if found_text:
+            text_line = i
+            text_start_end = found_text.span()
+            break
+        else:
+            log_message(
+                f"Text found in block {block.block_name} but cannot locate in block_content",
+                log_level=LogLevel.ERROR,
+            )
+            # add a temporary solution by remove all middle script commands
+            # find the start of the text, take the first 2 characters
+            text_start = text[:1]
+            found_text = re.search(text_start, line)
             if found_text:
                 text_line = i
-                text_start_end = found_text.span()
-            else:
-                log_message(
-                    f"Text found in block {block.block_name} but cannot locate in block_content",
-                    log_level=LogLevel.ERROR,
-                )
-                # add a temporary solution by remove all middle script commands
-                # find the start of the text, take the first 2 characters
-                text_start = text[:2]
-                found_text = re.search(text_start, line)
-                if found_text:
-                    text_line = i
-                    text_start_end = (found_text.span()[0], text_start_end[1])
-                # find the end of the text, take the last 2 characters
-                text_end = text[-2:]
-                matches = list(re.finditer(text_end, line))
-                if matches:
-                    last_match = matches[-1]
-                    text_start_end = (text_start_end[0], last_match.span()[1])
-                if text_start_end[1] <= text_start_end[0]:
-                    raise ValueError("Match error in parser")
-                    text_start_end = (text_start_end[0], text_start_end[0])
+                text_start_end = (found_text.span()[0], text_start_end[1])
+            # find the end of the text, take the last 2 characters
+            text_end = text[-1:]
+            matches = list(re.finditer(text_end, line))
+            if matches:
+                last_match = matches[-1]
+                text_start_end = (text_start_end[0], last_match.span()[1])
+
+            if text_start_end[1] < text_start_end[0]:  # it HAS TO BE < instead of <=
+                # this usually means that the text is not in the same line
+                return parse_block(fix_multiline_block(block))
+            if found_text and matches:
+                break
 
     # find the speaker if any
     search_pattern = r"\[【(.*?)】\]"
@@ -155,6 +165,48 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
         log_level=LogLevel.DEBUG,
     )
     return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
+
+
+def fix_multiline_block(block: Block):
+    """This function will fix the multiline block, combine all lines with text to one line
+    !!! this function will modify the block, generated block will be different from the original block
+    """
+    lines_containing_text = []
+    for i, line in enumerate(block.block_content):
+        # skip the block name line
+        if "*" in line:
+            continue
+        clean_line = re.sub(marco_indicator, "", line)
+        while True:
+            clean_line, count = re.subn(macro_indicator2, "", clean_line)
+            if count == 0:
+                break
+
+        if clean_line.strip() != "":
+            lines_containing_text.append(i)
+    # check if the lines are continuous
+    for i in range(len(lines_containing_text) - 1):
+        if lines_containing_text[i + 1] - lines_containing_text[i] != 1:
+            # raise ValueError("Lines are not continuous")
+            log_message(
+                "Lines are not continuous, moving all text to first line",
+                log_level=LogLevel.WARNING,
+            )
+
+    # combine all lines with text to one line
+    all_text_lines = ""
+    for i in lines_containing_text:
+        # remove "\n" before adding to the all text
+        all_text_lines += block.block_content[i].strip()
+
+    # replace first line with all text
+    block.block_content[lines_containing_text[0]] = all_text_lines
+
+    # remove all other lines
+    for i in lines_containing_text[1:]:
+        block.block_content[i] = ""
+
+    return block
 
 
 def guess_file_type(script_file: ScriptFile) -> str:
