@@ -163,7 +163,7 @@ class Block:
         """return the text to translate"""
         text = ""
         if add_speaker:
-            text += f"{self.speaker_original} : "
+            text += f"{self.speaker_original}: "
         text += self.text_original
         return text
 

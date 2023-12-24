@@ -36,6 +36,12 @@ DEFAULT_INITIATION_PROMPT = [
         + '" in the translated text exactly where they were.',
     },
 ]
+DEFAULT_FIXING_PROMPT = [
+    {
+        "sole": "user",
+        "content": "The number of the line breakers doesn't match your translation. Please check your translation and try again.",
+    }
+]
 
 
 class LogLevel(Enum):

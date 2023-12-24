@@ -175,7 +175,7 @@ class ChaosRGame(Game):
         self.update_to_translate_filelist()
 
         for script_file in self.to_translate_file_list:
-            if script_file.is_dangerous():
+            if script_file.is_Hcontent():
                 self.dangerous_file_list.append(script_file)
 
         log_message(
@@ -190,9 +190,7 @@ class ChaosRGame(Game):
                 parse_file_function=parse_file, parse_block_function=parse_block
             )
             # generate text file
-            script_file.generate_textfile(
-                text_file_directory=self.text_directory, replace=replace
-            )
+            script_file.generate_textfile(dest=self.text_directory, replace=replace)
         self.update_script_filelist()
 
     def copy_raw_text(self, replace=False):

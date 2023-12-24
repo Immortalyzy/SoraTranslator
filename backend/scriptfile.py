@@ -312,17 +312,17 @@ class ScriptFile:
         """return if is content file"""
         return self.file_type == "content"
 
-    def is_dangerous(self):
+    def is_Hcontent(self):
         """return if is dangerous file"""
         return self.file_type == "Hcontent"
 
-    def is_to_translate(self):
-        """return if is to translate file"""
-        return self.is_content_file() and not self.is_translated
-
     def is_to_translateH(self):
         """return if is dangerous file"""
-        return self.is_dangerous() and not self.is_translated
+        return self.is_Hcontent() and not self.is_translated
+
+    def is_to_translate(self):
+        """return if is to translate file"""
+        return (self.is_content_file() or self.is_Hcontent()) and not self.is_translated
 
 
 def initiate_script_filelist(listfilepath, replace=False):

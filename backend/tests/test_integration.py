@@ -39,7 +39,7 @@ def test_all():
     game.copy_raw_text(replace=False)
 
     # prepare translation
-    game.prepare_translation(replace=False)
+    game.prepare_translation(replace=True)
 
     # repack all files
     # game.repack_all_files()
