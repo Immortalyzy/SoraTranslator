@@ -152,21 +152,28 @@ class GPT_Translator:
                 description = (
                     f"part {i+1} of {n_parts} of file {script_file.text_file_path}"
                 )
-                self.translate_once(target=part, target_description=description)
+                success_translation = self.translate_once(
+                    target=part, target_description=description
+                )
+                if success_translation == success.ERROR:
+                    script_file.need_manual_fix = True
         else:
             # translate the whole file
-            self.translate_once(
+            success_translation = self.translate_once(
                 target=script_file, target_description=script_file.text_file_path
             )
+            if success_translation == success.ERROR:
+                script_file.need_manual_fix = True
 
         # evaluate the success status
         success_blocks = 0
         for block in script_file.blocks:
             if block.is_translated:
                 success_blocks += 1
-        success_status = success.status_from_ratio(
-            success_blocks / len(script_file.blocks)
-        )
+        translated_ratio = success_blocks / len(script_file.blocks)
+        script_file.translation_percentage = translated_ratio
+
+        success_status = success.status_from_ratio(translated_ratio)
         if (
             success_status == success.ALMOST_SUCCESS
             or success_status == success.SUCCESS
@@ -180,6 +187,7 @@ class GPT_Translator:
                 f"Translated file {script_file.text_file_path} failed.",
                 log_level=LogLevel.WARNING,
             )
+        script_file.is_translated = True
         return success_status
 
     def translate_once(
