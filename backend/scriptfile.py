@@ -105,8 +105,7 @@ class ScriptFile:
 
     def generate_textfile(
         self,
-        text_file_path="",
-        text_file_directory=DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY,
+        dest="",
         replace=False,
         update=False,
     ):
@@ -124,15 +123,16 @@ class ScriptFile:
         """
 
         # Create the text filepath if not provided
-        if text_file_path.strip() == "" and self.text_file_path.strip() == "":
-            if text_file_directory == "":
-                raise ValueError(
-                    "should at lease provide a text file directory or a text_file_path"
-                )
+        if self.text_file_path == "" and dest == "":
+            log_message(
+                "Noting providing any text generation path, trying to use default path",
+                log_level=LogLevel.ERROR,
+            )
             # get the base name of the file without the extension
             file_name = os.path.basename(self.script_file_path)
             file_name = os.path.splitext(file_name)[0]
             # remove file extension from original package
+            # todo: remove these raw_text_directorys
             relative_path = os.path.relpath(self.script_file_path, RAW_TEXT_DIRECTORY)
             text_file_path = os.path.join(
                 DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY, relative_path
@@ -140,6 +140,24 @@ class ScriptFile:
             # change the extension to .csv
             text_file_path = os.path.splitext(text_file_path)[0] + ".csv"
             self.text_file_path = text_file_path
+        if dest != "":
+            # check if dest is a file path or a directory
+            if os.path.isdir(dest):
+                # if dest is a directory, then generate a file path based on the original file path
+                # get the base name of the file without the extension
+                file_name = os.path.basename(self.script_file_path)
+                file_name = os.path.splitext(file_name)[0]
+                # remove file extension from original package
+                relative_path = os.path.relpath(
+                    self.script_file_path, RAW_TEXT_DIRECTORY
+                )
+                text_file_path = os.path.join(dest, relative_path)
+                # change the extension to .csv
+                text_file_path = os.path.splitext(text_file_path)[0] + ".csv"
+                self.text_file_path = text_file_path
+            else:
+                # if dest is a file path, then use it
+                self.text_file_path = dest
 
         # get the directory of the text file
         destination_directory = os.path.dirname(self.text_file_path)
@@ -294,13 +312,17 @@ class ScriptFile:
         """return if is content file"""
         return self.file_type == "content"
 
+    def is_dangerous(self):
+        """return if is dangerous file"""
+        return self.file_type == "Hcontent"
+
     def is_to_translate(self):
         """return if is to translate file"""
         return self.is_content_file() and not self.is_translated
 
-    def is_dangerous(self):
+    def is_to_translateH(self):
         """return if is dangerous file"""
-        return self.file_type == "Hcontent"
+        return self.is_dangerous() and not self.is_translated
 
 
 def initiate_script_filelist(listfilepath, replace=False):
