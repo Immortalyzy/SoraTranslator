@@ -37,6 +37,8 @@ class ScriptFile:
 
         # set to true if ALL the text in the file is translated
         self.is_translated = False
+        self.need_manual_fix = False
+        self.translation_percentage = 0.0
 
         # if file type is content, then it should content following variables for eaiser integration
         # at the end of certain files there will be a "jump" action that indicates the name of next file
@@ -85,6 +87,8 @@ class ScriptFile:
         entry += self.text_file_path + "\t"
         entry += self.file_type + "\t"
         entry += str(int(self.is_translated)) + "\t"
+        entry += str(int(self.need_manual_fix)) + "\t"
+        entry += f"{self.translation_percentage:.1f}" + "\t"
         entry += self.original_package + "\t"
 
         entry += str(self.read_date) + "\n"
@@ -337,19 +341,19 @@ def initiate_script_filelist(listfilepath, replace=False):
 
     with open(listfilepath, "w", encoding="utf_16") as file:
         file.write(
-            "script_file_path\ttext_file_path\tfile_type\tis_translated\toriginal_package\tread_date\n"
+            "script_file_path\ttext_file_path\tfile_type\tis_translated\tneed_manual_fix\ttranslation_percentage\toriginal_package\tread_date\n"
         )
 
 
 def update_script_filelist(listfilepath, filelist, replace=True):
     """update the script file list"""
+    if not os.path.exists(listfilepath):
+        print("script file list does not exist, creating a new one")
+        initiate_script_filelist(listfilepath)
     if replace:
         # remove the old file
         if os.path.exists(listfilepath):
             os.remove(listfilepath)
-    if not os.path.exists(listfilepath):
-        print("script file list does not exist, creating a new one")
-        initiate_script_filelist(listfilepath)
     for gamefile in filelist:
         with open(listfilepath, "a", encoding="utf_16") as file:
             file.write(gamefile.create_entry_in_scriptlistcsv())
@@ -371,9 +375,11 @@ def from_script_filelist(listfilepath: str) -> list:
         script_file.text_file_path = line[1]
         script_file.file_type = line[2]
         script_file.is_translated = bool(int(line[3]))
-        script_file.original_package = line[4]
+        script_file.need_manual_fix = bool(int(line[4]))
+        script_file.translation_percentage = float(line[5])
+        script_file.original_package = line[6]
         script_file.read_date = datetime.datetime.strptime(
-            line[5], "%Y-%m-%d %H:%M:%S.%f"
+            line[7], "%Y-%m-%d %H:%M:%S.%f"
         )
         script_file_list.append(script_file)
     return script_file_list
