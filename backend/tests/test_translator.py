@@ -43,12 +43,13 @@ def test_translate_all_files():
         open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb")
     )
 
-    testing_translate_list = game.to_translate_file_list[:100]
+    translated_count = 33
+    testing_translate_list = game.to_translate_file_list[translated_count:200]
 
     print("Testing GPT Translator")
     print("model name:", translator.model)
 
-    translated_count = 0
+    this_translated_count = 0
     for script_file in testing_translate_list:
         # translate
         success = translator.translate_file_whole(script_file)
@@ -57,10 +58,10 @@ def test_translate_all_files():
         script_file.generate_textfile(replace=True)
 
         # update count
-        translated_count += 1
+        this_translated_count += 1
 
         print(
-            f"Translated {translated_count:d} files out of {len(testing_translate_list):d} files."
+            f"Translated {this_translated_count:d} files out of {len(testing_translate_list):d} files."
         )
 
     # save game

@@ -38,8 +38,9 @@ DEFAULT_INITIATION_PROMPT = [
 ]
 DEFAULT_FIXING_PROMPT = [
     {
-        "sole": "user",
-        "content": "The number of the line breakers doesn't match your translation. Please check your translation and try again.",
+        "role": "user",
+        "content": "The number of the line breakers doesn't match in your translation (there are {:.0f} while there should be {:.0f}). "
+        + "Please check your translation and try again.",
     }
 ]
 
@@ -103,6 +104,8 @@ class Config:
     gpt_completion_max_tokens = 8000
     gpt_model = "gpt-3.5-turbo-16k"
     gpt_temperature = 0.3
+    gpt_max_lines = 90
+    gpt_second_try = False
 
     # success status
     record_failure_text = True
@@ -114,6 +117,7 @@ class Config:
 
     def __init__(self):
         self.gpt_prompt = DEFAULT_INITIATION_PROMPT
+        self.fixing_prompt = DEFAULT_FIXING_PROMPT
 
     @classmethod
     def from_json(cls, json_file):

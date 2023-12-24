@@ -129,11 +129,76 @@ class GPT_Translator:
 
     def translate_file_whole(self, script_file: ScriptFile) -> success:
         """This method translates the script_file into the specified language in a single time."""
-        # todo: estimate the total tokens in the file, if below allowable limit, translate the whole file in a single request.
+        # check if the number of blocks exceed line limit
+        if len(script_file.blocks) > self.config.gpt_max_lines:
+            # log
+            # if exceed, divide the file into multiple parts
+            n_parts = len(script_file.blocks) // self.config.gpt_max_lines + 1
+            n_blocks_per_part = len(script_file.blocks) // n_parts + 1
+            all_parts = []
+            log_message(
+                f"File {script_file.text_file_path} has too many blocks dividing to {n_parts} parts with each having {n_blocks_per_part} blocks.",
+                log_level=LogLevel.WARNING,
+            )
+            for i in range(n_parts):
+                if i == n_parts - 1:
+                    sub_blocks = script_file.blocks[i * n_blocks_per_part :]
+                sub_blocks = script_file.blocks[
+                    i * n_blocks_per_part : (i + 1) * n_blocks_per_part
+                ]
+                all_parts.append(sub_blocks)
+
+            for i, part in enumerate(all_parts):
+                description = (
+                    f"part {i+1} of {n_parts} of file {script_file.text_file_path}"
+                )
+                self.translate_once(target=part, target_description=description)
+        else:
+            # translate the whole file
+            self.translate_once(
+                target=script_file, target_description=script_file.text_file_path
+            )
+
+        # evaluate the success status
+        success_blocks = 0
+        for block in script_file.blocks:
+            if block.is_translated:
+                success_blocks += 1
+        success_status = success.status_from_ratio(
+            success_blocks / len(script_file.blocks)
+        )
+        if (
+            success_status == success.ALMOST_SUCCESS
+            or success_status == success.SUCCESS
+        ):
+            log_message(
+                f"Translated file {script_file.text_file_path} successfully.",
+                log_level=LogLevel.INFO,
+            )
+        else:
+            log_message(
+                f"Translated file {script_file.text_file_path} failed.",
+                log_level=LogLevel.WARNING,
+            )
+        return success_status
+
+    def translate_once(
+        self, target: ScriptFile or list(Block), target_description: str = ""
+    ) -> success:
+        """This method translates the script_file into the specified language in a single time."""
+        log_message(
+            f'Translating target " {target_description} "...', log_level=LogLevel.INFO
+        )
+        if isinstance(target, ScriptFile):
+            all_blocks = target.blocks
+        # if the target is a list of blocks
+        elif isinstance(target, list):
+            all_blocks = target
+
         # generate the messages
         all_text_list = []
         total_number_of_blocks_to_translate = 0
-        for block in script_file.blocks:
+        for block in all_blocks:
             # if the block has been translated, skip
             if block.is_translated or block.is_empty():
                 continue
@@ -151,8 +216,6 @@ class GPT_Translator:
         base_message = self.config.gpt_prompt
         total_message = base_message.copy()
         total_message.append({"role": "user", "content": all_texts})
-
-        # todo: add verification of total tokens, if larger than max_tokens/2, raise a warning
 
         try:
             response = self.client.chat.completions.create(
@@ -172,14 +235,46 @@ class GPT_Translator:
 
             # divide to translations of each block
             translations = translation.split("||")
-            if len(translations) != total_number_of_blocks_to_translate:
+
+            # if the translation count does not match the block count and the config allows second try
+            if (
+                len(translations) != total_number_of_blocks_to_translate
+                and self.config.gpt_second_try
+            ):
                 log_message(
-                    f"Translation of file {script_file.text_file_path} failed. (Translation count mismatch)",
+                    f"Translation of target {target_description} failed. (Translation count mismatch)"
+                    + f"{len(translations)} instead of {total_number_of_blocks_to_translate}.",
                     log_level=LogLevel.ERROR,
                 )
+                log_message("Making gpt try again.", log_level=LogLevel.ERROR)
+                total_message.append(
+                    {"role": "assistant", "content": translation.strip()}
+                )
+                # generating the message again
+                new_message = self.config.fixing_prompt
+                new_message[0]["content"] = new_message[0]["content"].format(
+                    len(translations), total_number_of_blocks_to_translate
+                )
+                total_message.append(new_message[0])
+
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=total_message,
+                    n=1,  # number of response choicesd
+                    temperature=self.config.gpt_temperature,
+                    max_tokens=self.config.gpt_completion_max_tokens,
+                    stop=["\n"],
+                    stream=False,
+                )
+                translation = (
+                    response.choices[0].message.content.replace("\n\n", "\n").strip()
+                )
+                translations = translation.split("||")
+
+            if len(translations) != total_number_of_blocks_to_translate:
                 # still save the results
                 translation_index = 0
-                for block in script_file.blocks:
+                for block in all_blocks:
                     if block.is_translated or block.is_empty():
                         continue
                     # skip the block if it contains aaaa
@@ -202,7 +297,7 @@ class GPT_Translator:
                         break
                 return success.ERROR
 
-            for block in script_file.blocks:
+            for block in all_blocks:
                 if block.is_translated or block.is_empty():
                     continue
                 if utils.find_aaaa(block.text_original) is not None:
@@ -212,20 +307,19 @@ class GPT_Translator:
             # check success status
             # if the translation response contains one of failure keywords
             if not response.choices[0].finish_reason == "stop":
-                script_file.is_translated = False
                 log_message(
-                    f"Translation of file {script_file.text_file_path} failed.",
+                    f"Translation of target {target_description} failed.",
                     log_level=LogLevel.DEBUG,
                 )
                 return success.ERROR
 
             else:
                 log_message(
-                    f"Translated file {script_file.text_file_path} successfully.",
+                    f"Translated target {target_description} successfully.",
                     log_level=LogLevel.DEBUG,
                 )
                 translation_index = 0
-                for block in script_file.blocks:
+                for block in all_blocks:
                     if block.is_translated or block.is_empty():
                         continue
                     if utils.find_aaaa(block.text_original) is not None:
@@ -244,7 +338,7 @@ class GPT_Translator:
                     block.translation_engine = self.config.gpt_model
 
                 return success.SUCCESS
-        except:
+        except Exception as e:
             return success.ERROR
 
     @staticmethod
