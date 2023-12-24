@@ -104,7 +104,7 @@ class Config:
     gpt_completion_max_tokens = 8000
     gpt_model = "gpt-3.5-turbo-16k"
     gpt_temperature = 0.3
-    gpt_max_lines = 90
+    gpt_max_lines = 70
     gpt_second_try = False
 
     # success status
