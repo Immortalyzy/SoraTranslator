@@ -106,8 +106,10 @@ class Block:
         if text == "":
             self.is_translated = True
 
-    def generate_full_rawblock(self):
-        """generate the full translated content, to be replaced in the script file"""
+    def generate_full_rawblock(self) -> str:
+        """generate the full translated content, to be replaced in the script file
+        The function will return the text AND set the block_content_translated variable
+        """
         # todo: implement
         # check translation status and check block_content
 
@@ -116,7 +118,7 @@ class Block:
             return 1
 
         # block content is a list of lines
-        temp_block_content = self.block_content
+        temp_block_content = self.block_content.copy()
         # replace the speaker if not empty
         if self.speaker_original.strip() != "":
             temp_block_content[self.speaker_line] = (
