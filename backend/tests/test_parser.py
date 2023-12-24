@@ -5,7 +5,7 @@ from ..scriptfile import ScriptFile
 from ..block import Block
 
 test_file = (
-    "D:\\Work\\SoraTranslator\\GameResources\\RawText\\k_scenario\\01本編\\luna003.ks"
+    "D:\\Work\\SoraTranslator\\GameResources\\RawText\\k_scenario\\01本編\\luna044.ks"
 )
 test_blocks_start = (107, 132)
 
@@ -18,8 +18,8 @@ def test_parser():
     for block in blocks:
         block.parse(parse_block_function=parse_block)
 
-    block: Block = blocks[14]
-    block.text_translated = "54181285294534895"
+    block: Block = blocks[0]
+    block.text_translated = "5418128/5294534895"
     block.speaker_translated = "54188"
     result = block.generate_full_rawblock()
 
