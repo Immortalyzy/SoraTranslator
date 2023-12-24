@@ -186,7 +186,9 @@ class GPT_Translator:
                     if utils.find_aaaa(block.text_original) is not None:
                         continue
                     # record the translation
-                    block.text_translated = translations[translation_index]
+                    block.text_translated = utils.fix_text_after_translation(
+                        translations[translation_index]
+                    )
                     translation_index += 1
 
                     # update the translation info
@@ -229,7 +231,9 @@ class GPT_Translator:
                     if utils.find_aaaa(block.text_original) is not None:
                         continue
                     # record the translation
-                    block.text_translated = translations[translation_index]
+                    block.text_translated = utils.fix_text_after_translation(
+                        translations[translation_index]
+                    )
                     translation_index += 1
 
                     # update the translation info

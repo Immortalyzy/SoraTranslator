@@ -10,12 +10,6 @@ aaaa_possible_list = [
 surrounding_characters = [""]
 
 
-def fix_text_before_translation(text: str) -> str:
-    """A combination of fixing methods before translation"""
-    text, _ = remove_aaa(text)
-    return text
-
-
 def find_aaaa(text: str) -> object:
     """check if the text has aaaa
     Args:
@@ -49,3 +43,29 @@ def remove_aaa(text: str) -> (str, (int, int)):
         # remove the aaaa
         text = text[: found_aaaa.span()[0]] + text[found_aaaa.span()[1] :]
         return text, found_aaaa.span()
+
+
+def fix_quoting_symbol(text: str) -> str:
+    """fix the quoting symbol in the text
+    Args:
+        text (str): the text to be fixed
+    Returns:
+        str: the text with the quoting symbol fixed
+    """
+    if text.startswith("“"):
+        text = "「" + text[1:]
+    if text.startswith("”"):
+        text = "」" + text[1:]
+    return text
+
+
+def fix_text_before_translation(text: str) -> str:
+    """A combination of fixing methods before translation"""
+    text, _ = remove_aaa(text)
+    return text
+
+
+def fix_text_after_translation(text: str) -> str:
+    """A combination of fixing methods after translation"""
+    text = fix_quoting_symbol(text)
+    return text
