@@ -127,6 +127,17 @@ class Block:
                 + temp_block_content[self.speaker_line][self.speaker_start_end[1] :]
             )
 
+        # replacing the speaker will change the text positioni if they are on the same line
+        if self.speaker_line == self.text_line:
+            # shift the text position
+            if self.speaker_original.strip() != "":
+                self.text_start_end = (
+                    self.text_start_end[0]
+                    + (len(self.speaker_translated) - len(self.speaker_original)),
+                    self.text_start_end[1]
+                    + (len(self.speaker_translated) - len(self.speaker_original)),
+                )
+
         # replace the text
         if self.text_original != "" and self.text_translated.strip() != "":
             temp_block_content[self.text_line] = (

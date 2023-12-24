@@ -73,9 +73,9 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     text = ""
     text_line = 0
     text_start_end = (0, 0)
-    marco_indicator = r"\[.*?\]"
-    # indicator for "other" speakers
-    marco_indicator2 = r"\[ns\].*?\[nse\]"
+    # indicator for "other" speakers, this MUST be kept in this order
+    marco_indicator = r"\[ns\].*?\[nse\]"
+    marco_indicator2 = r"\[.*?\]"
 
     # this only works when there is only one text in one line
     for i, line in enumerate(block.block_content):
