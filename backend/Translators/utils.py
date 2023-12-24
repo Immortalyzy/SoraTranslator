@@ -5,7 +5,9 @@ import re
 
 aaaa_possible_list = [
     "あああ",
-    "ああぁ",
+    "ぁぁぁ",
+    "ぅぅぅ",
+    "ぃぃぃ",
 ]
 surrounding_characters = [""]
 
