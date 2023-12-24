@@ -7,7 +7,7 @@ from ..Integrators.Chaos_R.chaosr_game import ChaosRGame
 from pickle import dump, load
 
 test_file = (
-    "D:\\Work\\SoraTranslator\\GameResources\\Text\\k_scenario\\01本編\\dakr001.csv"
+    "D:\\Work\\SoraTranslator\\GameResources\\Text\\k_scenario\\01本編\\luna034H.csv"
 )
 
 

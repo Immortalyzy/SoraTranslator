@@ -8,6 +8,7 @@ from ...constants import Config, default_config
 from ...constants import SuccessStatus as success
 from ...constants import LogLevel
 from ...logger import log_message
+from .. import utils
 
 
 class GPT_Translator:
@@ -136,6 +137,8 @@ class GPT_Translator:
             # if the block has been translated, skip
             if block.is_translated or block.is_empty():
                 continue
+            if utils.find_aaaa(block.text_original) is not None:
+                continue
             all_text_list.append(
                 block.text_to_translate(self.config.if_translate_with_speaker)
             )
@@ -179,6 +182,9 @@ class GPT_Translator:
                 for block in script_file.blocks:
                     if block.is_translated or block.is_empty():
                         continue
+                    # skip the block if it contains aaaa
+                    if utils.find_aaaa(block.text_original) is not None:
+                        continue
                     # record the translation
                     block.text_translated = translations[translation_index]
                     translation_index += 1
@@ -196,6 +202,8 @@ class GPT_Translator:
 
             for block in script_file.blocks:
                 if block.is_translated or block.is_empty():
+                    continue
+                if utils.find_aaaa(block.text_original) is not None:
                     continue
                 block.translation_status = response.choices[0].finish_reason
 
@@ -217,6 +225,8 @@ class GPT_Translator:
                 translation_index = 0
                 for block in script_file.blocks:
                     if block.is_translated or block.is_empty():
+                        continue
+                    if utils.find_aaaa(block.text_original) is not None:
                         continue
                     # record the translation
                     block.text_translated = translations[translation_index]
