@@ -75,7 +75,8 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     text_start_end = (0, 0)
     # indicator for "other" speakers, this MUST be kept in this order
     marco_indicator = r"\[ns\].*?\[nse\]"
-    marco_indicator2 = r"\[.*?\]"
+    macro_indicator2 = r"\[([^\[\]]*)\]"
+    # Keep replacing innermost brackets until there are none left
 
     # this only works when there is only one text in one line
     for i, line in enumerate(block.block_content):
@@ -83,7 +84,10 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
         if "*" in line:
             continue
         clean_block = re.sub(marco_indicator, "", line)
-        clean_block = re.sub(marco_indicator2, "", clean_block)
+        while True:
+            clean_block, count = re.subn(macro_indicator2, "", clean_block)
+            if count == 0:
+                break
         text += clean_block.strip()
         if text != "":
             found_text = re.search(text, line)

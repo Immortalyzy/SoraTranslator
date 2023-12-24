@@ -5,7 +5,7 @@ from ..scriptfile import ScriptFile
 from ..block import Block
 
 test_file = (
-    "D:\\Work\\SoraTranslator\\GameResources\\RawText\\k_scenario\\01本編\\luna005.ks"
+    "D:\\Work\\SoraTranslator\\GameResources\\RawText\\k_scenario\\01本編\\luna078.ks"
 )
 test_blocks_start = (107, 132)
 
@@ -35,3 +35,6 @@ def test_text_file():
 
 def test_text_rebuild():
     """test the function of putting translated text back to its places"""
+
+
+0
