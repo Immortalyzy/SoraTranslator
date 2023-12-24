@@ -8,6 +8,8 @@ aaaa_possible_list = [
     "ぁぁぁ",
     "ぅぅぅ",
     "ぃぃぃ",
+    "アアア",
+    "ァァァ",
 ]
 surrounding_characters = [""]
 
