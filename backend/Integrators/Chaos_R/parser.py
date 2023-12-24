@@ -94,6 +94,27 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
             if found_text:
                 text_line = i
                 text_start_end = found_text.span()
+            else:
+                log_message(
+                    f"Text found in block {block.block_name} but cannot locate in block_content",
+                    log_level=LogLevel.ERROR,
+                )
+                # add a temporary solution by remove all middle script commands
+                # find the start of the text, take the first 2 characters
+                text_start = text[:2]
+                found_text = re.search(text_start, line)
+                if found_text:
+                    text_line = i
+                    text_start_end = (found_text.span()[0], text_start_end[1])
+                # find the end of the text, take the last 2 characters
+                text_end = text[-2:]
+                matches = list(re.finditer(text_end, line))
+                if matches:
+                    last_match = matches[-1]
+                    text_start_end = (text_start_end[0], last_match.span()[1])
+                if text_start_end[1] <= text_start_end[0]:
+                    raise ValueError("Match error in parser")
+                    text_start_end = (text_start_end[0], text_start_end[0])
 
     # find the speaker if any
     search_pattern = r"\[【(.*?)】\]"
