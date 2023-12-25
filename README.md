@@ -71,4 +71,4 @@ There can be multiple translators for the program. However, the program is desig
 #### To-Do
 - [x] Write backend
 - [ ] Write frontend
-- ~~[ ] Add support for local LLM models for the translation of unallowed content (GPT API actually doesn't filter out any sensitive content)~~
+- [ ] ~~Add support for local LLM models for the translation of unallowed content (GPT API actually doesn't filter out any sensitive content)~~
