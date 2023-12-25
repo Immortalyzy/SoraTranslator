@@ -227,7 +227,7 @@ class GPT_Translator:
         # generate all_texts
         for i, _ in enumerate(all_text_list):
             all_text_list[i] = "[" + all_text_list[i] + "]"
-        all_texts = " ".join(all_text_list)
+        all_texts = "    ".join(all_text_list)
 
         # generate the message
         base_message = self.config.gpt_prompt

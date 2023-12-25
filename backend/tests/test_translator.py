@@ -43,8 +43,22 @@ def test_translate_all_files():
         open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb")
     )
 
-    translated_count = 33
-    testing_translate_list = game.to_translate_file_list[translated_count:200]
+    translated_count = 191
+    total_translation = len(game.to_translate_file_list)
+    now_translate = min(200, total_translation)
+    retanslate_list = [
+        "172H.csv",
+        "186H.csv",
+        "190H.csv",
+    ]
+    testing_translate_list = []
+    for script_file in game.to_translate_file_list:
+        for name_end in retanslate_list:
+            if script_file.text_file_path.endswith(name_end):
+                testing_translate_list.append(script_file)
+    testing_translate_list.extend(
+        game.to_translate_file_list[translated_count:now_translate]
+    )
 
     print("Testing GPT Translator")
     print("model name:", translator.model)
@@ -63,11 +77,9 @@ def test_translate_all_files():
         print(
             f"Translated {this_translated_count:d} files out of {len(testing_translate_list):d} files."
         )
-
-    # save game
-    game.update_script_filelist()
-    game.update_to_translate_filelist()
-
-    game.save_game("D:\\Work\\SoraTranslator\\GameResources\\game.pkl")
+        # save game
+        game.update_to_translate_filelist()
+        game.save_game("D:\\Work\\SoraTranslator\\GameResources\\game.pkl")
+        game.update_script_filelist()
 
     return success

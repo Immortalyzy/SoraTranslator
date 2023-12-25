@@ -25,12 +25,12 @@ def test_all():
     xp3_unpacker = util.XP3_UPK
     game.set_unpacker(xp3_unpacker)
 
-    # for testing purpose, remove old temp directory
-    # ! created
+    # # for testing purpose, remove old temp directory
+    # # ! created
     # game.create_temp_unpack_directory(clear=True)
 
-    # prepare raw files
-    #! prepared
+    # # prepare raw files
+    # # prepared
     # game.prepare_raw_text()
 
     # read script files
@@ -72,10 +72,9 @@ def test_integration():
 
         # copy the file to the temp folder, overwrite if exists
         shutil.copyfile(script_file.translated_script_file_path, desitnation_path)
-    game.save_game("D:\\Work\\SoraTranslator\\GameResources\\game.pkl")
 
 
-from typing import Any
+#    game.save_game("D:\\Work\\SoraTranslator\\GameResources\\game.pkl")
 
 
 def test_repack() -> None:
