@@ -236,6 +236,9 @@ class GPT_Translator:
         base_message = self.config.gpt_prompt
         total_message = base_message.copy()
         total_message.append({"role": "user", "content": all_texts})
+        total_message.append(
+            {"role": "user", "content": f"There are {len(all_text_list)} blocks."}
+        )
 
         try:
             response = self.client.chat.completions.create(
