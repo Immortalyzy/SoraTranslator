@@ -5,6 +5,7 @@ import re
 
 aaaa_possible_list = [
     "あああ",
+    "ああー",
     "ぁぁぁ",
     "ぅぅぅ",
     "ぃぃぃ",

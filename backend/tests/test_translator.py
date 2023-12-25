@@ -40,7 +40,7 @@ def test_translate_all_files():
     # test different temperature
     config.gpt_temperature = 0.25
     config.gpt_model = "gpt-3.5-turbo-16k"
-    config.gpt_max_lines = 30
+    config.gpt_max_lines = 40
     config.gpt_speration_method = "[]"
     config.gpt_enclosing_joiner = "|"
     translator = GPT_Translator(config)
@@ -52,18 +52,15 @@ def test_translate_all_files():
     translated_count = 337
     total_translation = len(game.to_translate_file_list)
     now_translate = min(500, total_translation)
-    retanslate_list = [
-        "738H.csv",
-        "patch\luna249.csv",
-    ]
+    retanslate_list = []
     testing_translate_list = []
     for script_file in game.to_translate_file_list:
         for name_end in retanslate_list:
             if script_file.text_file_path.endswith(name_end):
                 testing_translate_list.append(script_file)
-    testing_translate_list.extend(
-        game.to_translate_file_list[translated_count:now_translate]
-    )
+    # testing_translate_list.extend(
+    #     game.to_translate_file_list[translated_count:now_translate]
+    # )
 
     print("Testing GPT Translator")
     print("model name:", translator.model)
