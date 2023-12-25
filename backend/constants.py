@@ -31,9 +31,7 @@ LINE_BREAKER = "||"
 DEFAULT_INITIATION_PROMPT = [
     {
         "role": "system",
-        "content": 'You are a translator. Translate from {} to {}, KEEP the line breaker "'
-        + LINE_BREAKER
-        + '" in the translated text exactly where they were.',
+        "content": "You are a translator of fantasy stories. Plase translate from {} to {}. KEEP the surroundings \[ \] of sentences in the translated text. ",
     },
 ]
 DEFAULT_FIXING_PROMPT = [

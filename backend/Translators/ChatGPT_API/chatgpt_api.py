@@ -2,6 +2,7 @@
 
 from datetime import datetime
 from openai import OpenAI
+import re
 from ...scriptfile import ScriptFile
 from ...block import Block
 from ...constants import Config, default_config
@@ -130,6 +131,7 @@ class GPT_Translator:
     def translate_file_whole(self, script_file: ScriptFile) -> success:
         """This method translates the script_file into the specified language in a single time."""
         # check if the number of blocks exceed line limit
+        script_file.need_manual_fix = False
         if len(script_file.blocks) > self.config.gpt_max_lines:
             # log
             # if exceed, divide the file into multiple parts
@@ -188,6 +190,11 @@ class GPT_Translator:
                 log_level=LogLevel.WARNING,
             )
         script_file.is_translated = True
+        if script_file.need_manual_fix:
+            log_message(
+                f"Manual fix required for file {script_file.text_file_path}.",
+                log_level=LogLevel.WARNING,
+            )
         return success_status
 
     def translate_once(
@@ -208,7 +215,7 @@ class GPT_Translator:
         total_number_of_blocks_to_translate = 0
         for block in all_blocks:
             # if the block has been translated, skip
-            if block.is_translated or block.is_empty():
+            if block.is_empty():
                 continue
             if utils.find_aaaa(block.text_original) is not None:
                 continue
@@ -218,7 +225,9 @@ class GPT_Translator:
             total_number_of_blocks_to_translate += 1
 
         # generate all_texts
-        all_texts = "||".join(all_text_list)
+        for i, _ in enumerate(all_text_list):
+            all_text_list[i] = "[" + all_text_list[i] + "]"
+        all_texts = " ".join(all_text_list)
 
         # generate the message
         base_message = self.config.gpt_prompt
@@ -242,7 +251,8 @@ class GPT_Translator:
             )
 
             # divide to translations of each block
-            translations = translation.split("||")
+            # find all '[' in the translation
+            translations = re.findall(r"\[(.*?)\]", translation)
 
             # if the translation count does not match the block count and the config allows second try
             if (
@@ -277,13 +287,17 @@ class GPT_Translator:
                 translation = (
                     response.choices[0].message.content.replace("\n\n", "\n").strip()
                 )
-                translations = translation.split("||")
 
             if len(translations) != total_number_of_blocks_to_translate:
                 # still save the results
                 translation_index = 0
+                log_message(
+                    f"Translation of target {target_description} failed. (Translation count mismatch)"
+                    + f"{len(translations)} instead of {total_number_of_blocks_to_translate}.",
+                    log_level=LogLevel.ERROR,
+                )
                 for block in all_blocks:
-                    if block.is_translated or block.is_empty():
+                    if block.is_empty():
                         continue
                     # skip the block if it contains aaaa
                     if utils.find_aaaa(block.text_original) is not None:
@@ -306,7 +320,7 @@ class GPT_Translator:
                 return success.ERROR
 
             for block in all_blocks:
-                if block.is_translated or block.is_empty():
+                if block.is_empty():
                     continue
                 if utils.find_aaaa(block.text_original) is not None:
                     continue
@@ -328,7 +342,7 @@ class GPT_Translator:
                 )
                 translation_index = 0
                 for block in all_blocks:
-                    if block.is_translated or block.is_empty():
+                    if block.is_empty():
                         continue
                     if utils.find_aaaa(block.text_original) is not None:
                         continue
