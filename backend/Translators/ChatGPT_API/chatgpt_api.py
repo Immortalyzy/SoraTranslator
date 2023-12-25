@@ -222,12 +222,15 @@ class GPT_Translator:
             all_text_list.append(
                 block.text_to_translate(self.config.if_translate_with_speaker)
             )
+            block.text_translated = ""
             total_number_of_blocks_to_translate += 1
 
         # generate all_texts
-        for i, _ in enumerate(all_text_list):
-            all_text_list[i] = "[" + all_text_list[i] + "]"
-        all_texts = "    ".join(all_text_list)
+        all_texts = utils.convert_prompt_response(
+            all_text_list,
+            seperation_method=self.config.gpt_speration_method,
+            enclosing_joiner=self.config.gpt_enclosing_joiner,
+        )
 
         # generate the message
         base_message = self.config.gpt_prompt
@@ -252,7 +255,11 @@ class GPT_Translator:
 
             # divide to translations of each block
             # find all '[' in the translation
-            translations = re.findall(r"\[(.*?)\]", translation)
+            translations = utils.convert_prompt_response(
+                translation,
+                seperation_method=self.config.gpt_speration_method,
+                enclosing_joiner=self.config.gpt_enclosing_joiner,
+            )
 
             # if the translation count does not match the block count and the config allows second try
             if (
