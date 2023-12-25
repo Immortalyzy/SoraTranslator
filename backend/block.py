@@ -45,7 +45,7 @@ class Block:
             # if not, split it
             csv_line = csv_line.split("\t")
         # check csv line length
-        if len(csv_line) < 3:
+        if len(csv_line) < 5:
             raise ValueError("CSV line length not correct")
 
         block_name = csv_line[0]
@@ -60,15 +60,16 @@ class Block:
         block.speaker_translated = csv_line[3]
         block.text_translated = csv_line[4]
 
-        if csv_line[5] != "Yes" and csv_line[5] != "No":
-            log_message(
-                f'CSV line {csv_line} has incompatible is_translated entry record. (Accepted record is "Yes" or "No")',
-                log_level=LogLevel.WARNING,
-            )
+        if len(csv_line) >= 8:
+            if csv_line[5] != "Yes" and csv_line[5] != "No":
+                log_message(
+                    f'CSV line {csv_line} has incompatible is_translated entry record. (Accepted record is "Yes" or "No")',
+                    log_level=LogLevel.WARNING,
+                )
 
-        block.is_translated = csv_line[5] == "Yes"
-        block.translation_date = csv_line[6]
-        block.translation_engine = csv_line[7]
+            block.is_translated = csv_line[5] == "Yes"
+            block.translation_date = csv_line[6]
+            block.translation_engine = csv_line[7]
         return block
 
     def to_csv_line(self):
