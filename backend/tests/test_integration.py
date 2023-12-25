@@ -58,7 +58,7 @@ def test_integration():
         open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb")
     )
 
-    for script_file in game.to_translate_file_list[:100]:
+    for script_file in game.to_translate_file_list:
         script_file.update_from_textfile()
 
         # regenerate the script file, this will be save to translated_files folder

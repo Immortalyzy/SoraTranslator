@@ -37,19 +37,24 @@ def test_translate_all_files():
     """!! this test has real usage, consumes tokens and must be run only once"""
     # load config
     config = Config.from_json(DEFAULT_CONFIG_FILE)
+    # test different temperature
+    config.gpt_temperature = 0.25
+    config.gpt_model = "gpt-3.5-turbo-16k"
+    config.gpt_max_lines = 30
+    config.gpt_speration_method = "[]"
+    config.gpt_enclosing_joiner = "|"
     translator = GPT_Translator(config)
 
     game: ChaosRGame = load(
         open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb")
     )
 
-    translated_count = 191
+    translated_count = 337
     total_translation = len(game.to_translate_file_list)
-    now_translate = min(200, total_translation)
+    now_translate = min(500, total_translation)
     retanslate_list = [
-        "172H.csv",
-        "186H.csv",
-        "190H.csv",
+        "738H.csv",
+        "patch\luna249.csv",
     ]
     testing_translate_list = []
     for script_file in game.to_translate_file_list:
