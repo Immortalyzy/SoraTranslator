@@ -25,7 +25,7 @@ class Project:
     translation_percentage = 0.0
     is_translation_complete = False
     original_language = "Japanese"
-    target_language = "Chinese"
+    target_language = "Chinese (Simplified)"
 
     def __init__(self):
         self.start_date = dt.datetime.now()
