@@ -15,9 +15,9 @@ export default {
 
 <style scoped>
 .status-bar {
-  background-color: #222;
+  background-color: rgba(34, 34, 34, 0.233);
   color: #fff;
   padding: 10px;
-  text-align: center;
+  text-align: left;
 }
 </style>

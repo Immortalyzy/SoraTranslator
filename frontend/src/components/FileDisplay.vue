@@ -8,7 +8,8 @@
       </thead>
       <tbody>
         <tr v-for="(row, rowIndex) in tableData" :key="rowIndex">
-          <td v-for="(cell, cellIndex) in row" :key="cellIndex" contenteditable @blur="editCell(rowIndex, cellIndex, $event)">
+          <td v-for="(cell, cellIndex) in row" :key="cellIndex" contenteditable
+            @blur="editCell(rowIndex, cellIndex, $event)">
             {{ cell }}
           </td>
         </tr>
@@ -40,15 +41,19 @@ export default {
 <style>
 .table-container {
   overflow: auto;
-  max-height: 300px; /* Adjust as needed */
+  max-height: 300px;
+  /* Adjust as needed */
+  width: 70%;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  color: white;
 }
 
-th, td {
+th,
+td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
