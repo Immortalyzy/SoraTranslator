@@ -47,9 +47,10 @@ class Game(ABC):
         self.temp_unpack_directory = ""
 
     @abstractmethod
-    def prepare_raw_text(self):
+    def prepare_translation(self):
         """
-        This generalized function should provide a combination of operations that take the raw text from the game, save it to GameResources/RawText and prepare it for further processing.
+        This generalized function should provide a combination of operations that prepare the game for translation.
+        Fill the folder GameResources/Text with all the text files that need to be translated.
         """
         pass
 
@@ -57,6 +58,7 @@ class Game(ABC):
     def integrate_from_text(self, text):
         """
         This generalized function should provide a combination of operations that take the text from the GameResources/Text folder and integrate it into the game.
+        This funciton should also return some instructions for the user to follow to finalize the integration.
         """
         pass
 

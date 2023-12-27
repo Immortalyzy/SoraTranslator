@@ -4,6 +4,8 @@ import datetime as dt
 import os
 import pickle
 
+from game import Game
+
 
 class Project:
     """A project defines a translation work, storing information and configuration"""

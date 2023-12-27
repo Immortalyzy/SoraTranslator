@@ -234,7 +234,22 @@ class ChaosRGame(Game):
 
     def integrate_from_text(self, text):
         """Integrate the text into the game."""
-        pass
+        for script_file in self.to_translate_file_list:
+            script_file.update_from_textfile()
+
+            # regenerate the script file, this will be save to translated_files folder
+            script_file.generate_translated_rawfile(replace=True)
+
+            # get the relative path
+            relative_path = os.path.relpath(
+                script_file.translated_script_file_path, self.translated_files_directory
+            )
+            desitnation_path = os.path.join(self.temp_unpack_directory, relative_path)
+
+            # copy the file to the temp folder, overwrite if exists
+            shutil.copyfile(script_file.translated_script_file_path, desitnation_path)
+        self.repack_all_files()
+        return f"For security reasons, please replace the original files with the .xp3 files in {self.temp_unpack_directory}."
 
     # ==== methods for packeging ==================================================================
     def unpack_allfiles(self, replace=False):
