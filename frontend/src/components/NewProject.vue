@@ -28,30 +28,47 @@
         <div v-else>
             <div class="option-container">
                 <div class="option">
+                    <label for="projectName">Project Name:</label>
+                    <div class="input-area">
+                        <input type="text" id="projectName" name="projectName" v-model="projectName">
+                    </div>
+                </div>
+                <div class="option">
                     <label for="projectPath">Project Path:</label>
-                    <input type="text" id="gamePath" name="gameEngine" v-model="projectPath">
-                    <button @click="selectProjectPath">...</button>
+                    <div class="input-area">
+                        <input type="text" id="gamePath" name="gameEngine" v-model="projectPath">
+                        <button @click="selectProjectPath">...</button>
+                    </div>
                 </div>
                 <div class="option">
                     <label for="gamePath">Game Path:</label>
-                    <input type="text" id="gamePath" name="gameEngine" v-model="gamePath">
-                    <button @click="selectGamePath">...</button>
+                    <div class="input-area">
+                        <input type="text" id="gamePath" name="gameEngine" v-model="gamePath">
+                        <button @click="selectGamePath">...</button>
+                    </div>
                 </div>
                 <div class="option">
                     <label for="gameEngine">Game Engine:</label>
-                    <input type="text" id="gameEngine" name="gameEngine" v-model="gameEngine">
+                    <div class="input-area">
+                        <input type="text" id="gameEngine" name="gameEngine" v-model="gameEngine">
+                    </div>
                 </div>
                 <div class="option">
                     <label for="translator">Translator:</label>
-                    <input type="text" id="translator" name="translator" v-model="translator">
+                    <div class="input-area">
+                        <input type="text" id="translator" name="translator" v-model="translator">
+                    </div>
                 </div>
                 <div class="option">
                     <label for="Language">Language:</label>
-                    <input class="half-input" type="text" id="fromLanguage" name="fromLanguage" v-model="fromLanguage">
-                    >
-                    <input class="half-input" type="text" id="toLanguage" name="toLanguage" v-model="toLanguage">
+                    <div class="input-area">
+                        <input class="half-input" type="text" id="fromLanguage" name="fromLanguage" v-model="fromLanguage">
+                        >
+                        <input class="half-input" type="text" id="toLanguage" name="toLanguage" v-model="toLanguage">
+                    </div>
                 </div>
             </div>
+            <div>{{ this.projectTest.projectPath }}</div>
             <button @click="createProject">Create</button>
             <div>
             </div>
@@ -60,7 +77,9 @@
 </template>
 
 <script>
-import { updateProject } from 'vuex'
+import { useStore } from 'vuex'
+import axios from 'axios'
+import { computed } from 'vue'
 export default {
     name: "NewProject",
     props: {
@@ -68,11 +87,12 @@ export default {
     data() {
         return {
             // for new project
-            projectPath: "",
+            projectName: "Default",
+            projectPath: "~",
             gamePath: "",
-            translator: "",
-            fromLanguage: "",
-            toLanguage: "",
+            translator: "gpt-3.5-16k",
+            fromLanguage: "Japanese",
+            toLanguage: "Chinese (Simplified)",
 
             // for page display
             displayIntro: true,
@@ -91,6 +111,15 @@ export default {
             }
         });
     },
+    setup() {
+        const store = useStore();
+        const updateProject = (project) => {
+            store.dispatch("updateProject", project);
+        };
+        const projectTest = computed(() => store.state.project);
+        return { updateProject, projectTest };
+
+    },
     methods: {
         clickNext() {
             this.displayIntro = false;
@@ -98,9 +127,27 @@ export default {
         createProject() {
             alert("Project created!");
             // add code to verify the data
-            const project = this.data();
+            const project = this.$data;
+
             // add code to create the project object using python, and save to the destination path
-            updateProject(project);
+            const http = axios.create({
+                baseURL: "http://localhost:5000",
+                method: "POST",
+                headers: {
+                    "Content-type": "application/json",
+                },
+            });
+            http.post("/create_project", project).then((response) => {
+                console.log(response.data);
+            }).catch((error) => {
+                console.log(error);
+            })
+            // if success, then update the project
+            // if (response.data.result["success"] === true) { updateProject(project); }
+            // if failed, then alert the user
+            // if (response.data.result["success"] === false) { alert("Project creation failed. Please check the path."); }
+            this.updateProject(project);
+
         },
         selectProjectPath() {
             window.electron.ipcRenderer.send("open-directory-dialog");
@@ -158,7 +205,7 @@ button {
 
 .option-container {
     display: flex;
-    margin: 0 20%;
+    margin: 0 10%;
     flex-direction: column;
     align-items: left;
     text-align: left;
@@ -171,6 +218,14 @@ button {
     text-align: left;
 }
 
+
+.option {
+    display: flex;
+    flex-direction: row;
+    color: white;
+    flex-basis: 5%;
+}
+
 label {
     display: inline-block;
     color: rgb(255, 255, 255);
@@ -180,9 +235,12 @@ label {
     text-align: right;
 }
 
-.option {
-    color: white;
-    flex-basis: 5%;
+.input-area {
+    display: flex;
+    flex-direction: row;
+    align-items: left;
+    justify-items: normal;
+    width: calc(100% - 200px);
 }
 
 input {
@@ -191,14 +249,13 @@ input {
     background-color: rgba(0, 0, 0, 0.295);
     border: 1px solid #ffd0d0;
     border-radius: 5px;
-    width: 500px;
     flex-shrink: 0;
     flex-grow: 0;
     text-align: left;
 }
 
 .half-input {
-    width: 200px;
+    /*    width: 200px; */
     flex-shrink: 0;
     flex-grow: 0;
     text-align: left;

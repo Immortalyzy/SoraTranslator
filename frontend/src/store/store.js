@@ -4,7 +4,10 @@ const store = createStore({
     state() {
         return {
             // your JSON variable
-            project: {}
+            project: {
+                name: '',
+                description: '',
+            }
         }
     },
     mutations: {
@@ -17,6 +20,12 @@ const store = createStore({
         // action to commit the mutation
         updateProject(context, newJson) {
             context.commit('updateProject', newJson);
+        }
+    },
+    getters: {
+        // getter to access your JSON variable
+        getProject(state) {
+            return state.project;
         }
     }
 });
