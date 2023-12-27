@@ -29,12 +29,13 @@
             <div class="option-container">
                 <div class="option">
                     <label for="projectPath">Project Path:</label>
-                    <input type="text" id="gameEngine" name="gameEngine" v-model="gameEngine">
+                    <input type="text" id="gamePath" name="gameEngine" v-model="projectPath">
                     <button @click="selectProjectPath">...</button>
                 </div>
                 <div class="option">
                     <label for="gamePath">Game Path:</label>
-                    <input type="file" id="gamePath" name="gamePath" v-on:change="changeGamePath">
+                    <input type="text" id="gamePath" name="gameEngine" v-model="gamePath">
+                    <button @click="selectGamePath">...</button>
                 </div>
                 <div class="option">
                     <label for="gameEngine">Game Engine:</label>
@@ -82,8 +83,20 @@ export default {
 
             // for page display
             displayIntro: true,
+            selectingWhich: "projectPath"
 
         };
+    },
+    created() {
+        window.electron.ipcRenderer.on("selected-path", (path) => {
+            // this method from chatgpt is a bit strange, but it allows the program to be interactive while the dialog is open
+            console.log("Selected Path", path);
+            if (this.selectingWhich === "projectPath") {
+                this.projectPath = path;
+            } else if (this.selectingWhich === "gamePath") {
+                this.gamePath = path;
+            }
+        });
     },
     methods: {
         clickNext() {
@@ -91,17 +104,17 @@ export default {
         },
         createProject() {
             alert("Project created!");
+            // add code to verify the data
+            const project = this.data();
+            this.$emit("create-project", project);
         },
-        async selectProjectPath() {
-            const { filePaths } = await this.$electron.remote.dialog.showOpenDialog({
-                properties: ['openDirectory']
-            });
-            if (filePaths.length > 0) {
-                this.projectPath = filePaths[0];
-            }
+        selectProjectPath() {
+            window.electron.ipcRenderer.send("open-path-dialog");
+            this.selectingWhich = "projectPath";
         },
-        changeProjectPath(path) {
-            this.projectPath = path.target;
+        selectGamePath() {
+            window.electron.ipcRenderer.send("open-path-dialog");
+            this.selectingWhich = "gamePath";
         },
         changeGamePath(path) {
             const file = path.target.files[0];
@@ -109,6 +122,9 @@ export default {
                 this.gamePath = file.name;
             }
         },
+    },
+    beforeUnmount() {
+        window.electron.ipcRenderer.removeAllListeners("selected-path");
     },
 };
 </script>
