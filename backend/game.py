@@ -6,7 +6,7 @@ All child classes should have these functions declared in this class as abstract
 from abc import ABC, abstractmethod
 import importlib
 import os
-from .constants import default_config
+from constants import default_config
 from pickle import dump, load
 
 
@@ -42,8 +42,8 @@ class Game(ABC):
         # temp file info storage
         self.temp_unpack_directory = ""
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def from_pythonfile(cls, paths, python_file, config=default_config):
         """create a game instance from a python file"""
         pass

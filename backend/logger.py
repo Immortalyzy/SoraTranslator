@@ -1,5 +1,5 @@
 """ this file defines the logging mechanism for the project """
-from .constants import default_config
+from constants import default_config
 
 
 def log_message(message, log_level=default_config.log_level):

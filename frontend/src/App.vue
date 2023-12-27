@@ -8,7 +8,7 @@
     <div class="main-content">
       <SideBar class="side-bar" @change-tree="changeTree" @show-tree="showTree" />
       <DirectoryTree :currentTreeDisplay="treeDisplay" class="directory-tree" />
-      <FileDisplay :content="filePath" class="file-display" />
+      <FileDisplay :displayType="displayType" :filePath="filePath" class="file-display" @change-display="changeDisplay" />
       <ActionInfo class="action-info" />
     </div>
     <StatusBar :message="statusMessage" class="status-bar" />

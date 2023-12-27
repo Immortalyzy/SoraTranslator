@@ -15,7 +15,7 @@ export default {
             buttons: [
                 { letter: "S", clicks: 0 },
                 { letter: "T", clicks: 0 },
-                { letter: "H", clicks: 0 },
+                { letter: "R", clicks: 0 },
             ],
             selectedButton: "T"
         }

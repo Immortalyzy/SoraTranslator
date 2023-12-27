@@ -1,7 +1,10 @@
 <template>
   <div class="table-container">
     <div v-if="displayType === 'new_project'">
-      <NewProject />
+      <NewProject @change-display="changeDisplay" />
+    </div>
+    <div v-if="displayType === 'initialize_game'">
+      <InitializeProject />
     </div>
     <table v-if="displayType === 'TextFile'">
       <thead>
@@ -23,10 +26,12 @@
 
 <script>
 import NewProject from "./NewProject.vue";
+import InitializeProject from "./InitializeProject.vue";
 export default {
   name: "FileDisplay",
   components: {
-    NewProject
+    NewProject,
+    InitializeProject
   },
   props: {
     displayType: {
@@ -52,6 +57,10 @@ export default {
     editCell(rowIndex, cellIndex, event) {
       this.tableData[rowIndex][cellIndex] = event.target.innerText;
     },
+    changeDisplay(type, path) {
+      this.$emit("change-display", type, path)
+    }
+
   },
 };
 </script>

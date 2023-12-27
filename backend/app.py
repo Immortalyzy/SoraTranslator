@@ -56,10 +56,16 @@ def initialize_game():
     # read project
     data = request.json
     # load project from pickle file
-    project = Project().from_pickle(data["project_file_path"])
+    project = Project().from_json(data)
+    project.save()
 
     # initiate game
-    project.initiate_game()
+    try:
+        success = project.initiate_game()
+        project.save()
+        return {"status": success}
+    except:
+        return {"status": False}
 
 
 if __name__ == "__main__":

@@ -4,10 +4,10 @@
 from typing import List
 import re
 import os
-from ...logger import log_message
-from ...constants import LogLevel
-from ...scriptfile import ScriptFile
-from ...block import Block
+from logger import log_message
+from constants import LogLevel
+from scriptfile import ScriptFile
+from block import Block
 
 marco_indicator = r"\[ns\].*?\[nse\]"
 macro_indicator2 = r"\[([^\[\]]*)\]"

@@ -74,4 +74,5 @@ There can be multiple translators for the program. However, the program is desig
 - [ ] Translate the speakers and options
 - [ ] Translate the *Onomatopoeia*
 - [ ] Write frontend
+- [ ] Add support for translating a to_translate_file_list method for translating things other than games (frontend minor changes)
 - [ ] ~~Add support for local LLM models for the translation of unallowed content (GPT API actually doesn't filter out any sensitive content)~~

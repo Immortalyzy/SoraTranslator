@@ -29,6 +29,17 @@ ipcMain.on('open-file-dialog', (event) => {
     });
 });
 
+ipcMain.handle('show-confirmation-dialog', async (event, message) => {
+    const options = {
+        type: 'warning',
+        buttons: ['YES', 'No'],
+        defaultId: 1,
+        title: 'Confirmation',
+        message: message,
+    };
+    let response = dialog.showMessageBoxSync(options);
+    return response.response === 0;
+});
 
 
 function createWindow() {
@@ -40,7 +51,9 @@ function createWindow() {
         },
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
-            contextIsolation: true
+            nodeIntegration: false,
+            contextIsolation: true,
+            enableRemoteModule: true
         }
 
     });

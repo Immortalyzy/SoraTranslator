@@ -17,6 +17,7 @@ class Project:
 
     name = "Default Project Name"
     project_file_path = ""
+    is_initialized = False
 
     # game specific
     original_file_type = ".py"
@@ -58,7 +59,9 @@ class Project:
     @classmethod
     def from_pickle(cls, pickle_file):
         """load a project from a pickle file"""
-        instance = pickle.load(pickle_file)
+        # load the project from pickle file
+        with open(pickle_file, "rb") as pickle_file:
+            instance = pickle.load(pickle_file)
         return instance
 
     def initiate_game(self):
@@ -91,13 +94,13 @@ class Project:
                         return False
                     else:
                         # create game instance using python file
-                        self.game = supported_game_engines[
-                            self.game_engine
-                        ]().from_pythonfile(
+                        GameClass = supported_game_engines[self.game_engine]
+                        self.game = GameClass.from_pythonfile(
                             paths=self.paths,
                             python_file=self.game_path,
                             config=self.config,
                         )
+                        print(self.game.rawtext_directory)
             else:
                 GameClass = getattr(game_module, "Game")
                 self.game = GameClass()
@@ -107,7 +110,9 @@ class Project:
 
         # prepare translation
         try:
-            success = self.game.prepare_translation()
+            success = self.game.prepare_translation(replace=True)
+            if success:
+                self.is_initialized = True
             return success
         except:
             return False

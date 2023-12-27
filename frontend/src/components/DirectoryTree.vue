@@ -33,8 +33,8 @@ export default {
         return "Script Files:";
       } else if (this.currentTreeDisplay === "T") {
         return "Text Files:";
-      } else if (this.currentTreeDisplay === "H") {
-        return "Help Files:";
+      } else if (this.currentTreeDisplay === "R") {
+        return "Result Files:";
       }
       alert(this.currentTreeDisplay)
       return "Tree Display";

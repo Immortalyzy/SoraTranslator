@@ -12,5 +12,12 @@ module.exports = defineConfig({
 })
 
 module.exports = {
-  publicPath: "./"
+  configureWebpack: {
+    resolve: {
+      fallback: {
+        fs: false, // Tell webpack not to polyfill 'fs'
+        // Add other Node modules here if necessary
+      }
+    }
+  }
 }

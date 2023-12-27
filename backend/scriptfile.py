@@ -2,14 +2,14 @@
 
 import datetime
 import os
-from .logger import log_message
-from .constants import (
+from logger import log_message
+from constants import (
     DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY,
     RAW_TEXT_DIRECTORY,
     DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY,
 )
-from .constants import LogLevel
-from .block import Block
+from constants import LogLevel
+from block import Block
 
 
 class ScriptFile:

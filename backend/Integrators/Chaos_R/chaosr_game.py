@@ -3,12 +3,12 @@
 import importlib.util
 import os
 import shutil
-from ...constants import LogLevel, default_config
-from ...game import Game
-from ...scriptfile import ScriptFile, update_script_filelist
+from constants import LogLevel, default_config
+from game import Game
+from scriptfile import ScriptFile, update_script_filelist
 from .encoding_fix import fix_allfiles
 from .parser import guess_file_type, parse_file, parse_block
-from ...logger import log_message
+from logger import log_message
 
 
 class ChaosRGame(Game):
@@ -162,9 +162,9 @@ class ChaosRGame(Game):
     def prepare_translation(self, replace=False):
         """
         This function will generate all the files that are required by the translation process.
-        The function must be run after the raw text is prepared.
         """
         # guess file types (chaos-R only)
+        self.prepare_raw_text(replace=replace)
         # chaos-R game permits the auto detection of file types
         for scriptfile in self.script_file_list:
             scriptfile.file_type = guess_file_type(scriptfile)

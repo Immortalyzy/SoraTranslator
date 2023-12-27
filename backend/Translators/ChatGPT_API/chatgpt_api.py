@@ -2,14 +2,14 @@
 
 from datetime import datetime
 from openai import OpenAI
-from ...scriptfile import ScriptFile
-from ...block import Block
-from ...constants import Config, default_config
-from ...constants import SuccessStatus as success
-from ...constants import LogLevel
-from ...logger import log_message
+from scriptfile import ScriptFile
+from block import Block
+from constants import Config, default_config
+from constants import SuccessStatus as success
+from constants import LogLevel
+from logger import log_message
 from .. import utils
-from ..translator import Translator
+from translator import Translator
 
 
 class GPT_Translator(Translator):

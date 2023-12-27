@@ -8,13 +8,15 @@
             <div class="new-project-instructions">
                 <h3>Instructions:</h3>
                 <p>You should at first analyse your game manually, then create a python file defining your game. It should
-                    contains the following functions:
+                    contains a Game class with the following functions:
                 <ol>
-                    <li>intialize(): the function takes a folder path as parameter. It should create a GameResrouces folder
+                    <li>prepare_translation(): the function takes a folder path as parameter. It should create a
+                        GameResrouces folder
                         as
                         described in the project's README.</li>
-                    <li>integrate() (optional): the function takes a folder path as parameter. It should be about to put all
-                        files from GameResroucesTree back to the Game. </li>
+                    <li>integrate() (optional): the function takes a folder path as parameter. It should be able to put all
+                        files from GameResroucesTree back to the Game. It will also update the TranslatedFiles folder so
+                        that you can view the raw file with translated text. </li>
                 </ol>
                 This translator provides several built-in integrators (for Chaos-R games), in that case you can simple give
                 a path to the game folder. Note that the integrator will modify the original game, so always KEEP A BACKUP.
@@ -47,12 +49,13 @@
                         <button @click="selectGamePath">...</button>
                     </div>
                 </div>
+                <!--
                 <div class="option">
                     <label for="gameEngine">Game Engine:</label>
                     <div class="input-area">
                         <input type="text" id="gameEngine" name="gameEngine" v-model="gameEngine">
                     </div>
-                </div>
+                </div>-->
                 <div class="option">
                     <label for="translator">Translator:</label>
                     <div class="input-area">
@@ -125,9 +128,20 @@ export default {
             this.displayIntro = false;
         },
         createProject() {
-            alert("Project created!");
             // add code to verify the data
             const project = this.$data;
+            if (project.projectName === "") {
+                alert("Please enter a project name.");
+                return;
+            }
+            if (project.projectPath === "") {
+                alert("Please enter a project path.");
+                return;
+            }
+            if (project.gamePath === "") {
+                alert("Please enter a game path.");
+                return;
+            }
 
             // add code to create the project object using python, and save to the destination path
             const http = axios.create({
@@ -142,11 +156,9 @@ export default {
             }).catch((error) => {
                 console.log(error);
             })
-            // if success, then update the project
-            // if (response.data.result["success"] === true) { updateProject(project); }
-            // if failed, then alert the user
-            // if (response.data.result["success"] === false) { alert("Project creation failed. Please check the path."); }
             this.updateProject(project);
+
+            this.$emit("change-display", "initialize_game")
 
         },
         selectProjectPath() {

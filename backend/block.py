@@ -1,8 +1,8 @@
 """ define the Block class """
 #!! csv sperator used is tab "\t"
 
-from .logger import log_message
-from .constants import LogLevel
+from logger import log_message
+from constants import LogLevel
 
 
 class Block:
