@@ -11,6 +11,7 @@ export default {
     methods: {
         create_new_project() {
             // open a window of selecting local files
+            this.$emit('change-display-type', 'new_project', "none");
         },
         save_project() {
         }

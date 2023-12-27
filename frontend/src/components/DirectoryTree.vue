@@ -51,8 +51,6 @@ export default {
 .container-directory-tree {
   display: flex;
   flex-direction: column;
-  background-color: rgba(0, 0, 0, 0.103);
-  border: 3px solid rgb(71, 0, 0);
 }
 
 .title {

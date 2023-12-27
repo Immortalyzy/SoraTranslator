@@ -3,16 +3,15 @@
     <header class="app-header">
       <img src="./assets/logo.png" class="app-logo" alt="logo" />
       <h1 class="app-title">SoraTranslator</h1>
-      <MenuBar />
+      <MenuBar :changeDisplay="changeDisplay" />
     </header>
     <div class="main-content">
       <SideBar class="side-bar" @change-tree="changeTree" @show-tree="showTree" />
       <DirectoryTree :currentTreeDisplay="treeDisplay" class="directory-tree" />
-      <FileDisplay :content="fileContent" class="file-display" />
+      <FileDisplay :content="filePath" class="file-display" />
       <ActionInfo class="action-info" />
-      <hr />
-      <StatusBar :message="statusMessage" class="status-bar" />
     </div>
+    <StatusBar :message="statusMessage" class="status-bar" />
     <div class="background">
       <div class="color-overlay">
       </div>
@@ -41,7 +40,9 @@ export default {
   },
   data() {
     return {
-      fileContent: 'DISPLAY OF TEXT',
+      // possible types : new_project, game, package, script, text
+      displayType: "new_project",
+      filePath: 'DISPLAY OF TEXT',
       statusMessage: 'STATUS',
       treeDisplay: 'S',
       showTreeDisplay: true
@@ -63,6 +64,11 @@ export default {
       } else {
         this.statusMessage = 'Hiding tree display';
       }
+    },
+    changeDisplay(type, path) {
+      this.displayType = type;
+      this.filePath = path;
+      this.statusMessage = 'Changing display to ' + type;
     }
 
   }
@@ -73,6 +79,15 @@ export default {
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Amatic+SC&display=swap');
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
 
 .background {
   position: absolute;
@@ -104,12 +119,6 @@ export default {
 
 }
 
-.container {
-  display: flex;
-  height: 80vh;
-  z-index: 5;
-}
-
 .main-content {
   display: flex;
   flex-direction: row;
@@ -117,10 +126,13 @@ export default {
 }
 
 .main-content>* {
-  height: 80vh;
+  height: calc(100vh - 55px - 70px);
   flex-shrink: 0;
   flex-grow: 0;
   margin: 0 0;
+  background-color: rgba(0, 0, 0, 0.103);
+  border: 3px solid rgb(71, 0, 0);
+  box-sizing: border-box;
 }
 
 .side-bar {
@@ -142,7 +154,7 @@ export default {
 
 .status-bar {
   width: 100vw;
-  height: 10vh;
+  height: 70px;
   position: fixed;
   left: 0;
   right: 0;
@@ -154,7 +166,7 @@ export default {
   align-items: top;
   display: flex;
   width: 100vw;
-  height: 7vh;
+  height: 55px;
   align-items: top;
   vertical-align: top;
   padding: 0px 0;

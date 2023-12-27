@@ -1,6 +1,9 @@
 <template>
   <div class="table-container">
-    <table>
+    <div v-if="displayType === 'new_project'">
+      <NewProject />
+    </div>
+    <table v-if="displayType === 'TextFile'">
       <thead>
         <tr>
           <th v-for="header in headers" :key="header">{{ header }}</th>
@@ -19,7 +22,22 @@
 </template>
 
 <script>
+import NewProject from "./NewProject.vue";
 export default {
+  name: "FileDisplay",
+  components: {
+    NewProject
+  },
+  props: {
+    displayType: {
+      type: String,
+      default: "new_project"
+    },
+    filePath: {
+      type: String,
+      default: "DISPLAY OF TEXT"
+    }
+  },
   data() {
     return {
       headers: ['Name', 'Age', 'Occupation'],
@@ -41,7 +59,6 @@ export default {
 <style>
 .table-container {
   overflow: auto;
-  max-height: 300px;
   /* Adjust as needed */
   width: 70%;
 }

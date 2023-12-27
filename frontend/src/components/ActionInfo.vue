@@ -30,17 +30,19 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin: 0 0;
+    padding: 0 0;
 }
 
 .actions {
-    margin: 0px 5px;
+    margin: 0px 0px;
     height: 50%;
     border: #ffd0d0;
 }
 
 .information {
-    margin: 0px 5px;
-    padding: 5px 20px;
+    margin: 0px 0px;
+    padding: 0px 00px;
     font-size: large;
     align-items: center;
     display: inline-block;

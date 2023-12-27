@@ -17,7 +17,8 @@ export default {
 .status-bar {
   background-color: rgba(34, 34, 34, 0.233);
   color: #fff;
-  padding: 10px;
+  padding: 0 0;
+  margin: 0px 0px;
   text-align: left;
 }
 </style>
