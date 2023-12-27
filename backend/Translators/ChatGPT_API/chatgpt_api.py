@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from openai import OpenAI
-import re
 from ...scriptfile import ScriptFile
 from ...block import Block
 from ...constants import Config, default_config
@@ -10,16 +9,17 @@ from ...constants import SuccessStatus as success
 from ...constants import LogLevel
 from ...logger import log_message
 from .. import utils
+from ..translator import Translator
 
 
-class GPT_Translator:
+class GPT_Translator(Translator):
     """This class contains the ChatGPT API for translation."""
 
     def __init__(self, config: Config = default_config) -> None:
         """This method initializes the ChatGPT API for translation."""
+        super().__init__(config)
         self.client = OpenAI(api_key=config.openai_api_key)
 
-        self.config = config
         self.model = config.gpt_model
 
     def translate_block(self, block: Block, context=None) -> success:

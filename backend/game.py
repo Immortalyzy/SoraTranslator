@@ -4,28 +4,24 @@ All child classes should have these functions declared in this class as abstract
 """
 
 from abc import ABC, abstractmethod
-from .constants import (
-    DEFAULT_GAME_RESOURCES_DIRECTORY,
-    DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY,
-    DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY,
-    DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY,
-)
+import importlib
+import os
+from .constants import default_config
 from pickle import dump, load
 
 
 class Game(ABC):
     """Parent class for all games."""
 
-    def __init__(self, name):
+    def __init__(self, paths, name, config):
         self.name = name
+        self.config = config
 
         # Game Resources directory, no matter the original file directory the output will be put under RawText of this folder
-        self.game_resources_directory = DEFAULT_GAME_RESOURCES_DIRECTORY
-        self.rawtext_directory = DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY
-        self.text_directory = DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY
-        self.translated_files_directory = (
-            DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY
-        )
+        self.game_resources_directory = paths["project_path"]
+        self.rawtext_directory = paths["rawtext_directory"]
+        self.text_directory = paths["text_directory"]
+        self.translated_files_directory = paths["translated_files_directory"]
 
         # directory
         self.directory = ""
@@ -47,17 +43,31 @@ class Game(ABC):
         self.temp_unpack_directory = ""
 
     @abstractmethod
-    def prepare_translation(self):
-        """
-        This generalized function should provide a combination of operations that prepare the game for translation.
-        Fill the folder GameResources/Text with all the text files that need to be translated.
-        """
+    @classmethod
+    def from_pythonfile(cls, paths, python_file, config=default_config):
+        """create a game instance from a python file"""
         pass
 
     @abstractmethod
-    def integrate_from_text(self, text):
+    def prepare_translation(self):
         """
-        This generalized function should provide a combination of operations that take the text from the GameResources/Text folder and integrate it into the game.
+        This generalized function should provide a combination of operations that prepare the game for translation.
+        It includes (if necessary) extract game scripts, parsing game scripts and save them to text files.
+        The method should fill the folder SoraTranslator/Text with all the text files that need to be translated.
+        This method should update for the instance of the game the following variables:
+        *   self.script_file_list
+        *   self.to_translate_file_list
+        And create the following files in SoraTranslator folder (and save the path to the corresponding variables):
+        *   self.scriptfile_list_file
+        *   self.to_translate_file_list_file
+        """
+        # todo: preparation of these list might not be needed because the translator could read directly all files under Text
+        pass
+
+    @abstractmethod
+    def integrate(self, text):
+        """
+        This generalized function should provide a combination of operations that take the text from the SoraTranslator/Text folder and integrate it into the game.
         This funciton should also return some instructions for the user to follow to finalize the integration.
         """
         pass

@@ -47,7 +47,19 @@ def create_project():
     data = request.json
     project = Project().from_json(data)
     success = project.save()
-    return {"status": "success", "received_data": data}
+    return {"status": success, "project_file_path": project.project_file_path}
+
+
+@app.route("/initialize_game", methods=["POST"])
+def initialize_game():
+    """initialize the game, prepare for translation"""
+    # read project
+    data = request.json
+    # load project from pickle file
+    project = Project().from_pickle(data["project_file_path"])
+
+    # initiate game
+    project.initiate_game()
 
 
 if __name__ == "__main__":

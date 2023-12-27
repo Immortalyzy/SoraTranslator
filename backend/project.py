@@ -3,8 +3,13 @@
 import datetime as dt
 import os
 import pickle
+import importlib.util
 
 from game import Game
+from constants import default_config
+from Integrators.Chaos_R.chaosr_game import ChaosRGame
+
+supported_game_engines = {"ChaosR": ChaosRGame}
 
 
 class Project:
@@ -24,6 +29,7 @@ class Project:
     # paths
     project_path = ""
     game_path = ""
+    paths = {}
 
     translation_engine = "gpt-3.5"
     translation_percentage = 0.0
@@ -33,7 +39,8 @@ class Project:
 
     def __init__(self):
         self.start_date = dt.datetime.now()
-        self.name = ""
+        self.game = None
+        self.config = default_config
 
     @classmethod
     def from_json(cls, json_data):
@@ -54,28 +61,56 @@ class Project:
         instance = pickle.load(pickle_file)
         return instance
 
-    def create_project(self, **kwargs):
-        """create a new project, with most basic information"""
-        self.game_engine = kwargs.get("game_engine", None)
-        self.open_game(kwargs.get("game_path", None))
-        self.original_language = kwargs.get("original_language", self.original_language)
-        self.target_language = kwargs.get("target_language", self.target_language)
+    def initiate_game(self):
+        """create a game instance, store it in self.game"""
+        # create paths for the project
+        self.paths = self.create_paths(self.project_path)
 
-    def open_game(self, game_path):
-        """open a game in the project"""
-        # analyse the path type
-        # if it is a file
-        if os.path.isfile(game_path):
-            # if it is a file, check if it is a supported file
-            if game_path.endswith(".py"):
-                self.original_file_type = ".py"
-        # if it is a folder
-        elif os.path.isdir(game_path):
-            # if it is a folder, check if it is a supported folder
-            self.original_file_type = "directory"
-        elif game_path is None:
-            # if it is not specified, ask user to specify
-            pass
+        if self.game_path.endswith(".py"):
+            # load the file and check engine
+            if not os.path.exists(self.game_path):
+                raise FileNotFoundError(f"Game file {self.game_path} not found.")
+            spec = importlib.util.spec_from_file_location("game_module", self.game_path)
+            game_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(game_module)
+            if not hasattr(game_module, "Game"):
+                print(
+                    "Game class not defined in the game file. Check if using supported game engine."
+                )
+                if not hasattr(game_module, "GAME_ENGINE"):
+                    print(
+                        "GAME_ENGINE not defined in the game file. Check if using supported game engine."
+                    )
+                    return False
+                else:
+                    self.game_engine = game_module.GAME_ENGINE
+                    if self.game_engine not in supported_game_engines:
+                        print(
+                            f"Game engine {self.game_engine} not supported. Check if using supported game engine."
+                        )
+                        return False
+                    else:
+                        # create game instance using python file
+                        self.game = supported_game_engines[
+                            self.game_engine
+                        ]().from_pythonfile(
+                            paths=self.paths,
+                            python_file=self.game_path,
+                            config=self.config,
+                        )
+            else:
+                GameClass = getattr(game_module, "Game")
+                self.game = GameClass()
+        else:
+            print("Not supported")
+            return False
+
+        # prepare translation
+        try:
+            success = self.game.prepare_translation()
+            return success
+        except:
+            return False
 
     def load_project(self, project_path):
         """load a project from a project file"""
@@ -96,3 +131,21 @@ class Project:
         """save a project to a project file"""
         with open(project_path, "wb") as pickle_file:
             pickle.dump(self, pickle_file)
+
+    @staticmethod
+    def create_paths(project_path):
+        """create paths for the project"""
+        # create paths for the project
+        paths = {}
+        paths["project_path"] = project_path
+        paths["rawtext_directory"] = os.path.join(project_path, "RawText")
+        paths["text_directory"] = os.path.join(project_path, "Text")
+        paths["translated_files_directory"] = os.path.join(
+            project_path, "TranslatedFiles"
+        )
+        paths["temp_unpack_directory"] = os.path.join(project_path, "Temp")
+        # create directories
+        for path in paths.values():
+            if not os.path.exists(path):
+                os.makedirs(path)
+        return paths

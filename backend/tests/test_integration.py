@@ -10,14 +10,16 @@ from ..scriptfile import ScriptFile
 from ..block import Block
 
 test_file = (
-    "D:\\Work\\SoraTranslator\\GameResources\\RawText\\k_scenario\\01本編\\dakr001.ks"
+    "D:\\Work\\SoraTranslator\\SoraTranslator\\RawText\\k_scenario\\01本編\\dakr001.ks"
 )
 
 
 def test_all():
     """test the encoding_fix.py module"""
     # test the from_file_list method
-    python_file = "D:\\Work\\SoraTranslator\\GameResources\\OriginalFiles\\file_path.py"
+    python_file = (
+        "D:\\Work\\SoraTranslator\\SoraTranslator\\OriginalFiles\\file_path.py"
+    )
 
     # create a game instance
     game = ChaosRGame.from_pythonfile(python_file)
@@ -44,7 +46,7 @@ def test_all():
     # repack all files
     # game.repack_all_files()
 
-    game.save_game("D:\\Work\\SoraTranslator\\GameResources\\game.pkl")
+    game.save_game("D:\\Work\\SoraTranslator\\SoraTranslator\\game.pkl")
 
     print(f"game: {game} has {len(game.script_file_list):d} script files prepared.")
 
@@ -55,7 +57,7 @@ def test_all():
 def test_integration():
     """test the function of putting files back to its places"""
     game: ChaosRGame = load(
-        open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb")
+        open("D:\\Work\\SoraTranslator\\SoraTranslator\\game.pkl", "rb")
     )
 
     for script_file in game.to_translate_file_list:
@@ -74,14 +76,14 @@ def test_integration():
         shutil.copyfile(script_file.translated_script_file_path, desitnation_path)
 
 
-#    game.save_game("D:\\Work\\SoraTranslator\\GameResources\\game.pkl")
+#    game.save_game("D:\\Work\\SoraTranslator\\SoraTranslator\\game.pkl")
 
 
 def test_repack() -> None:
     """!! real usage test"""
     # add type hint
     game: ChaosRGame = load(
-        open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb")
+        open("D:\\Work\\SoraTranslator\\SoraTranslator\\game.pkl", "rb")
     )
 
     game.repack_all_files()

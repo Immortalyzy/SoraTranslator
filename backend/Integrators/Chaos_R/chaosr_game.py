@@ -3,7 +3,7 @@
 import importlib.util
 import os
 import shutil
-from ...constants import DEFAULT_XP3_UNPACKER, LogLevel
+from ...constants import LogLevel, default_config
 from ...game import Game
 from ...scriptfile import ScriptFile, update_script_filelist
 from .encoding_fix import fix_allfiles
@@ -14,9 +14,9 @@ from ...logger import log_message
 class ChaosRGame(Game):
     """Game class for Chaos_R games."""
 
-    def __init__(self):
-        super().__init__("Chaos_R")
-        self.unpacker = DEFAULT_XP3_UNPACKER
+    def __init__(self, paths, name="Chaos_R", config=default_config):
+        super().__init__(paths=paths, name=name, config=config)
+        self.unpacker = config.xp3_unpacker
         # extensions of the script files
         self.script_extensions = [
             ".asd",
@@ -48,12 +48,10 @@ class ChaosRGame(Game):
         self.patching_mode = "patching"
 
     @classmethod
-    def from_pythonfile(cls, python_file):
+    def from_pythonfile(cls, paths, python_file, config=default_config):
         """
         Create an Game object from a python file. This is the recommended way since you can select which files to upzip.
         """
-        instance = cls()
-
         # verify the existence of the python file
         if not os.path.exists(python_file):
             raise FileNotFoundError("The python file does not exist.")
@@ -62,6 +60,13 @@ class ChaosRGame(Game):
         spec = importlib.util.spec_from_file_location("module.name", python_file)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
+
+        if hasattr(module, "GAME_NAME"):
+            name = module.GAME_NAME
+        else:
+            name = "Chaos_R"
+
+        instance = cls(paths=paths, name=name, config=config)
 
         # get the variables
         if hasattr(module, "GAME_RESOURCES_DIRECTORY"):
@@ -101,19 +106,16 @@ class ChaosRGame(Game):
         # verify the existence of the directory
         if not os.path.exists(instance.directory):
             raise FileNotFoundError("The directory does not exist.")
-        # verify game engine
-        if module.GAME_ENGINE != "Kirikiri2":
-            raise ValueError("The game engine is not Kirikiri2. ")
 
         instance.post_init()
         return instance
 
     @classmethod
-    def from_directory(cls, directory):
+    def from_directory(cls, paths, name, directory, config=default_config):
         """
         Create an EncodingFix object from a directory.
         """
-        instance = cls()
+        instance = cls(paths=paths, name=name, config=config)
         instance.directory = directory
         # verify the existence of the directory
         if not os.path.exists(instance.directory):
@@ -143,7 +145,7 @@ class ChaosRGame(Game):
     # ==== high level methods ===============================
     def prepare_raw_text(self, replace=False):
         """
-        Prepare the raw text for Chaos_R games. This method will put all script files into the GameResources/RawText folder.
+        Prepare the raw text for Chaos_R games. This method will put all script files into the SoraTranslator/RawText folder.
         """
         # unpack files
         self.unpack_allfiles(replace=False)
@@ -230,7 +232,7 @@ class ChaosRGame(Game):
             log_level=LogLevel.INFO,
         )
 
-    def integrate_from_text(self, text):
+    def integrate(self, text):
         """Integrate the text into the game."""
         for script_file in self.to_translate_file_list:
             script_file.update_from_textfile()
@@ -296,7 +298,7 @@ class ChaosRGame(Game):
 
     def pack_patchxp3(self):
         """instead of packing all files back, create a patch.xp3 file"""
-        # collect all files in the GameResources/TranslatedFiles directory
+        # collect all files in the SoraTranslator/TranslatedFiles directory
         # todo: implement this
         pass
 
@@ -355,6 +357,7 @@ class ChaosRGame(Game):
                 scriptfile = ScriptFile.from_originalfile(filepath)
                 scriptfile.original_package = base_xp3_file_name
                 self.script_file_list.append(scriptfile)
+        # todo: set the paths for various files of the script file to avoid problems
 
         # save the script file list to a .csv file under the temp_unpack_directory
         update_script_filelist(self.scriptfile_list_file, self.script_file_list)

@@ -3,14 +3,14 @@ from enum import Enum
 import json
 
 # Path specific
-DEFAULT_GAME_RESOURCES_DIRECTORY = "D:/Work/SoraTranslator/GameResources/"
-DEFAULT_ENCODING_OUTPUT = "D:/Work/SoraTranslator/GameResources/RawText/"
+DEFAULT_GAME_RESOURCES_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/"
+DEFAULT_ENCODING_OUTPUT = "D:/Work/SoraTranslator/SoraTranslator/RawText/"
 DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = (
-    "D:/Work/SoraTranslator/GameResources/RawText/"
+    "D:/Work/SoraTranslator/SoraTranslator/RawText/"
 )
-DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY = "D:/Work/SoraTranslator/GameResources/Text/"
+DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/Text/"
 DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY = (
-    "D:/Work/SoraTranslator/GameResources/TranslatedFiles/"
+    "D:/Work/SoraTranslator/SoraTranslator/TranslatedFiles/"
 )
 
 DEFAULT_XP3_UNPACKER = "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
@@ -82,7 +82,7 @@ DEFAULT_LOG_LEVEL = LogLevel.DEBUG
 
 
 # log config, after project.py is implemented, this should be moved to project.py
-RAW_TEXT_DIRECTORY = "D:/Work/SoraTranslator/GameResources/RawText/"
+RAW_TEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/RawText/"
 
 
 ### Configurations ============================================================
@@ -112,6 +112,9 @@ class Config:
     original_language = "Japanese"
     target_language = "Chinese"
     if_translate_with_speaker = False
+
+    # set xp3 unpacker
+    xp3_unpacker = DEFAULT_XP3_UNPACKER
 
     def __init__(self):
         self.gpt_prompt = DEFAULT_INITIATION_PROMPT

@@ -7,7 +7,7 @@ from ..Integrators.Chaos_R.chaosr_game import ChaosRGame
 from pickle import dump, load
 
 test_file = (
-    "D:\\Work\\SoraTranslator\\GameResources\\Text\\k_scenario\\01本編\\luna034H.csv"
+    "D:\\Work\\SoraTranslator\\SoraTranslator\\Text\\k_scenario\\01本編\\luna034H.csv"
 )
 
 
@@ -46,7 +46,7 @@ def test_translate_all_files():
     translator = GPT_Translator(config)
 
     game: ChaosRGame = load(
-        open("D:\\Work\\SoraTranslator\\GameResources\\game.pkl", "rb")
+        open("D:\\Work\\SoraTranslator\\SoraTranslator\\game.pkl", "rb")
     )
 
     translated_count = 337
@@ -81,7 +81,7 @@ def test_translate_all_files():
         )
         # save game
         game.update_to_translate_filelist()
-        game.save_game("D:\\Work\\SoraTranslator\\GameResources\\game.pkl")
+        game.save_game("D:\\Work\\SoraTranslator\\SoraTranslator\\game.pkl")
         game.update_script_filelist()
 
     return success
