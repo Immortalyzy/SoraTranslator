@@ -1,11 +1,11 @@
 """ a test script to check if the parser works """
 
-from ..Integrators.Chaos_R.parser import parse_file, parse_block
+from ..Integrators.Chaos_R.parser import parse_file, parse_block, guess_file_type
 from ..scriptfile import ScriptFile
 from ..block import Block
 
 test_file = (
-    "D:\\Work\\SoraTranslator\\GameResources\\RawText\\k_scenario\\01本編\\luna066H.ks"
+    "D:\\Work\\SoraTranslator\\SoraTranslator\\RawText\\k_scenario\\01本編\\luna066H.ks"
 )
 test_blocks_start = (107, 132)
 
@@ -35,6 +35,15 @@ def test_text_file():
 
 def test_text_rebuild():
     """test the function of putting translated text back to its places"""
+
+
+def test_type_guess():
+    """test the type guess function"""
+    test_file_type = "D:/Work/A_01_dakr026H.ks"
+    script_file = ScriptFile.from_originalfile(test_file_type)
+    result = guess_file_type(script_file)
+    print(result)
+    return
 
 
 0

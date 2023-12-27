@@ -209,6 +209,9 @@ def fix_multiline_block(block: Block):
     return block
 
 
+possible_content_re = [r"^(?!_).*dakr.*\.ks", r"^(?!_)luna.*\.ks"]
+
+
 def guess_file_type(script_file: ScriptFile) -> str:
     """guess the file type based on the file name"""
     # get the file extension
@@ -219,10 +222,11 @@ def guess_file_type(script_file: ScriptFile) -> str:
 
     # get the file basename
     file_basename = os.path.basename(script_file.script_file_path)
-    # if the file basename starts with "luna", then it is a "content" file
-    if file_basename.startswith("luna") or file_basename.startswith("dakr"):
-        if file_basename.endswith("H.ks"):
-            return "Hcontent"
-        return "content"
+    # match the file with possible content file re
+    for re_string in possible_content_re:
+        if re.match(re_string, file_basename):
+            if file_basename.endswith("H.ks"):
+                return "Hcontent"
+            return "content"
 
     return "other"
