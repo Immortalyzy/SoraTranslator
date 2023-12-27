@@ -11,10 +11,11 @@
     "start-dev": "cross-env NODE_ENV=development electron . --dev"
   },
   "dependencies": {
+    "axios": "^1.6.3",
     "core-js": "^3.8.3",
     "cross-env": "^7.0.3",
     "vue": "^3.2.13",
-    "vuex": "^4.1.0"
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.16",

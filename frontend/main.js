@@ -3,9 +3,22 @@ const path = require('path');
 
 const { ipcMain, dialog } = require('electron');
 
-ipcMain.on('open-path-dialog', (event) => {
+ipcMain.on('open-directory-dialog', (event) => {
     dialog.showOpenDialog({
-        properties: ['openFile', 'openDirectory']
+        properties: ['openDirectory']
+    }).then(result => {
+        if (!result.canceled && result.filePaths.length > 0) {
+            console.log(result.filePaths[0]);
+            event.sender.send('selected-path', result.filePaths[0]);
+        }
+    }).catch(err => {
+        console.log(err);
+    });
+});
+
+ipcMain.on('open-file-dialog', (event) => {
+    dialog.showOpenDialog({
+        properties: ['openFile']
     }).then(result => {
         if (!result.canceled && result.filePaths.length > 0) {
             console.log(result.filePaths[0]);

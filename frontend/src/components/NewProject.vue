@@ -52,14 +52,6 @@
                     <input class="half-input" type="text" id="toLanguage" name="toLanguage" v-model="toLanguage">
                 </div>
             </div>
-            <div>
-                DEBUG:
-                {{ projectPath }}
-                {{ gamePath }}
-                {{ translator }}
-                {{ fromLanguage }}
-                {{ toLanguage }}
-            </div>
             <button @click="createProject">Create</button>
             <div>
             </div>
@@ -68,6 +60,7 @@
 </template>
 
 <script>
+import { updateProject } from 'vuex'
 export default {
     name: "NewProject",
     props: {
@@ -106,14 +99,15 @@ export default {
             alert("Project created!");
             // add code to verify the data
             const project = this.data();
-            this.$emit("create-project", project);
+            // add code to create the project object using python, and save to the destination path
+            updateProject(project);
         },
         selectProjectPath() {
-            window.electron.ipcRenderer.send("open-path-dialog");
+            window.electron.ipcRenderer.send("open-directory-dialog");
             this.selectingWhich = "projectPath";
         },
         selectGamePath() {
-            window.electron.ipcRenderer.send("open-path-dialog");
+            window.electron.ipcRenderer.send("open-file-dialog");
             this.selectingWhich = "gamePath";
         },
         changeGamePath(path) {
