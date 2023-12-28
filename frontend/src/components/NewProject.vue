@@ -2,7 +2,7 @@
     <div>
         <div class="new-project-title">
             <h1>WELCOME TO SORATRANSLATOR</h1>
-            <button>Open Project</button>
+            <button @click="openProject">Open Project</button>
         </div>
         <div v-if="displayIntro">
             <h2 class="new-project-title">CREATE A PROJECT</h2>
@@ -125,6 +125,30 @@ export default {
 
     },
     methods: {
+        async openProject() {
+            // open a window of selecting local files
+            const project_file_path = await window.electron.ipcRenderer.invoke("select-file-dialog");
+            // create post request to open the project
+            const post_data = {
+                project_file_path: project_file_path,
+            };
+            console.log(post_data);
+            const http = axios.create({
+                baseURL: "http://localhost:5000",
+                method: "POST",
+                headers: {
+                    "Content-type": "application/json",
+                },
+            });
+            http.post("/open_project", post_data).then((response) => {
+                console.log(response.data);
+                const project = response.data;
+                this.updateProject(project);
+                alert("Project opened successfully.");
+            }).catch((error) => {
+                console.log(error);
+            })
+        },
         clickNext() {
             this.displayIntro = false;
         },

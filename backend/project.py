@@ -15,8 +15,15 @@ supported_game_engines = {"ChaosR": ChaosRGame}
 class Project:
     """A project defines a translation work, storing information and configuration"""
 
+    # this sync with the frontend storage
     name = "Default Project Name"
+    project_path = ""
     project_file_path = ""
+    game_path = ""
+    rawtext_directory = ""
+    text_directory = ""
+    translated_files_directory = ""
+
     is_initialized = False
 
     # game specific
@@ -26,11 +33,6 @@ class Project:
     # parsing functions
     script_file_parser = None
     block_parser = None
-
-    # paths
-    project_path = ""
-    game_path = ""
-    paths = {}
 
     translation_engine = "gpt-3.5"
     translation_percentage = 0.0
@@ -54,6 +56,10 @@ class Project:
         instance.translation_engine = json_data.get("translator", None)
         instance.original_language = json_data.get("fromLanguage", None)
         instance.target_language = json_data.get("toLanguage", None)
+        paths = instance.create_paths(instance.project_path)
+        instance.rawtext_directory = paths["rawtext_directory"]
+        instance.text_directory = paths["text_directory"]
+        instance.translated_files_directory = paths["translated_files_directory"]
         return instance
 
     @classmethod
@@ -64,10 +70,23 @@ class Project:
             instance = pickle.load(pickle_file)
         return instance
 
+    def to_json(self):
+        """return a json data of the project"""
+        return {
+            "name": self.name,
+            "project_path": self.project_path,
+            "game_path": self.game_path,
+            "rawtext_directory": self.rawtext_directory,
+            "text_directory": self.text_directory,
+            "translated_files_directory": self.translated_files_directory,
+            "fromLanguage": self.original_language,
+            "toLanguage": self.target_language,
+        }
+
     def initiate_game(self):
         """create a game instance, store it in self.game"""
         # create paths for the project
-        self.paths = self.create_paths(self.project_path)
+        paths = self.create_paths(self.project_path)
 
         if self.game_path.endswith(".py"):
             # load the file and check engine
@@ -96,7 +115,7 @@ class Project:
                         # create game instance using python file
                         GameClass = supported_game_engines[self.game_engine]
                         self.game = GameClass.from_pythonfile(
-                            paths=self.paths,
+                            paths=paths,
                             python_file=self.game_path,
                             config=self.config,
                         )
@@ -148,7 +167,6 @@ class Project:
         paths["translated_files_directory"] = os.path.join(
             project_path, "TranslatedFiles"
         )
-        paths["temp_unpack_directory"] = os.path.join(project_path, "Temp")
         # create directories
         for path in paths.values():
             if not os.path.exists(path):

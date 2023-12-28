@@ -14,14 +14,13 @@
 </template>
 
 <script>
-import { useStore } from 'vuex'
 // import { ipcRenderer } from 'electron'
 export default {
   name: "DirectoryTree",
   props: {
     currentTreeDisplay: {
       type: String,
-      default: "S"
+      default: "R"
     },
   },
   data() {
@@ -33,35 +32,38 @@ export default {
   },
   computed: {
     titleInfo() {
-      if (this.currentTreeDisplay === "S") {
-        return "Script Files:";
+      if (this.currentTreeDisplay === "R") {
+        return "Raw Text Files:";
       } else if (this.currentTreeDisplay === "T") {
         return "Text Files:";
-      } else if (this.currentTreeDisplay === "R") {
+      } else if (this.currentTreeDisplay === "F") {
         return "Result Files:";
       }
-      alert(this.currentTreeDisplay)
       return "Tree Display";
     },
 
   },
   methods: {
     async loadDirectory() {
-      const store = useStore();
-      const rawtextDirectory = store.state.project.rawtext_directory;
-      const textDirectory = store.state.project.text_directory;
-      const translatedFilesDirectory = store.state.project.translated_files_directory;
+      const rawtextDirectory = this.$store.getters.getProject.rawtext_directory;
+      const textDirectory = this.$store.getters.getProject.text_directory;
+      const translatedFilesDirectory = this.$store.getters.getProject.translated_files_directory;
+      console.log("loading tree for")
+      console.log(rawtextDirectory)
+      console.log(textDirectory)
+      console.log(translatedFilesDirectory)
 
-      console.log("Trying to display tree")
       let tempTree = "";
       if (this.currentTreeDisplay === "R") {
         tempTree = rawtextDirectory;
       } else if (this.currentTreeDisplay === "T") {
         tempTree = textDirectory;
-      } else if (this.currentTreeDisplay === "S") {
+      } else if (this.currentTreeDisplay === "F") {
         tempTree = translatedFilesDirectory;
       }
+      console.log("Trying to display tree", tempTree)
       if (tempTree === "") {
+        console.log("No directory to display");
         return;
       }
       let resultReturned = await window.electron.ipcRenderer.invoke("list-files", tempTree);
@@ -71,11 +73,11 @@ export default {
     clickItem(filePath) {
       let displayType = "text";
       if (this.currentTreeDisplay === "R") {
-        displayType = "translated_file";
+        displayType = "raw_text";
       } else if (this.currentTreeDisplay === "T") {
         displayType = "text";
-      } else if (this.currentTreeDisplay === "S") {
-        displayType = "raw_text";
+      } else if (this.currentTreeDisplay === "F") {
+        displayType = "translated_file";
       }
       this.$emit("change-display", displayType, filePath);
     },
@@ -85,6 +87,16 @@ export default {
     console.log("Mounted");
     this.loadDirectory();
   },
+  // watch this.currentTreeDisplay
+  watch: {
+    currentTreeDisplay: {
+      handler: function () {
+        console.log("Tree display changed");
+        this.loadDirectory();
+      },
+      immediate: true
+    },
+  }
 };
 </script>
 
@@ -114,6 +126,7 @@ export default {
   font-family: 'Microsoft YaHei', sans-serif;
   font-size: medium;
   font-weight: bold;
+  text-align: left;
   padding: 0px 0px;
   margin: 0px 0px;
   flex-basis: calc(100% - 20px);

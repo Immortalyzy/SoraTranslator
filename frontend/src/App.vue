@@ -3,7 +3,7 @@
     <header class="app-header">
       <img src="./assets/logo.png" class="app-logo" alt="logo" />
       <h1 class="app-title">SoraTranslator</h1>
-      <MenuBar :changeDisplay="changeDisplay" />
+      <MenuBar @change-display-type="changeDisplay" />
     </header>
     <div class="main-content">
       <SideBar class="side-bar" @change-tree="changeTree" @show-tree="showTree" />

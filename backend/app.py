@@ -41,6 +41,21 @@ def hello_there(name):
     return content
 
 
+@app.route("/open_project", methods=["POST"])
+def open_project():
+    """receive a json data from frontend, load a project from pickle file"""
+    data = request.json
+    try:
+        project = Project().from_pickle(data["project_file_path"])
+        json_data = project.to_json()
+        # add status: True to the json data
+        json_data["status"] = True
+        return json_data
+    except:
+        json_data = {"status": False}
+        return json_data
+
+
 @app.route("/create_project", methods=["POST"])
 def create_project():
     """receive a json data from frontend, create a project and save it to a pickle file"""

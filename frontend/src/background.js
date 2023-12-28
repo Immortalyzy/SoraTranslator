@@ -111,6 +111,16 @@ ipcMain.on('open-file-dialog', (event) => {
   });
 });
 
+ipcMain.handle('select-file-dialog', async (event) => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile']
+  })
+  if (!result.canceled && result.filePaths.length > 0) {
+    console.log(result.filePaths[0]);
+    return result.filePaths[0];
+  }
+});
+
 ipcMain.handle('show-confirmation-dialog', async (event, message) => {
   const options = {
     type: 'warning',

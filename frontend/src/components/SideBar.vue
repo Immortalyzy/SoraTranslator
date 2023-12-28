@@ -13,9 +13,9 @@ export default {
     data() {
         return {
             buttons: [
-                { letter: "S", clicks: 0 },
-                { letter: "T", clicks: 0 },
                 { letter: "R", clicks: 0 },
+                { letter: "T", clicks: 0 },
+                { letter: "F", clicks: 0 },
             ],
             selectedButton: "T"
         }

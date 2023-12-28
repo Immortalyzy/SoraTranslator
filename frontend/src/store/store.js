@@ -6,7 +6,9 @@ const store = createStore({
             // your JSON variable
             project: {
                 name: '',
-                description: '',
+                prject_file_path: '',
+                game_path: '', // path to the game definition file
+                project_path: '', // root path of the project, containing following folders
                 rawtext_directory: '',
                 text_directory: '',
                 translated_files_directory: '',
@@ -26,6 +28,7 @@ const store = createStore({
     actions: {
         // action to commit the mutation
         updateProject(context, newJson) {
+            console.log("project updated to ", newJson);
             context.commit('updateProject', newJson);
         }
     },
