@@ -2,7 +2,7 @@
     <div>
         <div class="new-project-title">
             <h1>WELCOME TO SORATRANSLATOR</h1>
-            <button @click="openProject">Open Project</button>
+            <button v-if="displayIntro" @click="openProject">Open Project</button>
         </div>
         <div v-if="displayIntro">
             <h2 class="new-project-title">CREATE A PROJECT</h2>
@@ -238,7 +238,7 @@ button {
 
 .option-container {
     display: flex;
-    margin: 0 10%;
+    margin: 0 5%;
     flex-direction: column;
     align-items: left;
     text-align: left;
@@ -288,7 +288,7 @@ input {
 }
 
 .half-input {
-    /*    width: 200px; */
+    width: 200px;
     flex-shrink: 0;
     flex-grow: 0;
     text-align: left;

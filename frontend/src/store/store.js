@@ -9,6 +9,7 @@ const store = createStore({
                 prject_file_path: '',
                 game_path: '', // path to the game definition file
                 project_path: '', // root path of the project, containing following folders
+                original_files_directory: '',
                 rawtext_directory: '',
                 text_directory: '',
                 translated_files_directory: '',

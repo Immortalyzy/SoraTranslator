@@ -2,7 +2,7 @@
     <div>
         <div class="new-project-title">
             <h1>WELCOME TO SORATRANSLATOR</h1>
-            <h2>CREATE A PROJECT</h2>
+            <h2>CREATE A PROJECT: Initailize the game </h2>
         </div>
         <div class="new-project-instructions">
             <h3>Instructions:</h3>
@@ -33,27 +33,27 @@
         <div class="option-container">
             <div class="option">
                 <label for="name">Project Name:</label>
-                <label> {{ this.project.name }}</label>
+                <div class="option-show"> {{ this.project.name }}</div>
             </div>
             <div class="option">
                 <label for="project_path">Project Path:</label>
-                <label> {{ this.project.project_path }}</label>
+                <div class="option-show"> {{ this.project.project_path }}</div>
             </div>
             <div class="option">
                 <label for="game_path">Game Path:</label>
-                <label> {{ this.project.game_path }}</label>
+                <div class="option-show"> {{ this.project.game_path }}</div>
             </div>
             <div class="option">
                 <label for="gameEngine">Game Engine:</label>
-                <label> {{ this.project.gameEngine }}</label>
+                <div class="option-show"> {{ this.project.gameEngine }}</div>
             </div>
             <div class="option">
                 <label for="translator">Translator:</label>
-                <label> {{ this.project.translator }}</label>
+                <div class="option-show"> {{ this.project.translator }}</div>
             </div>
             <div class="option">
                 <label for="Language">Language:</label>
-                <label>From {{ this.project.original_language }} to {{ this.target_language }}</label>
+                <div class="option-show">From {{ this.project.original_language }} to {{ this.target_language }}</div>
             </div>
         </div>
         <button @click="initGame">Initiate Game</button>
@@ -149,11 +149,13 @@ button {
 
 .option-container {
     display: flex;
-    margin: 0 10%;
+    margin: 0 1%;
     flex-direction: column;
     align-items: left;
     text-align: left;
     border: white;
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
 .option-container>* {
@@ -164,7 +166,7 @@ button {
 
 
 .option {
-    display: flex;
+    display: inline-block;
     flex-direction: row;
     color: white;
     flex-basis: 5%;
@@ -179,29 +181,13 @@ label {
     text-align: right;
 }
 
-.input-area {
-    display: flex;
-    flex-direction: row;
-    align-items: left;
-    justify-items: normal;
-    width: calc(100% - 200px);
-}
-
-input {
-    font-size: 25px;
+.option-show {
+    display: inline-block;
     color: rgb(255, 255, 255);
-    background-color: rgba(0, 0, 0, 0.295);
-    border: 1px solid #ffd0d0;
-    border-radius: 5px;
+    width: 200px;
     flex-shrink: 0;
     flex-grow: 0;
-    text-align: left;
-}
-
-.half-input {
-    /*    width: 200px; */
-    flex-shrink: 0;
-    flex-grow: 0;
+    margin-left: 5px;
     text-align: left;
 }
 </style>

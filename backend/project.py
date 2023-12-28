@@ -4,6 +4,7 @@ import datetime as dt
 import os
 import pickle
 import importlib.util
+import shutil
 
 from game import Game
 from constants import default_config
@@ -20,6 +21,7 @@ class Project:
     project_path = ""
     project_file_path = ""
     game_path = ""
+    original_files_directory = ""
     rawtext_directory = ""
     text_directory = ""
     translated_files_directory = ""
@@ -57,6 +59,7 @@ class Project:
         instance.original_language = json_data.get("original_language", None)
         instance.target_language = json_data.get("target_language", None)
         paths = instance.create_paths(instance.project_path)
+        instance.original_files_directory = paths["original_files_directory"]
         instance.rawtext_directory = paths["rawtext_directory"]
         instance.text_directory = paths["text_directory"]
         instance.translated_files_directory = paths["translated_files_directory"]
@@ -76,6 +79,7 @@ class Project:
             "name": self.name,
             "project_path": self.project_path,
             "game_path": self.game_path,
+            "original_files_directory": self.original_files_directory,
             "rawtext_directory": self.rawtext_directory,
             "text_directory": self.text_directory,
             "translated_files_directory": self.translated_files_directory,
@@ -89,6 +93,12 @@ class Project:
         paths = self.create_paths(self.project_path)
 
         if self.game_path.endswith(".py"):
+            # copy this flle to the original files directory
+            shutil.copyfile(
+                self.game_path,
+                os.path.join(paths["original_files_directory"], "game.py"),
+            )
+
             # load the file and check engine
             if not os.path.exists(self.game_path):
                 raise FileNotFoundError(f"Game file {self.game_path} not found.")
@@ -162,6 +172,7 @@ class Project:
         # create paths for the project
         paths = {}
         paths["project_path"] = project_path
+        paths["original_files_directory"] = os.path.join(project_path, "OriginalFiles")
         paths["rawtext_directory"] = os.path.join(project_path, "RawText")
         paths["text_directory"] = os.path.join(project_path, "Text")
         paths["translated_files_directory"] = os.path.join(

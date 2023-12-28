@@ -6,7 +6,7 @@
     <div v-if="displayType === 'initialize_game'">
       <InitializeProject />
     </div>
-    <div class="raw-text" v-if="displayType === 'raw_text'">
+    <div class="raw-text" v-if=isRaw>
       <div v-for="(line, index) in lines" :key="index" class="line">
         <span class="line-number">{{ index + 1 }}</span>
         <span class="line-content">{{ line }}</span>
@@ -70,18 +70,19 @@ export default {
     changeDisplay(type, filePath) {
       this.$emit("change-display", type, filePath)
     },
+    isRaw() {
+      return this.displayType === "raw_text" || this.displayType === "translated_file" || this.displayType === "original_file";
+    },
     async dispalyRaw() {
-      if (this.displayType === "raw_text" || this.displayType === "text" || this.displayType === "translated_file") {
-        this.fileContent = await window.electron.ipcRenderer.invoke("read-file", this.filePath);
-        this.lines = this.fileContent.split("\n");
-      }
-
+      console.log("displaying raw text at " + this.filePath)
+      this.fileContent = await window.electron.ipcRenderer.invoke("read-file", this.filePath);
+      this.lines = this.fileContent.split("\n");
     }
   },
   watch: {
     filePath: {
       handler: function () {
-        if (this.displayType === "raw_text" || this.displayType === "text" || this.displayType === "translated_file") {
+        if (this.displayType === "raw_text" || this.displayType === "text" || this.displayType === "translated_file" || this.displayType === "original_file") {
           console.log(this.displayType)
           this.dispalyRaw();
         }

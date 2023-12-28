@@ -44,6 +44,7 @@ Each directory is designed to handle a different stage of the translation proces
 To utilize SoraTranslator for different games, particularly from various companies, custom integrators must be written to handle the specific file formats and structures of each game.
 The extraction could be empty if you already have the text extracted from the game.
 The parser, no matter how it works, should output the text in a uniform format (in **.csv** files), with the following structure:
+You don't have to use the data structures written in this program. But your game definition file must contain the functions declared in `backend/game.py`.
 
 *The comma is better for illustration, use "\t" in the real file.*
 ```

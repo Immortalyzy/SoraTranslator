@@ -18,7 +18,7 @@ export default {
                 { letter: "F", clicks: 0 },
                 { letter: "O", clicks: 0 },
             ],
-            selectedButton: "T"
+            selectedButton: "O"
         }
 
     },

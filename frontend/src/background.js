@@ -158,6 +158,7 @@ ipcMain.handle('list-files', async (event, directoryPath) => {
 ipcMain.handle('read-file', async (event, filePath) => {
   try {
     const content = fs.readFileSync(filePath, 'utf16le');
+    console.log(content)
     return content;
   } catch (err) {
     console.log(err);

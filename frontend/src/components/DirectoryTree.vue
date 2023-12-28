@@ -40,6 +40,8 @@ export default {
         return "Text Files:";
       } else if (this.currentTreeDisplay === "F") {
         return "Result Files:";
+      } else if (this.currentTreeDisplay === "O") {
+        return "Original Files:";
       }
       return "Tree Display";
     },
@@ -50,6 +52,7 @@ export default {
       const rawtextDirectory = this.$store.getters.getProject.rawtext_directory;
       const textDirectory = this.$store.getters.getProject.text_directory;
       const translatedFilesDirectory = this.$store.getters.getProject.translated_files_directory;
+      const originalFilesDirectory = this.$store.getters.getProject.original_files_directory;
       console.log("loading tree for")
       console.log(rawtextDirectory)
       console.log(textDirectory)
@@ -62,6 +65,8 @@ export default {
         tempTree = textDirectory;
       } else if (this.currentTreeDisplay === "F") {
         tempTree = translatedFilesDirectory;
+      } else if (this.currentTreeDisplay === "O") {
+        tempTree = originalFilesDirectory;
       }
       console.log("Trying to display tree", tempTree)
       if (tempTree === "") {
@@ -80,6 +85,8 @@ export default {
         displayType = "text";
       } else if (this.currentTreeDisplay === "F") {
         displayType = "translated_file";
+      } else if (this.currentTreeDisplay === "O") {
+        displayType = "original_file";
       }
       this.selectedPath = filePath;
       this.$emit("change-display", displayType, filePath);
