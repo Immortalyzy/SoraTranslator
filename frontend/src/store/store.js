@@ -7,6 +7,9 @@ const store = createStore({
             project: {
                 name: '',
                 description: '',
+                rawtext_directory: '',
+                text_directory: '',
+                translated_files_directory: '',
             }
         }
     },

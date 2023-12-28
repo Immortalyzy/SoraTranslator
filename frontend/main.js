@@ -41,6 +41,18 @@ ipcMain.handle('show-confirmation-dialog', async (event, message) => {
     return response.response === 0;
 });
 
+ipcMain.handle('list-files', async (event, directoryPath) => {
+    const files = fs.readdirSync(directoryPath).map(fileName => {
+        const filePath = path.join(directoryPath, fileName);
+        return {
+            path: filePath,
+            name: fileName,
+            isDirectory: fs.lstatSync(filePath).isDirectory(),
+            isOpen: false,
+        };
+    });
+    return files;
+});
 
 function createWindow() {
     mainWindow = new BrowserWindow({

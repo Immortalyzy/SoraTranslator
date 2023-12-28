@@ -17,6 +17,8 @@
 </template>
 
 <script>
+import { listFiles } from '../fileService.js'
+import { ref, onMounted } from 'vue';
 export default {
   name: "DirectoryTree",
   props: {
@@ -26,6 +28,37 @@ export default {
     },
   },
   data() {
+    return {
+      rawtextDirectory: this.$store.state.project.rawtext_directory,
+      textDirectory: this.$store.state.project.text_directory,
+      translatedFilesDirectory: this.$store.state.project.translated_files_directory,
+    };
+  },
+  setup() {
+    const files = ref([]);
+
+    const toggle = (file) => {
+      if (file.isDirectory) {
+        file.isOpen = !file.isOpen;
+      }
+    };
+
+    let path = "";
+    if (this.currentTreeDisplay === "S") {
+      path = this.rawtextDirectory;
+    } else if (this.currentTreeDisplay === "T") {
+      path = this.textDirectory;
+    } else if (this.currentTreeDisplay === "R") {
+      path = this.translatedFilesDirectory;
+    }
+
+    const loadFiles = async () => {
+      files.value = await listFiles(path);
+    };
+
+    onMounted(loadFiles);
+
+    return { files, toggle };
   },
   computed: {
     titleInfo() {
