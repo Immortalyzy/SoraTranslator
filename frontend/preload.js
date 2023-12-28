@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
@@ -7,8 +9,11 @@ contextBridge.exposeInMainWorld('electron', {
             ipcRenderer.on(channel, (event, ...args) => func(...args));
         },
         invoke: (channel, data) => ipcRenderer.invoke(channel, data),
-        removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
+        removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel),
     }
 });
 
 alert('preload.js loaded');
+contextBridge.exposeInMainWorld('nodePaths', {
+    __dirname: __dirname
+});

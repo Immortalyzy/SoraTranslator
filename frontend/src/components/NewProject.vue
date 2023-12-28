@@ -2,9 +2,10 @@
     <div>
         <div class="new-project-title">
             <h1>WELCOME TO SORATRANSLATOR</h1>
-            <h2>CREATE A PROJECT</h2>
+            <button>Open Project</button>
         </div>
         <div v-if="displayIntro">
+            <h2 class="new-project-title">CREATE A PROJECT</h2>
             <div class="new-project-instructions">
                 <h3>Instructions:</h3>
                 <p>You should at first analyse your game manually, then create a python file defining your game. It should
@@ -104,13 +105,13 @@ export default {
         };
     },
     created() {
-        window.electron.ipcRenderer.on("selected-path", (path) => {
+        window.electron.ipcRenderer.on("selected-path", (targetPath) => {
             // this method from chatgpt is a bit strange, but it allows the program to be interactive while the dialog is open
-            console.log("Selected Path", path);
+            console.log("Selected Path", targetPath);
             if (this.selectingWhich === "projectPath") {
-                this.projectPath = path;
+                this.projectPath = targetPath;
             } else if (this.selectingWhich === "gamePath") {
-                this.gamePath = path;
+                this.gamePath = targetPath;
             }
         });
     },
@@ -168,12 +169,6 @@ export default {
         selectGamePath() {
             window.electron.ipcRenderer.send("open-file-dialog");
             this.selectingWhich = "gamePath";
-        },
-        changeGamePath(path) {
-            const file = path.target.files[0];
-            if (file) {
-                this.gamePath = file.name;
-            }
         },
     },
     beforeUnmount() {

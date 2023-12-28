@@ -5,59 +5,9 @@ import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const path = require('path');
+const fs = require('fs');
 
 const { ipcMain, dialog } = require('electron');
-
-ipcMain.on('open-directory-dialog', (event) => {
-  dialog.showOpenDialog({
-    properties: ['openDirectory']
-  }).then(result => {
-    if (!result.canceled && result.filePaths.length > 0) {
-      console.log(result.filePaths[0]);
-      event.sender.send('selected-path', result.filePaths[0]);
-    }
-  }).catch(err => {
-    console.log(err);
-  });
-});
-
-ipcMain.on('open-file-dialog', (event) => {
-  dialog.showOpenDialog({
-    properties: ['openFile']
-  }).then(result => {
-    if (!result.canceled && result.filePaths.length > 0) {
-      console.log(result.filePaths[0]);
-      event.sender.send('selected-path', result.filePaths[0]);
-    }
-  }).catch(err => {
-    console.log(err);
-  });
-});
-
-ipcMain.handle('show-confirmation-dialog', async (event, message) => {
-  const options = {
-    type: 'warning',
-    buttons: ['YES', 'No'],
-    defaultId: 1,
-    title: 'Confirmation',
-    message: message,
-  };
-  let response = dialog.showMessageBoxSync(options);
-  return response.response === 0;
-});
-
-ipcMain.handle('list-files', async (event, directoryPath) => {
-  const files = fs.readdirSync(directoryPath).map(fileName => {
-    const filePath = path.join(directoryPath, fileName);
-    return {
-      path: filePath,
-      name: fileName,
-      isDirectory: fs.lstatSync(filePath).isDirectory(),
-      isOpen: false,
-    };
-  });
-  return files;
-});
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -70,8 +20,7 @@ async function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-
+      preload: path.join(__dirname, '/preload.js'),
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
@@ -134,3 +83,75 @@ if (isDevelopment) {
     })
   }
 }
+
+
+ipcMain.on('open-directory-dialog', (event) => {
+  dialog.showOpenDialog({
+    properties: ['openDirectory']
+  }).then(result => {
+    if (!result.canceled && result.filePaths.length > 0) {
+      console.log(result.filePaths[0]);
+      event.sender.send('selected-path', result.filePaths[0]);
+    }
+  }).catch(err => {
+    console.log(err);
+  });
+});
+
+ipcMain.on('open-file-dialog', (event) => {
+  dialog.showOpenDialog({
+    properties: ['openFile']
+  }).then(result => {
+    if (!result.canceled && result.filePaths.length > 0) {
+      console.log(result.filePaths[0]);
+      event.sender.send('selected-path', result.filePaths[0]);
+    }
+  }).catch(err => {
+    console.log(err);
+  });
+});
+
+ipcMain.handle('show-confirmation-dialog', async (event, message) => {
+  const options = {
+    type: 'warning',
+    buttons: ['YES', 'No'],
+    defaultId: 1,
+    title: 'Confirmation',
+    message: message,
+  };
+  let response = dialog.showMessageBoxSync(options);
+  return response.response === 0;
+});
+
+const listFilesRecursively = (dir, fileList = [], parentDir = '') => {
+  fs.readdirSync(dir).forEach(file => {
+    const filePath = path.join(dir, file);
+    if (fs.statSync(filePath).isDirectory()) {
+      listFilesRecursively(filePath, fileList, path.join(parentDir, file));
+    } else {
+      fileList.push({
+        path: filePath,
+        displayPath: parentDir ? path.join(parentDir, file) : file
+      });
+    }
+  });
+  return fileList;
+};
+
+ipcMain.handle('list-files', async (event, directoryPath) => {
+  return listFilesRecursively(directoryPath);
+});
+
+
+// write function to read file raw content
+// text files (table format) should use Python API
+ipcMain.handle('read-file', async (event, filePath) => {
+  try {
+    const content = fs.readFileSync(filePath, 'utf16le');
+    return content;
+  } catch (err) {
+    console.log(err);
+    const content = "Please select a file";
+    return content;
+  }
+});

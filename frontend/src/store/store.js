@@ -10,6 +10,10 @@ const store = createStore({
                 rawtext_directory: '',
                 text_directory: '',
                 translated_files_directory: '',
+            },
+            currentDisplay: {
+                displayType: "T",
+                filePath: "",
             }
         }
     },

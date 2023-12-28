@@ -127,12 +127,6 @@ export default {
             window.electron.ipcRenderer.send("open-file-dialog");
             this.selectingWhich = "gamePath";
         },
-        changeGamePath(path) {
-            const file = path.target.files[0];
-            if (file) {
-                this.gamePath = file.name;
-            }
-        },
     },
     beforeUnmount() {
         window.electron.ipcRenderer.removeAllListeners("selected-path");

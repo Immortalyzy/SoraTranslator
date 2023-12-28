@@ -7,7 +7,7 @@
     </header>
     <div class="main-content">
       <SideBar class="side-bar" @change-tree="changeTree" @show-tree="showTree" />
-      <DirectoryTree :currentTreeDisplay="treeDisplay" class="directory-tree" />
+      <DirectoryTree :currentTreeDisplay="treeDisplay" @change-display="changeDisplay" class="directory-tree" />
       <FileDisplay :displayType="displayType" :filePath="filePath" class="file-display" @change-display="changeDisplay" />
       <ActionInfo class="action-info" />
     </div>
@@ -65,10 +65,10 @@ export default {
         this.statusMessage = 'Hiding tree display';
       }
     },
-    changeDisplay(type, path) {
+    changeDisplay(type, pathToFile) {
       this.displayType = type;
-      this.filePath = path;
-      this.statusMessage = 'Changing display to ' + type;
+      this.filePath = pathToFile;
+      this.statusMessage = 'Changing display to ' + type + ' at ' + pathToFile;
     }
 
   }
@@ -142,10 +142,12 @@ body {
 
 .directory-tree {
   flex-basis: 13%;
+  max-width: 13%;
 }
 
 .file-display {
   flex-basis: 70%;
+  max-width: 70%;
 }
 
 .action-info {

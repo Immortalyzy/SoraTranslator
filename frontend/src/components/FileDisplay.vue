@@ -6,6 +6,12 @@
     <div v-if="displayType === 'initialize_game'">
       <InitializeProject />
     </div>
+    <div class="raw-text" v-if="displayType === 'raw_text'">
+      <div v-for="(line, index) in lines" :key="index" class="line">
+        <span class="line-number">{{ index + 1 }}</span>
+        <span class="line-content">{{ line }}</span>
+      </div>
+    </div>
     <table v-if="displayType === 'TextFile'">
       <thead>
         <tr>
@@ -51,17 +57,38 @@ export default {
         ['Bob', 34, 'Designer'],
         // ... more rows
       ],
+      fileContent: "DISAY OF TEXT",
+      lines: [],
     };
+  },
+  created() {
   },
   methods: {
     editCell(rowIndex, cellIndex, event) {
       this.tableData[rowIndex][cellIndex] = event.target.innerText;
     },
-    changeDisplay(type, path) {
-      this.$emit("change-display", type, path)
-    }
+    changeDisplay(type, filePath) {
+      this.$emit("change-display", type, filePath)
+    },
+    async dispalyRaw() {
+      if (this.displayType === "raw_text" || this.displayType === "text" || this.displayType === "translated_file") {
+        this.fileContent = await window.electron.ipcRenderer.invoke("read-file", this.filePath);
+        this.lines = this.fileContent.split("\n");
+      }
 
+    }
   },
+  watch: {
+    filePath: {
+      handler: function () {
+        if (this.displayType === "raw_text" || this.displayType === "text" || this.displayType === "translated_file") {
+          console.log(this.displayType)
+          this.dispalyRaw();
+        }
+      },
+      immediate: true
+    }
+  }
 };
 </script>
 
@@ -85,5 +112,30 @@ td {
   text-align: left;
 }
 
-/* Additional styling as needed */
+.raw-text {
+  color: white;
+  font-family: 'Microsoft YaHei', sans-serif;
+  font-size: medium;
+  font-weight: bold;
+  padding: 0px 0px;
+  margin: 0px 0px;
+  flex-basis: calc(100% - 20px);
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.line {
+  display: flex;
+}
+
+.line-number {
+  color: gray;
+  text-align: right;
+  width: 30px;
+  margin: 0 5px;
+}
+
+.line-text {
+  white-space: pre;
+}
 </style>

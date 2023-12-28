@@ -25,7 +25,6 @@ export default {
     align-items: center;
     display: flex;
     width: 100vw;
-    height: 7vh;
     padding: 0px 0;
     margin: 0px 0;
     border: rgb(75, 0, 0);
