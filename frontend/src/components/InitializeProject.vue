@@ -32,16 +32,16 @@
         </div>
         <div class="option-container">
             <div class="option">
-                <label for="projectName">Project Name:</label>
-                <label> {{ this.project.projectName }}</label>
+                <label for="name">Project Name:</label>
+                <label> {{ this.project.name }}</label>
             </div>
             <div class="option">
-                <label for="projectPath">Project Path:</label>
-                <label> {{ this.project.projectPath }}</label>
+                <label for="project_path">Project Path:</label>
+                <label> {{ this.project.project_path }}</label>
             </div>
             <div class="option">
-                <label for="gamePath">Game Path:</label>
-                <label> {{ this.project.gamePath }}</label>
+                <label for="game_path">Game Path:</label>
+                <label> {{ this.project.game_path }}</label>
             </div>
             <div class="option">
                 <label for="gameEngine">Game Engine:</label>
@@ -53,10 +53,10 @@
             </div>
             <div class="option">
                 <label for="Language">Language:</label>
-                <label>From {{ this.project.fromLanguage }} to {{ this.toLanguage }}</label>
+                <label>From {{ this.project.original_language }} to {{ this.target_language }}</label>
             </div>
         </div>
-        <button @click="initializeGame">Initiate Game</button>
+        <button @click="initGame">Initiate Game</button>
         <div>
         </div>
     </div>
@@ -64,7 +64,8 @@
 
 <script>
 import { useStore } from 'vuex'
-import axios from 'axios'
+// import axios from 'axios'
+import { initializeGame } from '@/utils/projectManagement'
 import { computed } from 'vue'
 //import { ipcRenderer } from 'electron'
 export default {
@@ -91,41 +92,20 @@ export default {
         clickNext() {
             this.displayIntro = false;
         },
-        async initializeGame() {
+        async initGame() {
             // add code to create the project object using python, and save to the destination path
-            this.project = {
-                is_initialized: true,
-            }
+            await initializeGame(this.project);
 
-            // await ipcRenderer.invoke("show-confirmation-dialog", 'The project is already initialized. Are your sure to re-initialize it? This action will OVERWRITE ALL TRANSLATED TEXT AND FILES. ').then(response => {
-            //     if (response === 0) {
-            //         return;
-            //     }
-            // });
-            // if (!confirm) {
-            //     return;
-            // }
-            const http = axios.create({
-                baseURL: "http://localhost:5000",
-                method: "POST",
-                headers: {
-                    "Content-type": "application/json",
-                },
-            });
-            http.post("/initialize_game", this.project).then((response) => {
-                console.log(response.data);
-            }).catch((error) => {
-                console.log(error);
-            })
+            // todo: write code here to show a project resume page
 
         },
-        selectProjectPath() {
+        selectproject_path() {
             window.electron.ipcRenderer.send("open-directory-dialog");
-            this.selectingWhich = "projectPath";
+            this.selectingWhich = "project_path";
         },
         selectGamePath() {
             window.electron.ipcRenderer.send("open-file-dialog");
-            this.selectingWhich = "gamePath";
+            this.selectingWhich = "game_path";
         },
     },
     beforeUnmount() {

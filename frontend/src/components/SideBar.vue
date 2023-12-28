@@ -2,7 +2,7 @@
     <span class="side-bar">
         <button v-for="button in buttons" :key="button.letter" :class="{ selected: button.letter === selectedButton }"
             @click="handleClick(button.letter)">
-            {{ button.letter }}
+            {{ letterToWord(button.letter) }}
         </button>
     </span>
 </template>
@@ -16,6 +16,7 @@ export default {
                 { letter: "R", clicks: 0 },
                 { letter: "T", clicks: 0 },
                 { letter: "F", clicks: 0 },
+                { letter: "O", clicks: 0 },
             ],
             selectedButton: "T"
         }
@@ -49,6 +50,18 @@ export default {
             } else {
                 this.$emit('show-tree', true);
             }
+        },
+        letterToWord(letter) {
+            if (letter === "R") {
+                return "Raw";
+            } else if (letter === "T") {
+                return "Text";
+            } else if (letter === "F") {
+                return "Result";
+            } else if (letter === "O") {
+                return "Original";
+            }
+            return "Tree Display";
         }
     }
 };
@@ -59,11 +72,12 @@ export default {
 @import url('https://fonts.googleapis.com/css2?family=Amatic+SC&display=swap');
 
 button {
+    writing-mode: vertical-rl;
     margin: 0px 0px;
     padding: 0px 0px;
     /* sibar is 3vw */
     width: 2vw;
-    height: 2vw;
+    height: 10vw;
     /* add minimum value*/
     min-width: 5px;
     min-height: 5px;

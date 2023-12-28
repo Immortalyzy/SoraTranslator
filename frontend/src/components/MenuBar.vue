@@ -1,11 +1,13 @@
 <template>
     <span class="menu-bar-in">
         <button @click="create_new_project">New Project</button>
-        <button @click="save_project">Save Project</button>
+        <button @click="initialize_project">Initialize Project</button>
+        <button> Preferences </button>
     </span>
 </template>
 
 <script>
+import { initializeGame } from '@/utils/projectManagement'
 export default {
     name: 'MenuBar',
     methods: {
@@ -14,7 +16,12 @@ export default {
             this.$emit('change-display-type', 'new_project', "none");
         },
         save_project() {
-        }
+        },
+        async initialize_project() {
+            const project = this.$store.state.project;
+            await initializeGame(project);
+        },
+
     }
 };
 </script>

@@ -50,12 +50,12 @@ class Project:
         """load a project from json data, usually used to create a project from frontend"""
         print(json_data)
         instance = cls()
-        instance.name = json_data.get("projectName", "Default Project Name")
-        instance.project_path = json_data.get("projectPath", None)
-        instance.game_path = json_data.get("gamePath", None)
+        instance.name = json_data.get("name", "Default Project Name")
+        instance.project_path = json_data.get("project_path", None)
+        instance.game_path = json_data.get("game_path", None)
         instance.translation_engine = json_data.get("translator", None)
-        instance.original_language = json_data.get("fromLanguage", None)
-        instance.target_language = json_data.get("toLanguage", None)
+        instance.original_language = json_data.get("original_language", None)
+        instance.target_language = json_data.get("target_language", None)
         paths = instance.create_paths(instance.project_path)
         instance.rawtext_directory = paths["rawtext_directory"]
         instance.text_directory = paths["text_directory"]
@@ -79,8 +79,8 @@ class Project:
             "rawtext_directory": self.rawtext_directory,
             "text_directory": self.text_directory,
             "translated_files_directory": self.translated_files_directory,
-            "fromLanguage": self.original_language,
-            "toLanguage": self.target_language,
+            "original_language": self.original_language,
+            "target_language": self.target_language,
         }
 
     def initiate_game(self):

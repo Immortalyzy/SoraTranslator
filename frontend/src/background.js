@@ -141,7 +141,7 @@ const listFilesRecursively = (dir, fileList = [], parentDir = '') => {
     } else {
       fileList.push({
         path: filePath,
-        displayPath: parentDir ? path.join(parentDir, file) : file
+        displayPath: parentDir ? file + " -- " + parentDir : file
       });
     }
   });

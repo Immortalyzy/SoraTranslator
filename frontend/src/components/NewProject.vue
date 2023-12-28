@@ -31,22 +31,22 @@
         <div v-else>
             <div class="option-container">
                 <div class="option">
-                    <label for="projectName">Project Name:</label>
+                    <label for="name">Project Name:</label>
                     <div class="input-area">
-                        <input type="text" id="projectName" name="projectName" v-model="projectName">
+                        <input type="text" id="name" name="name" v-model="name">
                     </div>
                 </div>
                 <div class="option">
-                    <label for="projectPath">Project Path:</label>
+                    <label for="project_path">Project Path:</label>
                     <div class="input-area">
-                        <input type="text" id="gamePath" name="gameEngine" v-model="projectPath">
-                        <button @click="selectProjectPath">...</button>
+                        <input type="text" id="game_path" name="gameEngine" v-model="project_path">
+                        <button @click="selectproject_path">...</button>
                     </div>
                 </div>
                 <div class="option">
-                    <label for="gamePath">Game Path:</label>
+                    <label for="game_path">Game Path:</label>
                     <div class="input-area">
-                        <input type="text" id="gamePath" name="gameEngine" v-model="gamePath">
+                        <input type="text" id="game_path" name="gameEngine" v-model="game_path">
                         <button @click="selectGamePath">...</button>
                     </div>
                 </div>
@@ -66,13 +66,15 @@
                 <div class="option">
                     <label for="Language">Language:</label>
                     <div class="input-area">
-                        <input class="half-input" type="text" id="fromLanguage" name="fromLanguage" v-model="fromLanguage">
+                        <input class="half-input" type="text" id="original_language" name="original_language"
+                            v-model="original_language">
                         >
-                        <input class="half-input" type="text" id="toLanguage" name="toLanguage" v-model="toLanguage">
+                        <input class="half-input" type="text" id="target_language" name="target_language"
+                            v-model="target_language">
                     </div>
                 </div>
             </div>
-            <div>{{ this.projectTest.projectPath }}</div>
+            <div>{{ this.projectTest.project_path }}</div>
             <button @click="createProject">Create</button>
             <div>
             </div>
@@ -91,16 +93,16 @@ export default {
     data() {
         return {
             // for new project
-            projectName: "Default",
-            projectPath: "~",
-            gamePath: "",
+            name: "Default",
+            project_path: "~",
+            game_path: "",
             translator: "gpt-3.5-16k",
-            fromLanguage: "Japanese",
-            toLanguage: "Chinese (Simplified)",
+            original_language: "Japanese",
+            target_language: "Chinese (Simplified)",
 
             // for page display
             displayIntro: true,
-            selectingWhich: "projectPath"
+            selectingWhich: "project_path"
 
         };
     },
@@ -108,10 +110,10 @@ export default {
         window.electron.ipcRenderer.on("selected-path", (targetPath) => {
             // this method from chatgpt is a bit strange, but it allows the program to be interactive while the dialog is open
             console.log("Selected Path", targetPath);
-            if (this.selectingWhich === "projectPath") {
-                this.projectPath = targetPath;
-            } else if (this.selectingWhich === "gamePath") {
-                this.gamePath = targetPath;
+            if (this.selectingWhich === "project_path") {
+                this.project_path = targetPath;
+            } else if (this.selectingWhich === "game_path") {
+                this.game_path = targetPath;
             }
         });
     },
@@ -155,15 +157,15 @@ export default {
         createProject() {
             // add code to verify the data
             const project = this.$data;
-            if (project.projectName === "") {
+            if (project.name === "") {
                 alert("Please enter a project name.");
                 return;
             }
-            if (project.projectPath === "") {
+            if (project.project_path === "") {
                 alert("Please enter a project path.");
                 return;
             }
-            if (project.gamePath === "") {
+            if (project.game_path === "") {
                 alert("Please enter a game path.");
                 return;
             }
@@ -186,13 +188,13 @@ export default {
             this.$emit("change-display", "initialize_game")
 
         },
-        selectProjectPath() {
+        selectproject_path() {
             window.electron.ipcRenderer.send("open-directory-dialog");
-            this.selectingWhich = "projectPath";
+            this.selectingWhich = "project_path";
         },
         selectGamePath() {
             window.electron.ipcRenderer.send("open-file-dialog");
-            this.selectingWhich = "gamePath";
+            this.selectingWhich = "game_path";
         },
     },
     beforeUnmount() {

@@ -1,9 +1,13 @@
 <template>
     <div class="action-info-block">
         <div class="actions">
-            <button @click="translate">Translate</button>
-            <button @click="save_project">Save Project</button>
+            <button @click="translate">Translate all files</button>
+            <button> Translate this file</button>
+            <div class="action-value">
 
+                <input type="text" placeholder="Enter the file name" />
+            </div>
+            <button @click="save_project">Save Project</button>
         </div>
         <div class="information">
             Information
@@ -32,6 +36,12 @@ export default {
     align-items: center;
     margin: 0 0;
     padding: 0 0;
+}
+
+.action-info-block>* {
+    margin: 0 0;
+    padding: 0 0;
+    width: 100%;
 }
 
 .actions {

@@ -5,7 +5,8 @@
     </div>
     <div class="file-list">
       <ul>
-        <li v-for="file in this.files" :key="file.path" @click="clickItem(file.path)">
+        <li v-for="file in   this.files  " :key="file.path" @click="clickItem(file.path)"
+          :class="{ 'selected-item': selectedPath === file.path }">
           {{ file.displayPath }}
         </li>
       </ul>
@@ -26,6 +27,7 @@ export default {
   data() {
     return {
       files: null,
+      selectedPath: null,
     };
   },
   setup() {
@@ -79,6 +81,7 @@ export default {
       } else if (this.currentTreeDisplay === "F") {
         displayType = "translated_file";
       }
+      this.selectedPath = filePath;
       this.$emit("change-display", displayType, filePath);
     },
 
@@ -153,6 +156,15 @@ export default {
 }
 
 .file-list ul li:hover {
+  background-color: brown;
+  border: 1px solid rgb(171, 200, 0);
+  /* Border color on hover */
+  box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
+  /* Glowing effect */
+  /* Change cursor to indicate it's clickable or interactive */
+}
+
+.selected-item {
   background-color: brown;
   border: 1px solid rgb(171, 200, 0);
   /* Border color on hover */
