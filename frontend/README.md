@@ -1,4 +1,4 @@
-# soratranslator
+# sora-translator
 
 ## Project setup
 ```
