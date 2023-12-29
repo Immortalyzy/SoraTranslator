@@ -8,7 +8,7 @@
     <div class="main-content">
       <SideBar class="side-bar" @change-tree="changeTree" @show-tree="showTree" />
       <DirectoryTree :currentTreeDisplay="treeDisplay" @change-display="changeDisplay" class="directory-tree" />
-      <FileDisplay :displayType="displayType" :filePath="filePath" class="file-display" @change-display="changeDisplay" />
+      <MainDisplay :displayType="displayType" :filePath="filePath" class="file-display" @change-display="changeDisplay" />
       <ActionInfo class="action-info" />
     </div>
     <StatusBar :message="statusMessage" class="status-bar" />
@@ -21,7 +21,7 @@
 
 <script>
 import MenuBar from './components/MenuBar.vue';
-import FileDisplay from './components/FileDisplay.vue';
+import MainDisplay from './components/MainDisplay.vue';
 import StatusBar from './components/StatusBar.vue';
 import ActionInfo from './components/ActionInfo.vue';
 import DirectoryTree from './components/DirectoryTree.vue';
@@ -32,7 +32,7 @@ export default {
   components: {
     MenuBar,
     StatusBar,
-    FileDisplay,
+    MainDisplay,
     ActionInfo,
     DirectoryTree,
     SideBar

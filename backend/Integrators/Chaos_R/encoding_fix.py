@@ -4,20 +4,31 @@ The encoding of the text content of the games of Chaos-R is Shift-JIS.
 In order to run it directly without using Locale Emulator, we need to convert the encoding of the text content from Shift-JIS to UTF-8 (or UTF-16LF).
 """
 import os
+import shutil
 
 
 def fix_encoding(
     input_file_path,
     output_file_path,
     original_encoding="cp932",
-    target_encoding="utf_8",
+    target_encoding="utf_16",
 ):
     """
     Fix the encoding of the text content of the games of Chaos-R.
     """
     # read and change the encoding from Shift-JIS to UTF-8
-    with open(input_file_path, "r", encoding=original_encoding) as f:
-        content = f.read()
+    try:
+        with open(input_file_path, "r", encoding=original_encoding) as f:
+            content = f.read()
+    except UnicodeDecodeError:
+        print(f"UnicodeDecodeError: {input_file_path}")
+        try:
+            open(input_file_path, "r", encoding=target_encoding)
+            print(f"Already converted: {input_file_path}")
+            shutil.copyfile(input_file_path, output_file_path)
+            return True
+        except UnicodeDecodeError:
+            return False
 
     # write the content back to the file
     with open(output_file_path, "w", encoding=target_encoding) as f:

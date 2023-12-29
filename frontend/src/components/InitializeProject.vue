@@ -31,27 +31,27 @@
             </p>
         </div>
         <div class="option-container">
-            <div class="option">
+            <div class="option-init">
                 <label for="name">Project Name:</label>
                 <div class="option-show"> {{ this.project.name }}</div>
             </div>
-            <div class="option">
+            <div class="option-init">
                 <label for="project_path">Project Path:</label>
                 <div class="option-show"> {{ this.project.project_path }}</div>
             </div>
-            <div class="option">
+            <div class="option-init">
                 <label for="game_path">Game Path:</label>
                 <div class="option-show"> {{ this.project.game_path }}</div>
             </div>
-            <div class="option">
+            <div class="option-init">
                 <label for="gameEngine">Game Engine:</label>
                 <div class="option-show"> {{ this.project.gameEngine }}</div>
             </div>
-            <div class="option">
+            <div class="option-init">
                 <label for="translator">Translator:</label>
                 <div class="option-show"> {{ this.project.translator }}</div>
             </div>
-            <div class="option">
+            <div class="option-init">
                 <label for="Language">Language:</label>
                 <div class="option-show">From {{ this.project.original_language }} to {{ this.target_language }}</div>
             </div>
@@ -165,7 +165,7 @@ button {
 }
 
 
-.option {
+.option-init {
     display: inline-block;
     flex-direction: row;
     color: white;

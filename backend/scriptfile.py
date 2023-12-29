@@ -3,11 +3,6 @@
 import datetime
 import os
 from logger import log_message
-from constants import (
-    DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY,
-    RAW_TEXT_DIRECTORY,
-    DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY,
-)
 from constants import LogLevel
 from block import Block
 
@@ -128,40 +123,10 @@ class ScriptFile:
 
         # Create the text filepath if not provided
         if self.text_file_path == "" and dest == "":
-            log_message(
-                "Noting providing any text generation path, trying to use default path",
-                log_level=LogLevel.ERROR,
-            )
-            # get the base name of the file without the extension
-            file_name = os.path.basename(self.script_file_path)
-            file_name = os.path.splitext(file_name)[0]
-            # remove file extension from original package
-            # todo: remove these raw_text_directorys
-            relative_path = os.path.relpath(self.script_file_path, RAW_TEXT_DIRECTORY)
-            text_file_path = os.path.join(
-                DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY, relative_path
-            )
-            # change the extension to .csv
-            text_file_path = os.path.splitext(text_file_path)[0] + ".csv"
-            self.text_file_path = text_file_path
+            raise ValueError("In latest version you have to give a text file path")
         if dest != "":
-            # check if dest is a file path or a directory
-            if os.path.isdir(dest):
-                # if dest is a directory, then generate a file path based on the original file path
-                # get the base name of the file without the extension
-                file_name = os.path.basename(self.script_file_path)
-                file_name = os.path.splitext(file_name)[0]
-                # remove file extension from original package
-                relative_path = os.path.relpath(
-                    self.script_file_path, RAW_TEXT_DIRECTORY
-                )
-                text_file_path = os.path.join(dest, relative_path)
-                # change the extension to .csv
-                text_file_path = os.path.splitext(text_file_path)[0] + ".csv"
-                self.text_file_path = text_file_path
-            else:
-                # if dest is a file path, then use it
-                self.text_file_path = dest
+            # if dest is a file path, then use it
+            self.text_file_path = dest
 
         # get the directory of the text file
         destination_directory = os.path.dirname(self.text_file_path)
@@ -256,15 +221,11 @@ class ScriptFile:
         """generate a translated file from memory"""
         # if no translated file path is provided, generate one
         if self.translated_script_file_path == "" and dest == "":
-            # get the base name of the file without the extension
-            file_name = os.path.basename(self.script_file_path)
-            file_name = os.path.splitext(file_name)[0]
-            # remove file extension from original package
-            relative_path = os.path.relpath(self.script_file_path, RAW_TEXT_DIRECTORY)
-            translated_script_file_path = os.path.join(
-                DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY, relative_path
+            raise ValueError(
+                "In latest version you have to give a translated file path"
             )
-            self.translated_script_file_path = translated_script_file_path
+        if dest != "":
+            self.translated_script_file_path = dest
 
         # todo: add dest usage,
         # check if dest is a file path or a directory

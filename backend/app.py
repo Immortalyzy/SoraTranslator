@@ -77,10 +77,15 @@ def initialize_game():
     # initiate game
     try:
         success = project.initiate_game()
+        json_data = project.to_json()
         project.save()
-        return {"status": success}
+        json_data["status"] = success
+        return json_data
     except:
-        return {"status": False}
+        json_data = project.to_json()
+        json_data["status"] = False
+        project.save()
+        return json_data
 
 
 if __name__ == "__main__":

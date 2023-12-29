@@ -192,8 +192,19 @@ class ChaosRGame(Game):
                 parse_file_function=parse_file, parse_block_function=parse_block
             )
             # generate text file
-            script_file.generate_textfile(dest=self.text_directory, replace=replace)
+            # generate the destination path for the text file
+            # get the base name of the file without the extension
+            file_name = os.path.basename(script_file.script_file_path)
+            file_name = os.path.splitext(file_name)[0]
+            # remove file extension from original package
+            relative_path = os.path.relpath(
+                script_file.script_file_path, self.rawtext_directory
+            )
+            text_path = os.path.join(self.text_directory, relative_path)
+
+            script_file.generate_textfile(dest=text_path, replace=replace)
         self.update_script_filelist()
+        return True
 
     def copy_raw_text(self, replace=False):
         """copy the raw text from the temp_unpack_directory to the RawText directory

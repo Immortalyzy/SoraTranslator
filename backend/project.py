@@ -143,7 +143,7 @@ class Project:
             if success:
                 self.is_initialized = True
             return success
-        except:
+        except Exception as e:
             return False
 
     def load_project(self, project_path):

@@ -34,7 +34,7 @@
 import NewProject from "./NewProject.vue";
 import InitializeProject from "./InitializeProject.vue";
 export default {
-  name: "FileDisplay",
+  name: "MainDisplay",
   components: {
     NewProject,
     InitializeProject

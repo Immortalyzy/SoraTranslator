@@ -20,10 +20,12 @@ export async function initializeGame(project) {
     http.post("/initialize_game", project).then((response) => {
         console.log(response.data);
         const result = response.data;
+        const project_new = result;
         if (result.status === "success") {
-            updateProject(project);
+            updateProject(project_new);
             alert("Game initialized successfully!")
         } else {
+            updateProject(project_new);
             alert("Failed to initialize game. Please check your game definition or format.")
         }
     }).catch((error) => {
