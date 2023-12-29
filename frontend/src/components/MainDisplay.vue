@@ -12,7 +12,7 @@
         <span class="line-content">{{ line }}</span>
       </div>
     </div>
-    <div class="text" v-if="isText">
+    <div v-if="isText">
       <TextDisplay :filePath="filePath" />
     </div>
   </div>
@@ -87,10 +87,10 @@ export default {
 </script>
 
 <style>
-.table-container {
-  overflow: auto;
+.table-container>* {
   /* Adjust as needed */
-  width: 70%;
+  width: 100%;
+  height: calc(100vh - 55px - 70px - 7px);
 }
 
 .raw-text {

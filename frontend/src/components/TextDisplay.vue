@@ -1,6 +1,8 @@
 <template>
-    <hot-table ref="hotInstance" :data="rowData" :settings="hotSettings">
-    </hot-table>
+    <div class="hot-table">
+        <hot-table ref="hotInstance" :data="rowData" :settings="hotSettings">
+        </hot-table>
+    </div>
 </template>
 
 <script>
@@ -33,7 +35,8 @@ export default defineComponent({
                 { name: "183", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！" },
             ],
             hotSettings: {
-                height: 'auto',
+                width: '100%',
+                height: '100%',
                 stretchH: 'all',
                 licenseKey: 'non-commercial-and-evaluation',
                 colHeaders: ["name", "Sp_O", "Original Text", "Sp_T", "Translated Text"],
@@ -98,9 +101,14 @@ export default defineComponent({
     height: calc(100vh - 55px - 70px - 7px);
 }
 
-.hot-table .htCore {
+.hot-table {
+    height: calc(100vh - 55px - 70px - 7px);
+    background-color: transparent;
+}
+
+.hot-table>* {
     width: 100%;
-    /* height: calc(100vh - 55px - 70px - 7px); */
+    height: calc(100vh - 55px - 70px - 7px);
     background-color: transparent;
 }
 </style>
