@@ -93,19 +93,6 @@ export default {
   width: 70%;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  color: white;
-}
-
-th,
-td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-
 .raw-text {
   color: white;
   font-family: 'Microsoft YaHei', sans-serif;

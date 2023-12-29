@@ -13,10 +13,11 @@
   },
   "main": "background.js",
   "dependencies": {
-    "ag-grid-vue3": "^31.0.1",
+    "@handsontable/vue3": "^14.0.0",
     "axios": "^1.6.3",
     "core-js": "^3.8.3",
     "fs-extra": "^11.2.0",
+    "handsontable": "^14.0.0",
     "vue": "^3.2.13",
     "vuex": "^4.1.0"
   },
