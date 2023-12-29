@@ -21,7 +21,7 @@ export async function initializeGame(project) {
         console.log(response.data);
         const result = response.data;
         const project_new = result;
-        if (result.status === "success") {
+        if (result.status === true) {
             updateProject(project_new);
             alert("Game initialized successfully!")
         } else {

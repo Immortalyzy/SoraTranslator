@@ -201,6 +201,7 @@ class ChaosRGame(Game):
                 script_file.script_file_path, self.rawtext_directory
             )
             text_path = os.path.join(self.text_directory, relative_path)
+            text_path = os.path.splitext(text_path)[0] + ".csv"
 
             script_file.generate_textfile(dest=text_path, replace=replace)
         self.update_script_filelist()

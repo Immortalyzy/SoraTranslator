@@ -4,6 +4,7 @@ from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from project import Project
+from scriptfile import ScriptFile
 
 
 app = Flask(__name__)
@@ -86,6 +87,25 @@ def initialize_game():
         json_data["status"] = False
         project.save()
         return json_data
+
+
+@app.route("/require_text_json", methods=["POST"])
+def require_text_json():
+    """return the text json file"""
+    # read project
+    data = request.json
+    try:
+        script_file = ScriptFile.from_textfile(data)
+        print("Reading text file" + script_file.text_file_path)
+        result = script_file.to_json()
+        result["status"] = True
+        print(len(result["blocks"]))
+        return result
+    except Exception as e:
+        print(e)
+        result = {"status": False}
+        # get text json
+        return result
 
 
 if __name__ == "__main__":

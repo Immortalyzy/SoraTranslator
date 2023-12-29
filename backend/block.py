@@ -8,29 +8,28 @@ from constants import LogLevel
 class Block:
     """A block is a unit of text in a script file that controls the text that is shown at one time"""
 
-    # basic info
-    is_parsed = False
-
-    # for translation
-    is_translated = False  # will also be set to true if the block is empty
-    speaker_original = ""
-    speaker_translated = ""
-    text_original = ""
-    text_translated = ""
-    block_name_line = ""
-
-    # for integration
-    speaker_line = 0
-    speaker_start_end = (0, 0)
-    text_line = 0
-    text_start_end = (0, 0)
-
-    # for translation record
-    translation_date = ""
-    translation_engine = "Undefined or manual"
-    translation_status = "stop"
-
     def __init__(self, block_name, block_content):
+        # basic info
+        self.is_parsed = False
+
+        # for translation
+        self.is_translated = False  # will also be set to true if the block is empty
+        self.speaker_original = ""
+        self.speaker_translated = ""
+        self.text_original = ""
+        self.text_translated = ""
+        self.block_name_line = ""
+
+        # for integration
+        self.speaker_line = 0
+        self.speaker_start_end = (0, 0)
+        self.text_line = 0
+        self.text_start_end = (0, 0)
+
+        # for translation record
+        self.translation_date = ""
+        self.translation_engine = "Undefined or manual"
+        self.translation_status = "stop"
         self.block_name = block_name
         self.block_content = block_content
         # replace all \t with a space to avoid problems when generating csv
@@ -85,6 +84,20 @@ class Block:
         csv_line.append(self.translation_date)
         csv_line.append(self.translation_engine)
         return "\t".join(csv_line)
+
+    def to_json(self):
+        """convert to a dict (json) for frontend"""
+        data = {
+            "name": self.block_name,
+            "speaker_original": self.speaker_original,
+            "text_original": self.text_original,
+            "speaker_translated": self.speaker_translated,
+            "text_translated": self.text_translated,
+            "is_translated": self.is_translated,
+            "translation_date": self.translation_date,
+            "translation_engine": self.translation_engine,
+        }
+        return data
 
     def parse(self, parse_block_function):
         """parse the block"""

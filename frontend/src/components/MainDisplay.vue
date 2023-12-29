@@ -6,38 +6,28 @@
     <div v-if="displayType === 'initialize_game'">
       <InitializeProject />
     </div>
-    <div class="raw-text" v-if=isRaw>
+    <div class="raw-text" v-if="isRaw">
       <div v-for="(line, index) in lines" :key="index" class="line">
         <span class="line-number">{{ index + 1 }}</span>
         <span class="line-content">{{ line }}</span>
       </div>
     </div>
-    <table v-if="displayType === 'TextFile'">
-      <thead>
-        <tr>
-          <th v-for="header in headers" :key="header">{{ header }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(row, rowIndex) in tableData" :key="rowIndex">
-          <td v-for="(cell, cellIndex) in row" :key="cellIndex" contenteditable
-            @blur="editCell(rowIndex, cellIndex, $event)">
-            {{ cell }}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="text" v-if="isText">
+      <TextDisplay :filePath="filePath" />
+    </div>
   </div>
 </template>
 
 <script>
 import NewProject from "./NewProject.vue";
 import InitializeProject from "./InitializeProject.vue";
+import TextDisplay from "./TextDisplay.vue";
 export default {
   name: "MainDisplay",
   components: {
     NewProject,
-    InitializeProject
+    InitializeProject,
+    TextDisplay
   },
   props: {
     displayType: {
@@ -47,31 +37,21 @@ export default {
     filePath: {
       type: String,
       default: "DISPLAY OF TEXT"
-    }
+    },
   },
   data() {
     return {
-      headers: ['Name', 'Age', 'Occupation'],
-      tableData: [
-        ['Alice', 28, 'Engineer'],
-        ['Bob', 34, 'Designer'],
-        // ... more rows
-      ],
       fileContent: "DISAY OF TEXT",
       lines: [],
+      isRaw: false,
+      isText: false
     };
   },
   created() {
   },
   methods: {
-    editCell(rowIndex, cellIndex, event) {
-      this.tableData[rowIndex][cellIndex] = event.target.innerText;
-    },
     changeDisplay(type, filePath) {
       this.$emit("change-display", type, filePath)
-    },
-    isRaw() {
-      return this.displayType === "raw_text" || this.displayType === "translated_file" || this.displayType === "original_file";
     },
     async dispalyRaw() {
       console.log("displaying raw text at " + this.filePath)
@@ -82,9 +62,22 @@ export default {
   watch: {
     filePath: {
       handler: function () {
-        if (this.displayType === "raw_text" || this.displayType === "text" || this.displayType === "translated_file" || this.displayType === "original_file") {
+        if (this.displayType === "raw_text" || this.displayType === "translated_file" || this.displayType === "original_file") {
           console.log(this.displayType)
           this.dispalyRaw();
+        }
+      },
+      immediate: true
+    },
+    displayType: {
+      handler: function () {
+        if (this.displayType === "raw_text" || this.displayType === "translated_file" || this.displayType === "original_file") {
+          this.isRaw = true;
+          this.isText = false;
+        }
+        if (this.displayType === "text") {
+          this.isText = true;
+          this.isRaw = false;
         }
       },
       immediate: true

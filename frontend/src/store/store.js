@@ -17,6 +17,9 @@ const store = createStore({
             currentDisplay: {
                 displayType: "T",
                 filePath: "",
+            },
+            currentInfo: {
+
             }
         }
     },

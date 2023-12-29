@@ -6,17 +6,18 @@ from logger import log_message
 from constants import LogLevel
 from block import Block
 
+PROPERTY_LINE_LENGTH = 10
+
 
 class ScriptFile:
     """The GameFile class defines a script file and info around it, the class provides a framework for integration actions defined in the game folders"""
 
-    # a list of blocks in the file, will be filled when parsing
-    blocks = []
-    # these two are used to record the non-block content in the file
-    non_block_string_between_blocks = []
-    block_number_for_non_block_string = []
-
     def __init__(self, file_path):
+        # a list of blocks in the file, will be filled when parsing
+        self.blocks = []
+        # these two are used to record the non-block content in the file
+        self.non_block_string_between_blocks = []
+        self.block_number_for_non_block_string = []
         self.original_file_path = file_path
         self.script_file_path = (
             file_path  # this avoids error when forgot to use from_originalfile
@@ -24,7 +25,7 @@ class ScriptFile:
         self.text_file_path = ""  # the path of the text file in .csv
         self.translated_script_file_path = ""
 
-        self.read_date = datetime.datetime.now()
+        self.read_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # file type
         self.file_type = "content"
@@ -64,16 +65,43 @@ class ScriptFile:
             raise FileNotFoundError(f"Text file {file_path} does not exist")
         with open(file_path, "r", encoding="utf_16") as file:
             lines = file.readlines()
-        for line in lines:
-            scriptfile.blocks.append(Block.from_csv_line(line))
+            for i, line in enumerate(lines):
+                if i < PROPERTY_LINE_LENGTH:
+                    # record the property information from file
+                    scriptfile.to_property(line)
+                    # skip the first few lines
+                    continue
+                scriptfile.blocks.append(Block.from_csv_line(line))
+        print(f"Text file {file_path} loaded, {len(scriptfile.blocks)} blocks found")
 
         # verifications
         # if all the blocks are translated, then the file is translated
-        scriptfile.is_translated = all(
-            block.is_translated for block in scriptfile.blocks
-        )
+        # scriptfile.is_translated = all(
+        #     block.is_translated for block in scriptfile.blocks
+        # )
+        # ! setting a file to translated should be done by the translator
 
         return scriptfile
+
+    def to_json(self):
+        """create a json object for usage in frontend"""
+        data = {}
+        # record the property information from file
+        data["original_file_path"] = self.original_file_path
+        data["script_file_path"] = self.script_file_path
+        data["text_file_path"] = self.text_file_path
+        data["translated_script_file_path"] = self.translated_script_file_path
+        data["read_date"] = self.read_date
+        data["file_type"] = self.file_type
+        data["original_package"] = self.original_package
+        data["is_translated"] = self.is_translated
+        data["need_manual_fix"] = self.need_manual_fix
+        data["translation_percentage"] = self.translation_percentage
+        blocks_json = []
+        for block in self.blocks:
+            blocks_json.append(block.to_json())
+        data["blocks"] = blocks_json
+        return data
 
     def create_entry_in_scriptlistcsv(self):
         """create a entry in the scriptlist.csv"""
@@ -155,7 +183,22 @@ class ScriptFile:
                     return 1  # error
 
         # create the text file
+        ## save file information
         with open(self.text_file_path, "w", encoding="utf_16") as file:
+            file.write(self.from_property("original_file_path") + "\n")
+            file.write(self.from_property("script_file_path") + "\n")
+            file.write(self.from_property("text_file_path") + "\n")
+            file.write(self.from_property("translated_script_file_path") + "\n")
+
+            file.write(self.from_property("read_date") + "\n")
+
+            file.write(self.from_property("file_type") + "\n")
+            file.write(self.from_property("original_package") + "\n")
+
+            file.write(self.from_property("is_translated") + "\n")
+            file.write(self.from_property("need_manual_fix") + "\n")
+            file.write(self.from_property("translation_percentage") + "\n")
+            lines_wroten += PROPERTY_LINE_LENGTH
             for block in self.blocks:
                 lines_wroten += 1
                 file.write(block.to_csv_line() + "\n")
@@ -177,7 +220,7 @@ class ScriptFile:
         with open(self.text_file_path, "r", encoding="utf_16") as file:
             lines = file.readlines()
         # implement verification (total lines, etc.)
-        if len(lines) != len(self.blocks):
+        if len(lines) != len(self.blocks) + PROPERTY_LINE_LENGTH:
             log_message(
                 f"Text file {self.text_file_path} is not coherent with the script file, cannot update",
                 log_level=LogLevel.ERROR,
@@ -185,6 +228,11 @@ class ScriptFile:
             return False
         # record the translation information in the text file and write them to blocks
         for i, line in enumerate(lines):
+            if i < PROPERTY_LINE_LENGTH:
+                # record the property information from file
+                self.to_property(line)
+                # skip the first few lines
+                continue
             block = Block.from_csv_line(line)
             # verify line information
             if block.text_original != self.blocks[i].text_original:
@@ -288,6 +336,28 @@ class ScriptFile:
     def is_to_translate(self):
         """return if is to translate file"""
         return (self.is_content_file() or self.is_Hcontent()) and not self.is_translated
+
+    def from_property(self, property_name):
+        """convert between a property of the script file and a csv line"""
+        if property_name == "is_translated" or property_name == "need_manual_fix":
+            result = True if getattr(self, property_name) else False
+        elif property_name == "translation_percentage":
+            result = f"{getattr(self, property_name):.2f}"
+        else:
+            result = getattr(self, property_name)
+        return property_name + "\t" + str(result)
+
+    def to_property(self, csv_line):
+        """convert between a property of the script file and a csv line"""
+        data = csv_line.split("\t")
+        property_name = data[0]
+        if property_name == "is_translated" or property_name == "need_manual_fix":
+            result = True if data[1] == "Yes" else False
+            setattr(self, property_name, result)
+        elif property_name == "translation_percentage":
+            setattr(self, property_name, float(data[1]))
+        else:
+            setattr(self, property_name, data[1])
 
 
 def initiate_script_filelist(listfilepath, replace=False):
