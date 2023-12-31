@@ -27,7 +27,7 @@ const store = createStore({
             // stores the progress of translation and prevent new translation requests
             currentState: {
 
-            }
+            },
         }
     },
     mutations: {

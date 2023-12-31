@@ -352,8 +352,9 @@ class ScriptFile:
         """convert between a property of the script file and a csv line"""
         data = csv_line.split("\t")
         property_name = data[0].strip()
+        true_list = ["TRUE", "True", "true", "1", "Yes", "yes", "YES"]
         if property_name == "is_translated" or property_name == "need_manual_fix":
-            result = True if data[1].strip() == "Yes" else False
+            result = True if data[1].strip() in true_list else False
             setattr(self, property_name, result)
         elif property_name == "translation_percentage":
             setattr(self, property_name, float(data[1].strip()))

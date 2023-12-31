@@ -9,7 +9,7 @@ from constants import SuccessStatus as success
 from constants import LogLevel
 from logger import log_message
 from .. import utils
-from translator import Translator
+from ..translator import Translator
 
 
 class GPT_Translator(Translator):

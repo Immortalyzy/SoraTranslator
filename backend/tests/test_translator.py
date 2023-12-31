@@ -1,14 +1,21 @@
 """ pytest module to test translator """
 
-from ..scriptfile import ScriptFile
-from ..Translators.ChatGPT_API.chatgpt_api import GPT_Translator
-from ..constants import Config, DEFAULT_CONFIG_FILE
-from ..Integrators.Chaos_R.chaosr_game import ChaosRGame
+from scriptfile import ScriptFile
+from Translators.ChatGPT_API.chatgpt_api import GPT_Translator
+from constants import Config, DEFAULT_CONFIG_FILE
+from Integrators.Chaos_R.chaosr_game import ChaosRGame
 from pickle import dump, load
 
 test_file = (
     "D:\\Work\\SoraTranslator\\SoraTranslator\\Text\\k_scenario\\01本編\\luna034H.csv"
 )
+
+
+def test_generation_after_translation():
+    """test generation after translation"""
+    test_file_ = "U:/Toys/Games/Gal/chaosr/神聖昂燐ダクリュオン_ver1.0.1/SoraTranslator/Text/k_scenario/A_00_dakr020.csv"
+    script_file = ScriptFile.from_textfile(test_file_)
+    script_file.generate_textfile(replace=True)
 
 
 def test_gpt_translator():
