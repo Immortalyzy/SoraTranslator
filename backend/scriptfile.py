@@ -59,7 +59,7 @@ class ScriptFile:
         # the file type is content if it is read from a text file
         scriptfile.file_type = "content"
         # the original package is the directory name of the file (only the last part)
-        scriptfile.original_package = os.path.basename(os.path.dirname(file_path))
+        # scriptfile.original_package = os.path.basename(os.path.dirname(file_path))
         # check file existence
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Text file {file_path} does not exist")
@@ -350,14 +350,14 @@ class ScriptFile:
     def to_property(self, csv_line):
         """convert between a property of the script file and a csv line"""
         data = csv_line.split("\t")
-        property_name = data[0]
+        property_name = data[0].strip()
         if property_name == "is_translated" or property_name == "need_manual_fix":
-            result = True if data[1] == "Yes" else False
+            result = True if data[1].strip() == "Yes" else False
             setattr(self, property_name, result)
         elif property_name == "translation_percentage":
-            setattr(self, property_name, float(data[1]))
+            setattr(self, property_name, float(data[1].strip()))
         else:
-            setattr(self, property_name, data[1])
+            setattr(self, property_name, data[1].strip())
 
 
 def initiate_script_filelist(listfilepath, replace=False):
