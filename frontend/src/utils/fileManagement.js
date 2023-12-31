@@ -30,8 +30,6 @@ export async function saveFile(file, destination) {
 }
 
 export async function readTextFile(filePath) {
-    // add code to create the project object using python, and save to the destination path
-
     console.log("file to be read: ", filePath);
     const http = axios.create({
         baseURL: "http://localhost:5000",
@@ -50,6 +48,34 @@ export async function readTextFile(filePath) {
         alert("Failed to read file. Please check your the format of the file.")
         return result;
     }
+}
+
+export async function saveTextFile(file) {
+    let filePath = file["filePath"]
+    console.log("file to be saved: ", filePath);
+    if (!(store.getters.getCurrentDisplay["displayType"] === "T")) {
+        alert("Editing non-text file is not supported yet.");
+        return;
+    }
+    const http = axios.create({
+        baseURL: "http://localhost:5000",
+        method: "POST",
+        headers: {
+            "Content-type": "application/json",
+        },
+    });
+    let response = await http.post("/save_text", file);
+    console.log(response.data);
+    const result = response.data;
+    if (result.status === true) {
+        console.log("file read successfully!")
+        return result;
+    } else {
+        alert("Failed to read file. Please check your the format of the file.")
+        return result;
+    }
+
+
 }
 
 export async function translateTextFile(packed_data) {

@@ -41,6 +41,13 @@ export default defineComponent({
                 stretchH: 'all',
                 licenseKey: 'non-commercial-and-evaluation',
                 colHeaders: ["name", "Sp_O", "Original Text", "Sp_T", "Translated Text"],
+                columns: [
+                    { data: "name", readOnly: true },
+                    { data: "speakerOriginal", readOnly: true },
+                    { data: "text_original", readOnly: true },
+                    { data: "speakerTranslated", readOnly: false },
+                    { data: "text_translated", readOnly: false },
+                ],
                 manualColumnResize: true,
                 manualColumnMove: true,
                 cells: function (row) {
@@ -95,6 +102,12 @@ export default defineComponent({
                 console.error("Error reading file");
             }
 
+        },
+        getEditedData() {
+            const hotInstance = this.$refs.hotInstance.hotInstance;
+            const editedData = hotInstance.getSourceData();
+            console.log(editedData);
+            return editedData;
         },
 
     },
