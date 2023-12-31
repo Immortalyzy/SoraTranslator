@@ -50,3 +50,17 @@ export async function readTextFile(filePath) {
         return result;
     }
 }
+
+export async function translateTextFile(packed_data) {
+    console.log("Sending translation request of ", packed_data['file_path']);
+    const http = axios.create({
+        baseURL: "http://localhost:5000",
+        method: "POST",
+        headers: {
+            "Content-type": "application/json",
+        },
+    });
+
+    await http.post("/translate_text", packed_data);
+
+}

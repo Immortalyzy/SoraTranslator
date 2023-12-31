@@ -110,7 +110,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .container-directory-tree {
   display: flex;
   flex-direction: column;

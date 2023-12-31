@@ -69,6 +69,7 @@ export default {
       this.displayType = type;
       this.filePath = pathToFile;
       this.statusMessage = 'Changing display to ' + type + ' at ' + pathToFile;
+      this.$store.dispatch("updateCurrentDisplay", { type: type, filePath: pathToFile });
     }
 
   }

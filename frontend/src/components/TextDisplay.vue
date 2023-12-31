@@ -11,6 +11,7 @@ import { HotTable } from '@handsontable/vue3';
 import { registerAllModules } from 'handsontable/registry';
 import 'handsontable/dist/handsontable.full.css';
 import { readTextFile } from '@/utils/fileManagement'
+import { EventBus } from '@/utils/eventBus'
 
 registerAllModules();
 
@@ -42,12 +43,29 @@ export default defineComponent({
                 colHeaders: ["name", "Sp_O", "Original Text", "Sp_T", "Translated Text"],
                 manualColumnResize: true,
                 manualColumnMove: true,
+                cells: function (row) {
+                    var cellProperties = {};
+                    if (row % 2 === 0) {
+                        cellProperties.className = 'alternateRow';
+                    }
+                    return cellProperties;
+                },
             },
             cNameSettings: {
                 manualColumnResize: true,
             }
         }
 
+    },
+    mounted() {
+        EventBus.on("updateFileContent", this.getFileContent);
+        const hotInstance = this.$refs.hotInstance.hotInstance;
+        return {
+            hotInstance
+        }
+    },
+    unmounted() {
+        EventBus.off("updateFileContent", this.getFileContent);
     },
     methods: {
         async getFileContent() {
@@ -72,7 +90,6 @@ export default defineComponent({
                 this.rowData = [...newBlocks];
                 // update the table
                 console.log(this.rowData);
-                this.$refs.hotInstance.hotInstance.render();
                 this.$refs.hotInstance.hotInstance.updateData(newBlocks);
             } else {
                 console.error("Error reading file");
@@ -93,22 +110,28 @@ export default defineComponent({
 </script>
 
 <style>
-.grid {
-    flex-basis: 100%;
-}
-
-.grid>* {
-    height: calc(100vh - 55px - 70px - 7px);
-}
-
 .hot-table {
     height: calc(100vh - 55px - 70px - 7px);
     background-color: transparent;
+    opacity: 0.8;
 }
 
 .hot-table>* {
     width: 100%;
     height: calc(100vh - 55px - 70px - 7px);
     background-color: transparent;
+}
+
+
+.ht_master tr:nth-of-type(even)>td {
+    background-color: rgb(120, 50, 50);
+}
+
+.ht_master tr:nth-of-type(odd)>td {
+    background-color: rgb(120, 120, 55);
+}
+
+.handsontable {
+    color: white;
 }
 </style>

@@ -1,7 +1,8 @@
 <template>
     <span class="menu-bar-in">
         <button @click="create_new_project">New Project</button>
-        <button @click="initialize_project">Initialize Project</button>
+        <button @click="initialize_project">Initialize </button>
+        <button> Save project</button>
         <button> Preferences </button>
     </span>
 </template>

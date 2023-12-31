@@ -71,6 +71,10 @@ export default {
     },
     displayType: {
       handler: function () {
+        if (this.displayType === "new_project" || this.displayType === "initialize_game") {
+          this.isRaw = false;
+          this.isText = false;
+        }
         if (this.displayType === "raw_text" || this.displayType === "translated_file" || this.displayType === "original_file") {
           this.isRaw = true;
           this.isText = false;

@@ -203,7 +203,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 /* For new project */
 .new-project-title {
     color: white;

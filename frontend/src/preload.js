@@ -11,4 +11,3 @@ contextBridge.exposeInMainWorld('electron', {
     }
 });
 
-alert('preload.js loaded');

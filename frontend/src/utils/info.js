@@ -1,0 +1,1 @@
+// this files stores the method of displaying an info
