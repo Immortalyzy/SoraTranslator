@@ -71,6 +71,7 @@ class ScriptFile:
                     scriptfile.to_property(line)
                     # skip the first few lines
                     continue
+                # cannot call stirp() here because the line may be empty
                 scriptfile.blocks.append(Block.from_csv_line(line))
         print(f"Text file {file_path} loaded, {len(scriptfile.blocks)} blocks found")
 

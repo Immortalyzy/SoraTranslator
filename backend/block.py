@@ -47,28 +47,28 @@ class Block:
         if len(csv_line) < 5:
             raise ValueError("CSV line length not correct")
 
-        block_name = csv_line[0]
+        block_name = csv_line[0].strip()
         # when reading from csv file, the block content will not be read
         block_content = ""
         block = cls(block_name, block_content)
         # a block read from csv file is always parsed
         block.is_parsed = True
 
-        block.speaker_original = csv_line[1]
-        block.text_original = csv_line[2]
-        block.speaker_translated = csv_line[3]
-        block.text_translated = csv_line[4]
+        block.speaker_original = csv_line[1].strip()
+        block.text_original = csv_line[2].strip()
+        block.speaker_translated = csv_line[3].strip()
+        block.text_translated = csv_line[4].strip()
 
         if len(csv_line) >= 8:
-            if csv_line[5] != "Yes" and csv_line[5] != "No":
+            if csv_line[5].strip() != "Yes" and csv_line[5].strip() != "No":
                 log_message(
                     f'CSV line {csv_line} has incompatible is_translated entry record. (Accepted record is "Yes" or "No")',
                     log_level=LogLevel.WARNING,
                 )
 
-            block.is_translated = csv_line[5] == "Yes"
-            block.translation_date = csv_line[6]
-            block.translation_engine = csv_line[7]
+            block.is_translated = csv_line[5].strip() == "Yes"
+            block.translation_date = csv_line[6].strip()
+            block.translation_engine = csv_line[7].strip()
         return block
 
     def to_csv_line(self):
