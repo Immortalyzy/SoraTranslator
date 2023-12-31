@@ -1,5 +1,6 @@
 import axios from "axios";
 import store from '../store/store.js'
+import { EventBus } from './eventBus.js';
 
 
 const updateProject = (project) => {
@@ -62,5 +63,46 @@ export async function translateTextFile(packed_data) {
     });
 
     await http.post("/translate_text", packed_data);
+
+}
+export async function translateFile(filePath, temp_temperature, temp_max_lines) {
+    // create the request
+    let requestT = {};
+    requestT["temperature"] = temp_temperature;
+    requestT["max_lines"] = temp_max_lines;
+    requestT["file_path"] = filePath;
+    console.log("Trying to translate : " + requestT["file_path"]);
+    if (requestT["file_path"] == undefined) {
+        alert("Please select a file first");
+        return;
+    }
+    // if file path doesn't end with .csv, then it's not a csv file
+    if (!requestT["file_path"].endsWith(".csv")) {
+        alert("Please select a text rather than a script file");
+        return;
+    }
+    const http = axios.create({
+        baseURL: "http://localhost:5000",
+        method: "POST",
+        headers: {
+            "Content-type": "application/json",
+        },
+    });
+
+    // send the request
+    http.post("http://localhost:5000/translate_text", requestT)
+        .then(response => {
+            // update directory tree to display tranlsation status
+            EventBus.emit("updateTranslationStatus")
+            if (response.data["status"] == true) {
+                if (store.state.currentDisplay["filePath"] == requestT["file_path"]) {
+                    // if still displaying the same file, update manually the content
+                    EventBus.emit("updateFileContent");
+                }
+
+            } else {
+                alert("Failed to translate the file" + response.data["file_path"]);
+            }
+        });
 
 }

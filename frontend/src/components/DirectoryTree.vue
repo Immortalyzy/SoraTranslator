@@ -22,6 +22,7 @@
 <script>
 // import { ipcRenderer } from 'electron'
 import axios from 'axios';
+import { EventBus } from '@/utils/eventBus'
 export default {
   name: "DirectoryTree",
   props: {
@@ -138,6 +139,7 @@ export default {
   },
   mounted() {
     console.log("Mounted");
+    EventBus.on("updateTranslationStatus", this.updateTranslationStatus);
     this.loadDirectory();
   },
   // watch this.currentTreeDisplay

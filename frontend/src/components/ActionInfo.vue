@@ -13,13 +13,15 @@
             </div>
             <hr />
             <button @click="translateAll">Translate and save all files</button>
-            <hr />
             <button @click="translateThis"> Translate this file</button>
-            <br>
+            <hr />
             <div class="actions-sub">
                 <button> load </button>
                 <button> save </button>
             </div>
+            <hr />
+            <button> Mark as fixed </button>
+            <button> Mark as untranslated </button>
         </div>
         <div class="information">
             <div v-for="(value, key) in currentInfo" :key="key" class="info-row">
@@ -32,8 +34,8 @@
 
 <script>
 import { mapState } from 'vuex';
-import axios from 'axios';
 import { EventBus } from '@/utils/eventBus'
+import { translateFile } from '@/utils/fileManagement'
 export default {
     name: 'ActionInfo',
     data() {
@@ -49,49 +51,8 @@ export default {
             alert("Not implemented yet");
         },
         translateThis() {
-            // create the request
-            let requestT = {};
-            requestT["temperature"] = this.temperature;
-            requestT["max_lines"] = this.max_lines;
-            requestT["file_path"] = this.$store.getters.getCurrentDisplay["filePath"];
-            console.log("Trying to translate : " + requestT["file_path"]);
-            if (requestT["file_path"] == undefined) {
-                alert("Please select a file first");
-                return;
-            }
-            // if file path doesn't end with .csv, then it's not a csv file
-            if (!requestT["file_path"].endsWith(".csv")) {
-                alert("Please select a text rather than a script file");
-                return;
-            }
-            const http = axios.create({
-                baseURL: "http://localhost:5000",
-                method: "POST",
-                headers: {
-                    "Content-type": "application/json",
-                },
-            });
-
-            // send the request
-            http.post("http://localhost:5000/translate_text", requestT)
-                .then(response => {
-                    if (response.data["status"] == true) {
-                        // if still displaying the same file, update manually the content
-                        if (this.$store.state.currentDisplay["filePath"] == requestT["file_path"]) {
-                            EventBus.emit("updateFileContent");
-                        }
-
-                        // and info
-                    } else {
-                        alert("Failed to translate the file" + response.data["file_path"]);
-
-                    }
-                });
-
-
-            // update directory tree to display tranlsation status
-
-
+            let toTranslateFilePath = this.$store.getters.getCurrentDisplay["filePath"];
+            translateFile(toTranslateFilePath, this.temperature, this.max_lines);
         },
         save_file() {
         },
