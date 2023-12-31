@@ -23,8 +23,8 @@ def create_game_resources_directory(game_resources_directory: str) -> ():
 
 
 # Log file
-DEFAULT_LOG_FILE = "D:/Work/SoraTranslator/backend/log.txt"
-DEFAULT_CONFIG_FILE = "D:/Work/SoraTranslator/config.json"
+DEFAULT_LOG_FILE = "../backend_log.txt"
+DEFAULT_CONFIG_FILE = "../config.json"
 
 # GPT API
 LINE_BREAKER = "||"
@@ -104,6 +104,8 @@ class Config:
     gpt_temperature = 0.3
     gpt_max_lines = 50
     gpt_second_try = False
+    gpt_speration_method = "[]"
+    gpt_enclosing_joiner = "|"
 
     # success status
     record_failure_text = True
