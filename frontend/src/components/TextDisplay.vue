@@ -96,6 +96,7 @@ export default defineComponent({
     },
     unmounted() {
         EventBus.off("updateFileContent", this.getFileContent);
+        EventBus.on("saveFile", this.saveFile);
     },
     methods: {
         async getFileContent() {

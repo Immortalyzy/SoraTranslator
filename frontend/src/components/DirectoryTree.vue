@@ -151,6 +151,10 @@ export default {
     EventBus.on("loadDirectory", this.loadDirectory);
     this.loadDirectory();
   },
+  unmounted() {
+    EventBus.off("updateTranslationStatus", this.updateTranslationStatus);
+    EventBus.off("loadDirectory", this.loadDirectory);
+  },
   // watch this.currentTreeDisplay
   watch: {
     currentTreeDisplay: {
