@@ -4,6 +4,7 @@
       <img src="./assets/logo.png" class="app-logo" alt="logo" />
       <h1 class="app-title">SoraTranslator</h1>
       <MenuBar @change-display-type="changeDisplay" />
+      <TranslatingAnimation />
     </header>
     <div class="main-content">
       <SideBar class="side-bar" @change-tree="changeTree" @show-tree="showTree" />
@@ -21,6 +22,7 @@
 
 <script>
 import MenuBar from './components/MenuBar.vue';
+import TranslatingAnimation from './components/TranslatingAnimation.vue';
 import MainDisplay from './components/MainDisplay.vue';
 import StatusBar from './components/StatusBar.vue';
 import ActionInfo from './components/ActionInfo.vue';
@@ -31,6 +33,7 @@ export default {
   name: 'App',
   components: {
     MenuBar,
+    TranslatingAnimation,
     StatusBar,
     MainDisplay,
     ActionInfo,

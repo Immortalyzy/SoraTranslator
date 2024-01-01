@@ -23,6 +23,27 @@ export async function readTextFile(filePath) {
     }
 }
 
+export async function changeFileProperty(changeRequest) {
+    console.log("file to be changed: ", changeRequest);
+    const http = axios.create({
+        baseURL: "http://localhost:5000",
+        method: "POST",
+        headers: {
+            "Content-type": "application/json",
+        },
+    });
+    let response = await http.post("/change_file_property", changeRequest);
+    console.log(response.data);
+    const result = response.data;
+    if (result.status === true) {
+        console.log("file changed successfully!")
+        return result;
+    } else {
+        alert("Failed to change file. Please check your the format of the file.")
+        return result;
+    }
+}
+
 export async function saveTextFile(file) {
     let filePath = file["filePath"]
     console.log("file to be saved: ", filePath);
@@ -52,25 +73,19 @@ export async function saveTextFile(file) {
 
 }
 
-export async function translateTextFile(packed_data) {
-    console.log("Sending translation request of ", packed_data['file_path']);
-    const http = axios.create({
-        baseURL: "http://localhost:5000",
-        method: "POST",
-        headers: {
-            "Content-type": "application/json",
-        },
-    });
-
-    await http.post("/translate_text", packed_data);
-
-}
 export async function translateFile(filePath, temp_temperature, temp_max_lines) {
     // create the request
     let requestT = {};
+    let is_translating = store.state.currentTranslation["translating"];
+    if (is_translating) {
+        alert("Please wait for the current translation to finish");
+        return;
+    }
     requestT["temperature"] = temp_temperature;
     requestT["max_lines"] = temp_max_lines;
     requestT["file_path"] = filePath;
+    store.dispatch("updateTranslationFile", filePath);
+    store.dispatch("updateTranslationStatus", true);
     console.log("Trying to translate : " + requestT["file_path"]);
     if (requestT["file_path"] == undefined) {
         alert("Please select a file first");
@@ -103,6 +118,14 @@ export async function translateFile(filePath, temp_temperature, temp_max_lines) 
             } else {
                 alert("Failed to translate the file" + response.data["file_path"]);
             }
+            store.dispatch("updateTranslationFile", "");
+            store.dispatch("updateTranslationStatus", false);
         });
+
+}
+
+export async function translateAllFiles(temp_temperature, temp_max_lines) {
+    console.log(temp_max_lines);
+    console.log(temp_temperature);
 
 }

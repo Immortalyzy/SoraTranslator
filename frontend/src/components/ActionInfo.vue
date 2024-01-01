@@ -18,12 +18,12 @@
             <button @click="translateThis"> Translate this file</button>
             <hr />
             <div class="actions-sub">
-                <button> load </button>
+                <button @click="loadFile"> load </button>
                 <button @click="saveFile"> save </button>
             </div>
             <hr />
-            <button> Mark as fixed </button>
-            <button> Mark as untranslated </button>
+            <button @click="markFixed"> Mark as fixed </button>
+            <button @click="markUntranslated"> Mark as untranslated </button>
         </div>
         <div class="information">
             <div v-for="(value, key) in currentInfo" :key="key" class="info-row">
@@ -37,7 +37,7 @@
 <script>
 import { mapState } from 'vuex';
 import { EventBus } from '@/utils/eventBus'
-import { translateFile } from '@/utils/fileManagement'
+import { translateFile, changeFileProperty } from '@/utils/fileManagement'
 export default {
     name: 'ActionInfo',
     data() {
@@ -59,8 +59,25 @@ export default {
         saveFile() {
             EventBus.emit("saveFile");
         },
-        load_file() {
+        loadFile() {
             EventBus.emit("updateFileContent");
+        },
+        async markFixed() {
+            let changeRequest = {};
+            changeRequest.file_path = this.$store.getters.getCurrentDisplay["filePath"];
+            changeRequest.property_name = "need_manual_fix";
+            changeRequest.property_value = false;
+            await changeFileProperty(changeRequest);
+            EventBus.emit("updateTranslationStatus");
+        },
+        async markUntranslated() {
+            let changeRequest = {};
+            changeRequest.file_path = this.$store.getters.getCurrentDisplay["filePath"];
+            changeRequest.property_name = "is_translated";
+            changeRequest.property_value = false;
+            await changeFileProperty(changeRequest);
+            EventBus.emit("updateTranslationStatus");
+
         },
         updateInfo() {
             // update the info based on last clicked item

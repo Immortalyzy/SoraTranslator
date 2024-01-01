@@ -61,6 +61,24 @@ def initialize_game():
         return json_data
 
 
+@app.route("/change_file_property", methods=["POST"])
+def change_file_property():
+    """manually change a file's property, used for "Mark file as ..." """
+    data = request.json
+    try:
+        log_message("Changing file property:" + data["file_path"], LogLevel.DEBUG)
+        text_file = ScriptFile.from_textfile(data["file_path"])
+        property_name = data["property_name"]
+        property_value = data["property_value"]
+        setattr(text_file, property_name, property_value)
+        text_file.generate_textfile(text_file.text_file_path, replace=True)
+        result = {"status": True}
+        return result
+    except:
+        result = {"status": False}
+        return result
+
+
 @app.route("/require_text_json", methods=["POST"])
 def require_text_json():
     """return the text json file"""
@@ -72,9 +90,8 @@ def require_text_json():
         result = script_file.to_json()
         result["status"] = True
         return result
-    except Exception as e:
+    except:
         result = {"status": False}
-        # get text json
         return result
 
 
@@ -131,8 +148,14 @@ def save_text_from_json():
             result = {"status": False}
             return result
         for i, block in enumerate(script_file.blocks):
-            block.text_translated = blocks[i]["text_translated"]
-            block.speaker_translated = blocks[i]["speaker_translated"]
+            block.text_translated = (
+                blocks[i]["text_translated"] if blocks[i]["text_translated"] else ""
+            )
+            block.speaker_translated = (
+                blocks[i]["speaker_translated"]
+                if blocks[i]["speaker_translated"]
+                else ""
+            )
             if blocks[i]["is_edited"]:
                 block.is_translated = True
                 block.translation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
