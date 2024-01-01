@@ -50,6 +50,7 @@ export default defineComponent({
                 stretchH: 'all',
                 licenseKey: 'non-commercial-and-evaluation',
                 colHeaders: ["name", "Sp_O", "Original Text", "Sp_T", "Translated Text"],
+                wordWrap: true,
                 columns: [
                     { data: "name", readOnly: true },
                     { data: "speaker_original", readOnly: true },
@@ -89,6 +90,8 @@ export default defineComponent({
     mounted() {
         EventBus.on("updateFileContent", this.getFileContent);
         EventBus.on("saveFile", this.saveFile);
+        window.addEventListener('resize', this.updateHotSettings);
+        this.updateHotSettings();
         const hotInstance = this.$refs.hotInstance.hotInstance;
         return {
             hotInstance
@@ -97,8 +100,48 @@ export default defineComponent({
     unmounted() {
         EventBus.off("updateFileContent", this.getFileContent);
         EventBus.on("saveFile", this.saveFile);
+        window.removeEventListener('resize', this.updateHotSettings);
     },
     methods: {
+        isVerticalScrollbarPresent() {
+            const hotContainer = this.$refs.hotInstance.$el;
+            if (!hotContainer) {
+                console.error("Handsontable container not found");
+                return false;
+            }
+
+            const htCore = hotContainer.querySelector('.htCore');
+            if (!htCore) {
+                console.error("Handsontable core element not found");
+                return false;
+            }
+            // todo this is not working
+            return hotContainer.offsetWidth > htCore.clientWidth;
+        },
+        calculateColumnWidths() {
+            const containerElement = this.$refs.hotInstance.$el;
+            if (!containerElement) {
+                console.error("Container element not found");
+                return []; // Return an empty array to use default widths
+            }
+
+            const scrollbarWidth = this.isVerticalScrollbarPresent() ? 17 : 17; // Adjust scrollbar width if needed
+            console.log("Scrollbar: " + scrollbarWidth)
+            const containerWidth = containerElement.offsetWidth - scrollbarWidth;
+            const ratio = [5, 10, 40, 10, 35]; // Your specified ratios
+            const totalRatio = ratio.reduce((a, b) => a + b, 0);
+            return ratio.map(w => (w / totalRatio) * containerWidth);
+        },
+
+        updateHotSettings() {
+            this.hotSettings = Object.assign({}, this.hotSettings, {
+                colWidths: this.calculateColumnWidths()
+            });
+            // this.hotSettings = {
+            //     ...this.hotSettings,
+            //     colWidths: this.calculateColumnWidths(),
+            // };
+        },
         async getFileContent() {
             // clear the rowData
             if (this.filePath === "")
@@ -121,6 +164,7 @@ export default defineComponent({
                 // Update rowData with a new array to ensure reactivity
                 this.rowData = [...newBlocks];
                 this.$refs.hotInstance.hotInstance.updateData(newBlocks);
+                this.updateHotSettings();
             } else {
                 console.error("Error reading file");
             }
