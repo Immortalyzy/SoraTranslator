@@ -13,7 +13,7 @@
             </div>
             <hr />
             <button @click="translateAll">Translate and save all files</button>
-            <button>Stop</button>
+            <button @click="stop">Stop</button>
             <hr />
             <button @click="translateThis"> Translate this file</button>
             <hr />
@@ -37,7 +37,7 @@
 <script>
 import { mapState } from 'vuex';
 import { EventBus } from '@/utils/eventBus'
-import { translateFile, changeFileProperty } from '@/utils/fileManagement'
+import { translateFile, changeFileProperty, translateAllFiles } from '@/utils/fileManagement'
 export default {
     name: 'ActionInfo',
     data() {
@@ -49,8 +49,13 @@ export default {
     },
     methods: {
         translateAll() {
-            // open a window of selecting local files
-            alert("Not implemented yet");
+            translateAllFiles(this.temperature, this.max_lines);
+        },
+        stop() {
+            if (this.$store.state.currentTranslation.translating) {
+                alert("Stop signal sent, please wait for the current file to finish translation.");
+                this.$store.state.stopSignal = true;
+            }
         },
         translateThis() {
             let toTranslateFilePath = this.$store.getters.getCurrentDisplay["filePath"];

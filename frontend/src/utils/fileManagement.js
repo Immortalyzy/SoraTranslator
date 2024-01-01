@@ -89,11 +89,15 @@ export async function translateFile(filePath, temp_temperature, temp_max_lines) 
     console.log("Trying to translate : " + requestT["file_path"]);
     if (requestT["file_path"] == undefined) {
         alert("Please select a file first");
+        store.dispatch("updateTranslationFile", "");
+        store.dispatch("updateTranslationStatus", false);
         return;
     }
     // if file path doesn't end with .csv, then it's not a csv file
     if (!requestT["file_path"].endsWith(".csv")) {
         alert("Please select a text rather than a script file");
+        store.dispatch("updateTranslationFile", "");
+        store.dispatch("updateTranslationStatus", false);
         return;
     }
     const http = axios.create({
@@ -105,27 +109,54 @@ export async function translateFile(filePath, temp_temperature, temp_max_lines) 
     });
 
     // send the request
-    http.post("http://localhost:5000/translate_text", requestT)
+    await http.post("http://localhost:5000/translate_text", requestT)
         .then(response => {
             // update directory tree to display tranlsation status
             EventBus.emit("updateTranslationStatus")
+            store.dispatch("updateTranslationFile", "");
+            store.dispatch("updateTranslationStatus", false);
             if (response.data["status"] == true) {
                 if (store.state.currentDisplay["filePath"] == requestT["file_path"]) {
                     // if still displaying the same file, update manually the content
                     EventBus.emit("updateFileContent");
                 }
+                return;
 
             } else {
                 alert("Failed to translate the file" + response.data["file_path"]);
+                return;
             }
-            store.dispatch("updateTranslationFile", "");
-            store.dispatch("updateTranslationStatus", false);
         });
-
+    return;
 }
 
 export async function translateAllFiles(temp_temperature, temp_max_lines) {
-    console.log(temp_max_lines);
-    console.log(temp_temperature);
+    let file_list = store.state.currentFileList;
+    let toTranslate = [];
+    let thisCount = 1;
+
+    let totalCount = 0;
+    for (let file of file_list) {
+        if (!(file.transated == true)) {
+            totalCount += 1;
+            toTranslate.push(file);
+        }
+    }
+    console.log("total files to translate: ", totalCount);
+
+    store.dispatch("updateTranslationProgress", { thisCount: thisCount, totalCount: totalCount });
+    for (let file of toTranslate) {
+        if (store.state.stopSignal) {
+            console.log("stop signal received");
+            store.dispatch("updateTranslationProgress", { thisCount: 0, totalCount: 0 });
+            store.dispatch("updateTranslationStatus", false);
+            store.dispatch("updateTranslationFile", "");
+            store.state.stopSignal = false;
+            return;
+        }
+        await translateFile(file["path"], temp_temperature, temp_max_lines);
+        thisCount += 1;
+        store.dispatch("updateTranslationProgress", { thisCount: thisCount, totalCount: totalCount });
+    }
 
 }

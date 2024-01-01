@@ -44,10 +44,6 @@
                 <div class="option-show"> {{ this.project.game_path }}</div>
             </div>
             <div class="option-init">
-                <label for="gameEngine">Game Engine:</label>
-                <div class="option-show"> {{ this.project.gameEngine }}</div>
-            </div>
-            <div class="option-init">
                 <label for="translator">Translator:</label>
                 <div class="option-show"> {{ this.project.translator }}</div>
             </div>

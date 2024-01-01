@@ -35,6 +35,7 @@ const store = createStore({
                 thisCount: 1,
                 totalCount: 1,
             },
+            stopSignal: false,
         }
     },
     mutations: {
