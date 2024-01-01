@@ -10,10 +10,18 @@ import { defineComponent } from 'vue';
 import { HotTable } from '@handsontable/vue3';
 import { registerAllModules } from 'handsontable/registry';
 import 'handsontable/dist/handsontable.full.css';
-import { readTextFile } from '@/utils/fileManagement'
+import { readTextFile, saveTextFile } from '@/utils/fileManagement'
 import { EventBus } from '@/utils/eventBus'
 
 registerAllModules();
+function cellClasses(row) {
+    let classes = [];
+    classes.push('normal-text');
+    if (row % 2 === 0) {
+        classes.push('alternateRow');
+    }
+    return classes.join(' ');
+}
 
 export default defineComponent({
     name: "App",
@@ -30,11 +38,12 @@ export default defineComponent({
         return {
             blocks: [],
             rowData: [
-                { name: "181", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！" },
-                { name: "181", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！" },
-                { name: "182", speakerOriginal: "瑠奈", text_original: "「決まってるじゃない、子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，" },
-                { name: "183", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！" },
+                { name: "181", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
+                { name: "181", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
+                { name: "182", speakerOriginal: "瑠奈", text_original: "「決まってるじゃない、子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，", is_edited: false },
+                { name: "183", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
             ],
+            specialRows: [],
             hotSettings: {
                 width: '100%',
                 height: '100%',
@@ -52,10 +61,24 @@ export default defineComponent({
                 manualColumnMove: true,
                 cells: function (row) {
                     var cellProperties = {};
-                    if (row % 2 === 0) {
-                        cellProperties.className = 'alternateRow';
+                    cellProperties.className = cellClasses(row);
+                    if (this.rowData && this.rowData[row]) {
+                        // Check if the row is edited and apply the 'edited-row' class
+                        if (this.rowData[row].is_edited) {
+                            cellProperties.className = cellProperties.className + " edited-row";
+                        }
                     }
                     return cellProperties;
+                },
+                afterChange: (changes, source) => {
+                    if (source !== 'loadData' && changes) {
+                        changes.forEach(([row, oldValue, newValue]) => {
+                            if (oldValue !== newValue) {
+                                this.rowData[row].is_edited = true;
+                            }
+                        });
+                        console.log(this.rowData);
+                    }
                 },
             },
             cNameSettings: {
@@ -66,6 +89,7 @@ export default defineComponent({
     },
     mounted() {
         EventBus.on("updateFileContent", this.getFileContent);
+        EventBus.on("saveFile", this.saveFile);
         const hotInstance = this.$refs.hotInstance.hotInstance;
         return {
             hotInstance
@@ -91,6 +115,7 @@ export default defineComponent({
                     text_original: block.text_original,
                     speakerTranslated: block.speaker_translated,
                     text_translated: block.text_translated,
+                    is_edited: false,
                 }));
 
                 // Update rowData with a new array to ensure reactivity
@@ -103,11 +128,13 @@ export default defineComponent({
             }
 
         },
-        getEditedData() {
-            const hotInstance = this.$refs.hotInstance.hotInstance;
-            const editedData = hotInstance.getSourceData();
-            console.log(editedData);
-            return editedData;
+        saveFile() {
+            let fileToSave = {
+                "blocks": this.rowData,
+                "filePath": this.filePath
+            }
+            saveTextFile(fileToSave);
+            return this.rowData;
         },
 
     },
@@ -129,11 +156,28 @@ export default defineComponent({
     opacity: 0.8;
 }
 
+.handsontable .htDimmed {
+    color: white;
+}
+
 .hot-table>* {
     width: 100%;
     height: calc(100vh - 55px - 70px - 7px);
     background-color: transparent;
 }
+
+.normal-text {
+    font-family: 'Microsoft YaHei', sans-serif;
+    font-size: medium;
+    text-align: left;
+    padding: 0px 0px;
+    margin: 0px 0px;
+}
+
+.edited-row {
+    color: green !important;
+}
+
 
 
 .ht_master tr:nth-of-type(even)>td {

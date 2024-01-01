@@ -17,7 +17,7 @@
             <hr />
             <div class="actions-sub">
                 <button> load </button>
-                <button> save </button>
+                <button @click="saveFile"> save </button>
             </div>
             <hr />
             <button> Mark as fixed </button>
@@ -54,7 +54,8 @@ export default {
             let toTranslateFilePath = this.$store.getters.getCurrentDisplay["filePath"];
             translateFile(toTranslateFilePath, this.temperature, this.max_lines);
         },
-        save_file() {
+        saveFile() {
+            EventBus.emit("saveFile");
         },
         load_file() {
             EventBus.emit("updateFileContent");

@@ -121,15 +121,25 @@ def save_text_from_json():
     # read project
     data = request.json
     # read config from local file
-    config = Config.from_json(DEFAULT_CONFIG_FILE)
-    # apply temperatory config for this request
-    config.gpt_temperature = data["gpt_temperature"]
-    config.gpt_max_lines = data["gpt_max_lines"]
-
-    # create translator instance
-    translator = createTranslatorInstance("gpt", config)
     try:
-        script_file = ScriptFile.from_textfile(data["file_path"])
+        blocks = data["blocks"]
+        file_path = data["file_path"]
+        script_file = ScriptFile.from_textfile(file_path=file_path)
+        if len(blocks) != len(script_file.blocks):
+            log_message(
+                "The number of blocks in the text file is not the same as the number of blocks in the json file",
+                LogLevel.ERROR,
+            )
+            result = {"status": False}
+            return result
+        for i, block in enumerate(script_file.blocks):
+            block.text_translated = blocks[i]["text_translated"]
+            block.speaker_translated = blocks[i]["speaker_translated"]
+            if blocks[i]["is_edited"]:
+                block.is_translated = True
+                block.translation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                block.translation_engine = "manual"
+
         log_message("Saving text file" + script_file.text_file_path, LogLevel.INFO)
         script_file.generate_textfile(script_file.text_file_path)
         result = {"status": True}

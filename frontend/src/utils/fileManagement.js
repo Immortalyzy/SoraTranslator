@@ -64,7 +64,7 @@ export async function saveTextFile(file) {
             "Content-type": "application/json",
         },
     });
-    let response = await http.post("/save_text", file);
+    let response = await http.post("/save_text_from_json", file);
     console.log(response.data);
     const result = response.data;
     if (result.status === true) {
