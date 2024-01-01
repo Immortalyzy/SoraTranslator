@@ -136,13 +136,17 @@ export async function translateAllFiles(temp_temperature, temp_max_lines) {
     let thisCount = 1;
 
     let totalCount = 0;
+    let translatedCount = 0;
     for (let file of file_list) {
-        if (!(file.transated == true)) {
+        if (file.notTranslated) {
             totalCount += 1;
             toTranslate.push(file);
+        } else {
+            translatedCount += 1;
         }
     }
     console.log("total files to translate: ", totalCount);
+    alert("Start to translate " + totalCount + " files. Skipping" + translatedCount + " translated files.")
 
     store.dispatch("updateTranslationProgress", { thisCount: thisCount, totalCount: totalCount });
     for (let file of toTranslate) {
