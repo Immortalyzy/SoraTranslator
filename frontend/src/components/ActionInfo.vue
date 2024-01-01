@@ -13,6 +13,8 @@
             </div>
             <hr />
             <button @click="translateAll">Translate and save all files</button>
+            <button>Stop</button>
+            <hr />
             <button @click="translateThis"> Translate this file</button>
             <hr />
             <div class="actions-sub">

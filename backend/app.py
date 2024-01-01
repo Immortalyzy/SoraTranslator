@@ -71,10 +71,8 @@ def require_text_json():
         print("Reading text file" + script_file.text_file_path)
         result = script_file.to_json()
         result["status"] = True
-        print(len(result["blocks"]))
         return result
     except Exception as e:
-        print(e)
         result = {"status": False}
         # get text json
         return result
@@ -123,7 +121,7 @@ def save_text_from_json():
     # read config from local file
     try:
         blocks = data["blocks"]
-        file_path = data["file_path"]
+        file_path = data["filePath"]
         script_file = ScriptFile.from_textfile(file_path=file_path)
         if len(blocks) != len(script_file.blocks):
             log_message(
@@ -141,11 +139,11 @@ def save_text_from_json():
                 block.translation_engine = "manual"
 
         log_message("Saving text file" + script_file.text_file_path, LogLevel.INFO)
-        script_file.generate_textfile(script_file.text_file_path)
+        script_file.generate_textfile(script_file.text_file_path, replace=True)
         result = {"status": True}
         return result
     except Exception as e:
-        log_message(e, LogLevel.ERROR)
+        log_message("ERROR trying to save file " + str(e), LogLevel.ERROR)
         result = {"status": False}
         # get text json
         return result

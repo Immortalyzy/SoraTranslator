@@ -140,6 +140,7 @@ export default {
   mounted() {
     console.log("Mounted");
     EventBus.on("updateTranslationStatus", this.updateTranslationStatus);
+    EventBus.on("loadDirectory", this.loadDirectory);
     this.loadDirectory();
   },
   // watch this.currentTreeDisplay

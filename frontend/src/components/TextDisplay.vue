@@ -38,10 +38,10 @@ export default defineComponent({
         return {
             blocks: [],
             rowData: [
-                { name: "181", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
-                { name: "181", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
-                { name: "182", speakerOriginal: "瑠奈", text_original: "「決まってるじゃない、子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，", is_edited: false },
-                { name: "183", speakerOriginal: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speakerTranslated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
+                { name: "181", speaker_original: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speaker_translated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
+                { name: "181", speaker_original: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speaker_translated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
+                { name: "182", speaker_original: "瑠奈", text_original: "「決まってるじゃない、子の正体を暴くのよ！」", speaker_translated: "", text_translated: "「你不是知道吗，", is_edited: false },
+                { name: "183", speaker_original: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speaker_translated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
             ],
             specialRows: [],
             hotSettings: {
@@ -52,9 +52,9 @@ export default defineComponent({
                 colHeaders: ["name", "Sp_O", "Original Text", "Sp_T", "Translated Text"],
                 columns: [
                     { data: "name", readOnly: true },
-                    { data: "speakerOriginal", readOnly: true },
+                    { data: "speaker_original", readOnly: true },
                     { data: "text_original", readOnly: true },
-                    { data: "speakerTranslated", readOnly: false },
+                    { data: "speaker_translated", readOnly: false },
                     { data: "text_translated", readOnly: false },
                 ],
                 manualColumnResize: true,
@@ -62,12 +62,12 @@ export default defineComponent({
                 cells: function (row) {
                     var cellProperties = {};
                     cellProperties.className = cellClasses(row);
-                    if (this.rowData && this.rowData[row]) {
-                        // Check if the row is edited and apply the 'edited-row' class
-                        if (this.rowData[row].is_edited) {
-                            cellProperties.className = cellProperties.className + " edited-row";
-                        }
-                    }
+                    //                    if (this.rowData && this.rowData[row]) {
+                    //                        // Check if the row is edited and apply the 'edited-row' class
+                    //                        if (this.rowData[row].is_edited) {
+                    //                            cellProperties.className = cellProperties.className + " edited-row";
+                    //                        }
+                    //                   }
                     return cellProperties;
                 },
                 afterChange: (changes, source) => {
@@ -77,7 +77,6 @@ export default defineComponent({
                                 this.rowData[row].is_edited = true;
                             }
                         });
-                        console.log(this.rowData);
                     }
                 },
             },
@@ -111,17 +110,15 @@ export default defineComponent({
                 // Process your file data here
                 const newBlocks = fileJson["blocks"].map(block => ({
                     name: block.name,
-                    speakerOriginal: block.speaker_original,
+                    speaker_original: block.speaker_original,
                     text_original: block.text_original,
-                    speakerTranslated: block.speaker_translated,
+                    speaker_translated: block.speaker_translated,
                     text_translated: block.text_translated,
                     is_edited: false,
                 }));
 
                 // Update rowData with a new array to ensure reactivity
                 this.rowData = [...newBlocks];
-                // update the table
-                console.log(this.rowData);
                 this.$refs.hotInstance.hotInstance.updateData(newBlocks);
             } else {
                 console.error("Error reading file");
