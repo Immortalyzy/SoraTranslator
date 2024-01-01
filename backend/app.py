@@ -21,6 +21,7 @@ def open_project():
     try:
         project = Project().from_pickle(data["project_file_path"])
         json_data = project.to_json()
+        json_data["project_file_path"] = data["project_file_path"]
         # add status: True to the json data
         json_data["status"] = True
         return json_data
@@ -58,6 +59,25 @@ def initialize_game():
         json_data = project.to_json()
         json_data["status"] = False
         project.save()
+        return json_data
+
+
+@app.route("/integrate_game", methods=["POST"])
+def integrate_game():
+    """integrate the game, runs the integrate() function of Game"""
+    data = request.json
+    json_data = {}
+    try:
+        project = Project().from_pickle(data["project_file_path"])
+        indication = project.integrate_game()
+        # this process will read aditional info to project instance
+        project.save()
+        json_data["status"] = True
+        json_data["indication"] = indication
+        return json_data
+    except Exception as e:
+        json_data = {"status": False}
+        log_message("ERROR when trying to integrate game " + str(e), LogLevel.ERROR)
         return json_data
 
 
@@ -112,10 +132,12 @@ def require_tranlsation_status():
             script_file = ScriptFile.from_textfile(file_path)
             if not script_file.is_translated:
                 status_list.append("not_translated")
-            if script_file.need_manual_fix:
-                status_list.append("need_manual_fix")
-            if script_file.is_translated and not script_file.need_manual_fix:
-                status_list.append("translated")
+            else:  # is translated
+                if script_file.need_manual_fix:
+                    status_list.append("need_manual_fix")
+                else:
+                    status_list.append("translated")
+
         except Exception as e:
             log_message(
                 "ERROR when trying to load translation status of file "

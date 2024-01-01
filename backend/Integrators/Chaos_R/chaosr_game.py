@@ -244,13 +244,20 @@ class ChaosRGame(Game):
             log_level=LogLevel.INFO,
         )
 
-    def integrate(self, text):
+    def integrate(self):
         """Integrate the text into the game."""
         for script_file in self.to_translate_file_list:
             script_file.update_from_textfile()
 
-            # regenerate the script file, this will be save to translated_files folder
-            script_file.generate_translated_rawfile(replace=True)
+            # generate file destination path
+            relative_path = os.path.relpath(
+                script_file.script_file_path, self.rawtext_directory
+            )
+            translated_path = os.path.join(
+                self.translated_files_directory, relative_path
+            )
+
+            script_file.generate_translated_rawfile(dest=translated_path, replace=True)
 
             # get the relative path
             relative_path = os.path.relpath(

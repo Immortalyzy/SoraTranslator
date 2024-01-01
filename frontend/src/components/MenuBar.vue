@@ -2,13 +2,14 @@
     <span class="menu-bar-in">
         <button @click="create_new_project">New Project</button>
         <button @click="initialize_project">Initialize </button>
-        <button> Save project</button>
+        <button @click="integrate_project"> Integrate </button>
         <button> Preferences </button>
     </span>
 </template>
 
 <script>
 import { initializeGame } from '@/utils/projectManagement'
+import axios from 'axios'
 export default {
     name: 'MenuBar',
     methods: {
@@ -22,6 +23,25 @@ export default {
             const project = this.$store.state.project;
             await initializeGame(project);
         },
+        async integrate_project() {
+            let integrateRequest = {};
+            integrateRequest.project_file_path = this.$store.state.project.project_file_path;
+            alert("Integrating project: " + integrateRequest.project_file_path)
+            const http = axios.create({
+                baseURL: "http://localhost:5000",
+                method: "POST",
+                headers: {
+                    "Content-type": "application/json",
+                },
+            });
+            await http.post("/integrate_game", integrateRequest).then((response) => {
+                console.log(response.data);
+                const reponseInfo = response.data;
+                alert("Integration finished. " + reponseInfo["indication"]);
+            }).catch((error) => {
+                console.log(error);
+            })
+        }
 
     }
 };

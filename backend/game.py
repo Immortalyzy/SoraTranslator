@@ -65,7 +65,7 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def integrate(self, text):
+    def integrate(self):
         """
         This generalized function should provide a combination of operations that take the text from the SoraTranslator/Text folder and integrate it into the game.
         This funciton should also return some instructions for the user to follow to finalize the integration.

@@ -78,6 +78,7 @@ class Project:
         return {
             "name": self.name,
             "project_path": self.project_path,
+            "project_file_path": self.project_file_path,
             "game_path": self.game_path,
             "original_files_directory": self.original_files_directory,
             "rawtext_directory": self.rawtext_directory,
@@ -146,9 +147,10 @@ class Project:
         except Exception as e:
             return False
 
-    def load_project(self, project_path):
-        """load a project from a project file"""
-        pass
+    def integrate_game(self):
+        """runs the game.integrate()"""
+        indication = self.game.integrate()
+        return indication
 
     def save(self):
         """save the project to a project file"""

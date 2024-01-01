@@ -236,26 +236,27 @@ class ScriptFile:
                 continue
             block = Block.from_csv_line(line)
             # verify line information
-            if block.text_original != self.blocks[i].text_original:
+            j = i - PROPERTY_LINE_LENGTH
+            if block.text_original != self.blocks[j].text_original:
                 log_message(
-                    f"Line {i+1} in text file {self.text_file_path} does not match the script file, cannot update",
+                    f"Line {j+1} in text file {self.text_file_path} does not match the script file, cannot update",
                     log_level=LogLevel.ERROR,
                 )
                 return False
             # update the block, cannot copy because there is no parsing information in "block"
-            self.blocks[i].text_translated = block.text_translated
-            self.blocks[i].speaker_translated = (
+            self.blocks[j].text_translated = block.text_translated
+            self.blocks[j].speaker_translated = (
                 block.speaker_translated
                 if block.speaker_translated != ""
-                else self.blocks[i].speaker_original
+                else self.blocks[j].speaker_original
             )
             # update tanslation information
-            self.blocks[i].is_translated = (
+            self.blocks[j].is_translated = (
                 True if block.text_translated != "" else False
             )
-            if self.blocks[i].is_translated:
-                self.blocks[i].translation_date = block.translation_date
-                self.blocks[i].translation_engine = block.translation_engine
+            if self.blocks[j].is_translated:
+                self.blocks[j].translation_date = block.translation_date
+                self.blocks[j].translation_engine = block.translation_engine
 
         return True
 
