@@ -23,6 +23,8 @@
 // import { ipcRenderer } from 'electron'
 import axios from 'axios';
 import { EventBus } from '@/utils/eventBus'
+import { mapState } from 'vuex';
+import { mapActions } from 'vuex';
 export default {
   name: "DirectoryTree",
   props: {
@@ -33,7 +35,6 @@ export default {
   },
   data() {
     return {
-      files: null,
       selectedPath: null,
     };
   },
@@ -52,9 +53,15 @@ export default {
       }
       return "Tree Display";
     },
+    ...mapState({
+      files: state => state.currentFileList,
+    }),
 
   },
   methods: {
+    ...mapActions({
+      updateFileList: 'updateFileList',
+    }),
     async loadDirectory() {
       const rawtextDirectory = this.$store.getters.getProject.rawtext_directory;
       const textDirectory = this.$store.getters.getProject.text_directory;
@@ -82,7 +89,8 @@ export default {
       }
       let resultReturned = await window.electron.ipcRenderer.invoke("list-files", tempTree);
       console.log("Result Returned", resultReturned);
-      this.files = resultReturned;
+      //this.files = resultReturned;
+      this.updateFileList(resultReturned);
       this.updateTranslationStatus();
     },
     clickItem(filePath) {
