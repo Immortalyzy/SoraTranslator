@@ -41,6 +41,8 @@ class ScriptFile:
         self.next_script_file_name = ""
 
         # ordinary info, will add here as generally needed
+        # translation info, will store the translation status (including how the translation was performed and which part caused problem)
+        self.info = {"translation_info": "not translated yet"}
 
     @classmethod
     def from_originalfile(cls, file_path):
@@ -98,6 +100,7 @@ class ScriptFile:
         data["is_translated"] = self.is_translated
         data["need_manual_fix"] = self.need_manual_fix
         data["translation_percentage"] = self.translation_percentage
+        data["translation_info"] = self.info["translation_info"]
         blocks_json = []
         for block in self.blocks:
             blocks_json.append(block.to_json())
@@ -345,6 +348,9 @@ class ScriptFile:
             result = True if getattr(self, property_name) else False
         elif property_name == "translation_percentage":
             result = f"{getattr(self, property_name):.2f}"
+        elif property_name == "info":
+            # generate a long info line containing all info
+            print("not implemented yet")
         else:
             result = getattr(self, property_name)
         return property_name + "\t" + str(result)

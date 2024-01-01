@@ -202,8 +202,8 @@ def translate_text():
     data = request.json
     # some translation settings are sent from the frontend
     config = Config.from_json(DEFAULT_CONFIG_FILE)
-    config.temperature = data["temperature"]
-    config.max_lines = data["max_lines"]
+    config.gpt_temperature = float(data["temperature"])
+    config.gpt_max_lines = int(data["max_lines"])
 
     # create translator instance
     translator = createTranslatorInstance("gpt", config=config)
@@ -223,4 +223,4 @@ def translate_text():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
