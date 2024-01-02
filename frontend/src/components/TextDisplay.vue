@@ -127,7 +127,7 @@ export default defineComponent({
 
             const scrollbarWidth = 17; //this.isVerticalScrollbarPresent() ? 17 : 17; // Adjust scrollbar width if needed
             const containerWidth = containerElement.offsetWidth - scrollbarWidth;
-            const ratio = [5, 10, 40, 10, 35]; // Your specified ratios
+            const ratio = [5, 5, 45, 5, 40]; // Your specified ratios
             const totalRatio = ratio.reduce((a, b) => a + b, 0);
             return ratio.map(w => (w / totalRatio) * containerWidth);
         },

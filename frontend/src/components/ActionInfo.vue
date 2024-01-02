@@ -11,8 +11,16 @@
                 <label>Maximum lines: </label>
                 <input type="text" placeholder="50" v-model="max_lines" />
             </div>
+            <div class="action-sub">
+                <label>Separation: </label>
+                <input type="text" placeholder="50" v-model="separation_method" />
+            </div>
+            <div class="action-sub">
+                <label>Joiner: </label>
+                <input type="text" placeholder="50" v-model="joiner" />
+            </div>
             <hr />
-            <button @click="translateAll">Translate and save all files</button>
+            <button @click="translateAll">Translate all files</button>
             <button @click="stop">Stop</button>
             <hr />
             <button @click="translateThis"> Translate this file</button>
@@ -45,7 +53,9 @@ export default {
     data() {
         return {
             temperature: 0.25,
-            max_lines: 50
+            max_lines: 50,
+            separation_method: "[]",
+            joiner: "|",
         }
 
     },
@@ -129,6 +139,7 @@ export default {
     height: 50%;
     border: #ffd0d0;
     align-items: center;
+    overflow: auto;
 }
 
 .action-settings-title {
@@ -207,6 +218,7 @@ button :hover {
     text-shadow: 0 0 5px rgba(255, 0, 0, 0.7), 0 0 20px rgba(255, 0, 0, 0.6);
     /* Red glow */
     height: 50%;
+    overflow-y: auto;
 }
 
 .info-row {
