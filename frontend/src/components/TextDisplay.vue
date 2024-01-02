@@ -103,21 +103,21 @@ export default defineComponent({
         window.removeEventListener('resize', this.updateHotSettings);
     },
     methods: {
-        isVerticalScrollbarPresent() {
-            const hotContainer = this.$refs.hotInstance.$el;
-            if (!hotContainer) {
-                console.error("Handsontable container not found");
-                return false;
-            }
-
-            const htCore = hotContainer.querySelector('.htCore');
-            if (!htCore) {
-                console.error("Handsontable core element not found");
-                return false;
-            }
-            // todo this is not working
-            return hotContainer.offsetWidth > htCore.clientWidth;
-        },
+        //        isVerticalScrollbarPresent() {
+        //            const hotContainer = this.$refs.hotInstance.$el;
+        //            if (!hotContainer) {
+        //                console.error("Handsontable container not found");
+        //                return false;
+        //            }
+        //
+        //            const htCore = hotContainer.querySelector('.htCore');
+        //            if (!htCore) {
+        //                console.error("Handsontable core element not found");
+        //                return false;
+        //            }
+        //            // todo this is not working
+        //            return hotContainer.offsetWidth > htCore.clientWidth;
+        //        },
         calculateColumnWidths() {
             const containerElement = this.$refs.hotInstance.$el;
             if (!containerElement) {
@@ -125,8 +125,7 @@ export default defineComponent({
                 return []; // Return an empty array to use default widths
             }
 
-            const scrollbarWidth = this.isVerticalScrollbarPresent() ? 17 : 17; // Adjust scrollbar width if needed
-            console.log("Scrollbar: " + scrollbarWidth)
+            const scrollbarWidth = 17; //this.isVerticalScrollbarPresent() ? 17 : 17; // Adjust scrollbar width if needed
             const containerWidth = containerElement.offsetWidth - scrollbarWidth;
             const ratio = [5, 10, 40, 10, 35]; // Your specified ratios
             const totalRatio = ratio.reduce((a, b) => a + b, 0);

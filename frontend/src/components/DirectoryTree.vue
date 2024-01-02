@@ -106,6 +106,7 @@ export default {
       }
       this.selectedPath = filePath;
       this.$emit("change-display", displayType, filePath);
+      EventBus.emit("updateInfo");
     },
     updateTranslationStatus() {
       if (!(this.currentTreeDisplay === "T")) {

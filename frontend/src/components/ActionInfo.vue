@@ -27,8 +27,9 @@
         </div>
         <div class="information">
             <div v-for="(value, key) in currentInfo" :key="key" class="info-row">
-                <div class="property-name">{{ key }}</div>
+                <div class="property-name">{{ key }}: </div>
                 <div class="property-value">{{ value }}</div>
+                <hr />
             </div>
         </div>
     </div>
@@ -38,6 +39,7 @@
 import { mapState } from 'vuex';
 import { EventBus } from '@/utils/eventBus'
 import { translateFile, changeFileProperty, translateAllFiles } from '@/utils/fileManagement'
+import { requestFileInfo } from '@/utils/info';
 export default {
     name: 'ActionInfo',
     data() {
@@ -87,6 +89,7 @@ export default {
         updateInfo() {
             // update the info based on last clicked item
             // if a file
+            requestFileInfo();
 
             //todo: add other options when possible
         },
@@ -96,7 +99,14 @@ export default {
         ...mapState({
             currentInfo: state => state.currentInfo
         })
+    },
+    mounted() {
+        EventBus.on("updateInfo", this.updateInfo);
+    },
+    unmounted() {
+        EventBus.off("updateInfo", this.updateInfo);
     }
+
 };
 </script>
 

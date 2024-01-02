@@ -17,7 +17,7 @@ const store = createStore({
             currentFileList: [],
             // stores the main display
             currentDisplay: {
-                displayType: "T",
+                type: "text",
                 filePath: "",
             },
             // stores the strings to be displayed in the info panel
@@ -49,6 +49,9 @@ const store = createStore({
         updateCurrentDisplay(state, newDisplay) {
             state.currentDisplay = newDisplay;
         },
+        updateCurrentInfo(state, newInfo) {
+            state.currentInfo = newInfo;
+        },
         updateTranslationFile(state, newFilePath) {
             state.currentTranslation.filePath = newFilePath;
         },
@@ -71,6 +74,9 @@ const store = createStore({
         },
         updateCurrentDisplay(context, newDisplay) {
             context.commit('updateCurrentDisplay', newDisplay);
+        },
+        updateCurrentInfo(context, newInfo) {
+            context.commit('updateCurrentInfo', newInfo);
         },
         updateTranslationFile(context, newFilePath) {
             context.commit('updateTranslationFile', newFilePath);

@@ -222,5 +222,42 @@ def translate_text():
         return result
 
 
+@app.route("/request_file_info", methods=["POST"])
+def request_file_info():
+    """return the file info"""
+    # read project
+    data = request.json
+    result = {}
+    try:
+        file_type = data["file_type"]
+        file_path = data["file_path"]
+        if file_type == "raw_text" or file_type == "translated_file":
+            script_file = ScriptFile.from_originalfile(file_path)
+            result["File path"] = script_file.original_file_path
+        elif file_type == "text":
+            script_file = ScriptFile.from_textfile(file_path)
+            result["Info"] = script_file.info
+            # info is a dict, so add N of parts, N of blocks each part and parts that have problems here
+
+            result["Trnslted?"] = script_file.is_translated
+            result["Need fix?"] = script_file.need_manual_fix
+            result["Percent"] = script_file.translation_percentage
+
+            # result["Script file"] = script_file.original_file_path
+            result["Parsed on"] = script_file.read_date
+            result["File type"] = script_file.file_type
+            result["Package"] = script_file.original_package
+        else:
+            result["info"] = "Unsupported info type"
+        response = {
+            "status": True,
+            "info": result,
+        }
+        return response
+    except Exception as e:
+        response = {"status": False}
+        return response
+
+
 if __name__ == "__main__":
     app.run(debug=True, threaded=True)
