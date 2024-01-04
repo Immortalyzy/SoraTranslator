@@ -39,9 +39,6 @@ class Game(ABC):
         self.dangerous_file_list = []
         self.dangerous_file_list_file = ""
 
-        # temp file info storage
-        self.temp_unpack_directory = ""
-
     @classmethod
     @abstractmethod
     def from_pythonfile(cls, paths, python_file, config=default_config):
