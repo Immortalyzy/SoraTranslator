@@ -16,15 +16,24 @@ class Block:
         self.is_translated = False  # will also be set to true if the block is empty
         self.speaker_original = ""
         self.speaker_translated = ""
+        self.texts_original = []  # not used
         self.text_original = ""
         self.text_translated = ""
         self.block_name_line = ""
 
-        # for integration
+        ## for integration
+        # the line number of the speaker
         self.speaker_line = 0
+        # tuple for the start and end position of the speaker
         self.speaker_start_end = (0, 0)
-        self.text_line = 0
-        self.text_start_end = (0, 0)
+        # list of lines for every part of the text
+        self.text_line = [0]
+        # list of tuples for the positions of every part of the text
+        self.text_start_end = [(0, 0)]
+        # if the text is separated into multiple lines or parts (by macros)
+        self.text_separated = False
+        # the proportion of each part of the text, sum up to 1
+        self.text_proportion = [1]
 
         # for translation record
         self.translation_date = ""
