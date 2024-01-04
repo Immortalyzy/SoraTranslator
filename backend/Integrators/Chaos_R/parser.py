@@ -209,7 +209,7 @@ def fix_multiline_block(block: Block):
     return block
 
 
-possible_content_re = [r"^(?!_).*dakr.*\.ks", r"^(?!_)luna.*\.ks"]
+possible_content_re = [r"^(?!_).*dakr.*\.ks", r"^(?!_)luna.*\.ks", r"est.*\.ks"]
 
 
 def guess_file_type(script_file: ScriptFile) -> str:
