@@ -1,9 +1,9 @@
 """ This file contains the post process utilities functions for the translators."""
 from block import Block
 
-possible_starting_characters = ["『", "“", '"', "'", "‘"]
+possible_starting_characters = ["『", "“", '"', "'", "‘", "\\", "/"]
 
-possible_ending_characters = ["』", "”", '"', "'", "’"]
+possible_ending_characters = ["』", "”", '"', "'", "’", "/", "\\"]
 
 standard_starting_character = "「"
 standard_ending_character = "」"
