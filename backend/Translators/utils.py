@@ -1,6 +1,7 @@
 """ This file contains the utility functions for the translators."""
 
 import re
+from block import Block
 
 
 aaaa_possible_list = [
@@ -12,7 +13,7 @@ aaaa_possible_list = [
     "アアア",
     "ァァァ",
 ]
-surrounding_characters = [""]
+surrounding_characters = ["”"]
 
 
 def convert_prompt_response(
@@ -63,7 +64,7 @@ def find_aaaa(text: str) -> object:
 
 
 def remove_aaa(text: str) -> (str, (int, int)):
-    """remove the ahaha from the text
+    """remove the ahaha from the text, allows the tranlsation of sentences with aaa
     Args:
         text (str): the text to be removed
     Returns:
@@ -82,27 +83,7 @@ def remove_aaa(text: str) -> (str, (int, int)):
         return text, found_aaaa.span()
 
 
-def fix_quoting_symbol(text: str) -> str:
-    """fix the quoting symbol in the text
-    Args:
-        text (str): the text to be fixed
-    Returns:
-        str: the text with the quoting symbol fixed
-    """
-    if text.startswith("“"):
-        text = "「" + text[1:]
-    if text.startswith("”"):
-        text = "」" + text[1:]
-    return text
-
-
 def fix_text_before_translation(text: str) -> str:
     """A combination of fixing methods before translation"""
     text, _ = remove_aaa(text)
-    return text
-
-
-def fix_text_after_translation(text: str) -> str:
-    """A combination of fixing methods after translation"""
-    text = fix_quoting_symbol(text)
     return text

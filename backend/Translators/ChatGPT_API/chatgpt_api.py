@@ -9,6 +9,7 @@ from constants import SuccessStatus as success
 from constants import LogLevel
 from logger import log_message
 from .. import utils
+from .. import utils_post
 from ..translator import Translator
 
 
@@ -313,9 +314,8 @@ class GPT_Translator(Translator):
                     if utils.find_aaaa(block.text_original) is not None:
                         continue
                     # record the translation
-                    block.text_translated = utils.fix_text_after_translation(
-                        translations[translation_index]
-                    )
+                    block.text_translated = translations[translation_index]
+                    block = utils_post.fix_text_after_translation(block)
                     translation_index += 1
 
                     # update the translation info
@@ -357,9 +357,8 @@ class GPT_Translator(Translator):
                     if utils.find_aaaa(block.text_original) is not None:
                         continue
                     # record the translation
-                    block.text_translated = utils.fix_text_after_translation(
-                        translations[translation_index]
-                    )
+                    block.text_translated = translations[translation_index]
+                    block = utils_post.fix_text_after_translation(block)
                     translation_index += 1
 
                     # update the translation info
