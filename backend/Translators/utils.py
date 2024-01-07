@@ -60,6 +60,8 @@ def find_aaaa(text: str) -> object:
         found_aaaa = re.search(aaaa, text)
         if found_aaaa:
             break
+    # temp test
+    return None
     return found_aaaa
 
 
