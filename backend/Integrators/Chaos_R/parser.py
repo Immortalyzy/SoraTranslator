@@ -9,9 +9,6 @@ from constants import LogLevel
 from scriptfile import ScriptFile
 from block import Block
 
-marco_indicator = r"\[ns\].*?\[nse\]"
-macro_indicator2 = r"\[([^\[\]]*)\]"
-
 
 def parse_file(script_file: ScriptFile) -> List[Block]:
     """this function will parse a script file to blocks, this parser will omit the text at the beging of file outside of any blocks"""
@@ -68,6 +65,10 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
     )
 
 
+marco_indicator = r"\[ns\].*?\[nse\]"
+macro_indicator2 = r"\[([^\[\]]*)\]"
+
+
 def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     """parse the block"""
     speaker = ""
@@ -78,6 +79,16 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     text_start_end = (0, 0)
     # indicator for "other" speakers, this MUST be kept in this order
     # Keep replacing innermost brackets until there are none left
+
+    # check if the block is a selection block
+    # selection blocks for choas-r games has a name start with \*SEL***
+    if block.block_name.startswith("*SEL"):
+        block.block_type = "selection"
+        for i, line in enumerate(block.block_content):
+            # skip the block name line
+            if "*" in line:
+                continue
+        return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
 
     # this only works when there is only one text in one line
     for i, line in enumerate(block.block_content):
