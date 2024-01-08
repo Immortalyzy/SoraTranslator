@@ -5,12 +5,74 @@ from logger import log_message
 from constants import LogLevel
 
 
+def default_text_separater(text_translated_whole, texts_original):
+    """default text separater, by chatgpt"""
+    # Calculate the total length of the original text
+    total_length = sum(len(text) for text in texts_original)
+
+    # Calculate the proportion of each part of the original text
+    text_proportion = [len(text) / total_length for text in texts_original]
+
+    # Split the translated text based on the ratio
+    translated_texts = []
+    start = 0
+    for i, proportion in enumerate(text_proportion):
+        if i == len(text_proportion) - 1:  # For the last segment
+            end = len(text_translated_whole)
+        else:
+            end = start + int(proportion * len(text_translated_whole))
+            # Ensure not to split in the middle of a word
+            # while (
+            #     end < len(text_translated_whole)
+            #     and text_translated_whole[end].isalpha()
+            # ):
+            #     end += 1
+        translated_texts.append(text_translated_whole[start:end])
+        start = end
+
+    # Return the list of separated translated text
+    return translated_texts
+
+
+def replace_substrings(original, positions, new_texts):
+    """Replace substrings in a string at given positions with new texts"""
+    if len(positions) != len(new_texts):
+        raise ValueError("The lengths of positions and new_texts must be the same.")
+
+    # join the original texts
+    original = "".join(original)
+
+    # Sorting the positions by start index
+    positions = sorted(positions, key=lambda x: x[0])
+
+    last_end = 0
+    parts = []
+    for i, (start, end) in enumerate(positions):
+        # Append part of the string that doesn't change
+        parts.append(original[last_end:start])
+        # Append new text
+        parts.append(new_texts[i])
+        last_end = end
+
+    # Append any remaining part of the string after the last replacement
+    parts.append(original[last_end:])
+
+    # total text
+    total = "".join(parts)
+
+    # split by line
+    results = total.split("\n")
+
+    return results
+
+
 class Block:
     """A block is a unit of text in a script file that controls the text that is shown at one time"""
 
     def __init__(self, block_name, block_content):
         # basic info
         self.is_parsed = False
+        self.block_type = "normal"  # normal, selection or other
 
         # for translation
         self.is_translated = False  # will also be set to true if the block is empty
@@ -27,13 +89,9 @@ class Block:
         # tuple for the start and end position of the speaker
         self.speaker_start_end = (0, 0)
         # list of lines for every part of the text
-        self.text_line = [0]
+        self.text_lines = [0]
         # list of tuples for the positions of every part of the text
-        self.text_start_end = [(0, 0)]
-        # if the text is separated into multiple lines or parts (by macros)
-        self.text_separated = False
-        # the proportion of each part of the text, sum up to 1
-        self.text_proportion = [1]
+        self.text_positions = [(0, 0)]
 
         # for translation record
         self.translation_date = ""
@@ -108,28 +166,30 @@ class Block:
         }
         return data
 
-    def parse(self, parse_block_function):
+    def parse(self, parse_block_function=None):
         """parse the block"""
         (
             speaker,
             text,
             speaker_line,
             speak_start_end,
-            text_line,
-            text_start_end,
+            text_lines,
+            text_positions,
+            texts,
         ) = parse_block_function(self)
         self.speaker_original = speaker
         self.text_original = text
+        self.texts_original = texts
         self.speaker_line = speaker_line
         self.speaker_start_end = speak_start_end
-        self.text_line = text_line
-        self.text_start_end = text_start_end
+        self.text_lines = text_lines
+        self.text_positions = text_positions
 
         self.is_parsed = True
         if text == "":
             self.is_translated = True
 
-    def generate_full_rawblock(self) -> str:
+    def generate_full_rawblock(self, text_separater=default_text_separater) -> str:
         """generate the full translated content, to be replaced in the script file
         The function will return the text AND set the block_content_translated variable
         """
@@ -142,32 +202,40 @@ class Block:
 
         # block content is a list of lines
         temp_block_content = self.block_content.copy()
-        # replace the speaker if not empty
-        if self.speaker_original.strip() != "":
-            temp_block_content[self.speaker_line] = (
-                temp_block_content[self.speaker_line][: self.speaker_start_end[0]]
-                + self.speaker_translated
-                + temp_block_content[self.speaker_line][self.speaker_start_end[1] :]
+        total_replacement_positions = []
+        total_replacement_texts = []
+        # combine the speaker and text for eaiser processing
+        if self.speaker_original != "":
+            ## generate the speaker total position
+            ### count all length of lines before the speaker line
+            speaker_total_position = 0
+            for i in range(self.speaker_line):
+                speaker_total_position += len(temp_block_content[i])
+            ### add to the speaker position tuple
+            total_speaker_start_end = (
+                self.speaker_start_end[0] + speaker_total_position,
+                self.speaker_start_end[1] + speaker_total_position,
             )
-
-        # replacing the speaker will change the text positioni if they are on the same line
-        if self.speaker_line == self.text_line:
-            # shift the text position
-            if self.speaker_original.strip() != "":
-                self.text_start_end = (
-                    self.text_start_end[0]
-                    + (len(self.speaker_translated) - len(self.speaker_original)),
-                    self.text_start_end[1]
-                    + (len(self.speaker_translated) - len(self.speaker_original)),
-                )
+            ## add to total before adding the text
+            total_replacement_positions.append(total_speaker_start_end)
+            total_replacement_texts.append(self.speaker_translated)
 
         # replace the text
         if self.text_original != "" and self.text_translated.strip() != "":
-            temp_block_content[self.text_line] = (
-                temp_block_content[self.text_line][: self.text_start_end[0]]
-                + self.text_translated
-                + temp_block_content[self.text_line][self.text_start_end[1] :]
+            # separate the translated text
+            translated_texts = text_separater(self.text_translated, self.texts_original)
+            total_replacement_positions.extend(self.text_positions)
+            total_replacement_texts.extend(translated_texts)
+            # positions must be absolute positions in all content (not just the position in the line)
+            temp_block_content = replace_substrings(
+                original=temp_block_content,
+                positions=total_replacement_positions,
+                new_texts=total_replacement_texts,
             )
+        # remove empty lines
+        temp_block_content = [line for line in temp_block_content if line.strip() != ""]
+        # add an empty line at the end
+        temp_block_content.append("")
 
         # note the result
         self.block_content_translated = temp_block_content
@@ -181,6 +249,10 @@ class Block:
     def is_empty(self):
         """return if the block is empty"""
         return self.is_parsed and self.text_original == ""
+
+    def is_text_separated(self):
+        """return if the text is separated"""
+        return len(self.texts_original) > 1
 
     def text_to_translate(self, add_speaker: bool = False):
         """return the text to translate"""
