@@ -35,6 +35,7 @@ export default {
             try {
                 const response = await axios.get('http://localhost:5000/preferences');
                 this.preferences = response.data;
+                this.isEdited = false;
             } catch (error) {
                 console.error(error);
             }

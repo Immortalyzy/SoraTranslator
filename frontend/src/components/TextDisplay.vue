@@ -143,7 +143,7 @@ export default defineComponent({
         },
         async getFileContent() {
             // clear the rowData
-            if (this.filePath === "")
+            if (this.filePath === "" || this.$store.state.currentDisplay.type !== "text")
                 return;
             // clear rowData
             //            this.rowData = [];
