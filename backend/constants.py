@@ -23,7 +23,10 @@ LINE_BREAKER = "||"
 DEFAULT_INITIATION_PROMPT = [
     {
         "role": "system",
-        "content": "You are a translator of a part of a fantasy story with conversations and narration. Plase translate from {} to {}. KEEP the surroundings \[ \] of sentences in the translated text and return the same number of blocks in the translated text.",
+        "content": "You are a translator that translates a part of a fantasy story with conversations and narration while trying to keep the original text format. "
+        + "Plase translate from {} to {}. "
+        + " Please KEEP the surrounding symbols [ and ] of sentences in the translated text."
+        + " Each [ ] indicates a block and try to return the same number of blocks in the translated text.",
     },
 ]
 DEFAULT_FIXING_PROMPT = [
