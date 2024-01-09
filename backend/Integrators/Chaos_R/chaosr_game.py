@@ -204,7 +204,7 @@ class ChaosRGame(Game):
             text_path = os.path.join(self.text_directory, relative_path)
             text_path = os.path.splitext(text_path)[0] + ".csv"
 
-            script_file.generate_textfile(dest=text_path, replace=replace)
+            script_file.generate_textfiles(dest=text_path, replace=replace)
         self.update_script_filelist()
         return True
 
@@ -248,7 +248,7 @@ class ChaosRGame(Game):
     def integrate(self):
         """Integrate the text into the game."""
         for script_file in self.to_translate_file_list:
-            script_file.update_from_textfile()
+            script_file.update_from_textfiles()
 
             # generate file destination path
             relative_path = os.path.relpath(

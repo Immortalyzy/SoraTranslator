@@ -5,6 +5,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from project import Project
 from scriptfile import ScriptFile
+from textfile import TextFile
 from constants import DEFAULT_CONFIG_FILE, LogLevel
 from config import Config
 from Translators.all_translators import createTranslatorInstance
@@ -88,7 +89,7 @@ def change_file_property():
     data = request.json
     try:
         log_message("Changing file property:" + data["file_path"], LogLevel.DEBUG)
-        text_file = ScriptFile.from_textfile(data["file_path"])
+        text_file = TextFile.from_textfile(data["file_path"])
         property_name = data["property_name"]
         property_value = data["property_value"]
         setattr(text_file, property_name, property_value)
@@ -106,7 +107,7 @@ def require_text_json():
     # read project
     data = request.json
     try:
-        script_file = ScriptFile.from_textfile(data)
+        script_file = TextFile.from_textfile(data)
         print("Reading text file" + script_file.text_file_path)
         result = script_file.to_json()
         result["status"] = True
@@ -130,7 +131,7 @@ def require_tranlsation_status():
     log_message("Loading translation status", LogLevel.DEBUG)
     for file_path in file_list:
         try:
-            script_file = ScriptFile.from_textfile(file_path)
+            script_file = TextFile.from_textfile(file_path)
             if not script_file.is_translated:
                 status_list.append("not_translated")
             else:  # is translated
@@ -162,7 +163,7 @@ def save_text_from_json():
     try:
         blocks = data["blocks"]
         file_path = data["filePath"]
-        script_file = ScriptFile.from_textfile(file_path=file_path)
+        script_file = TextFile.from_textfile(file_path=file_path)
         if len(blocks) != len(script_file.blocks):
             log_message(
                 "The number of blocks in the text file is not the same as the number of blocks in the json file",
@@ -202,7 +203,7 @@ def translate_text():
     # data is file path
     data = request.json
     # some translation settings are sent from the frontend
-    config = Config.from_json(DEFAULT_CONFIG_FILE)
+    config = Config.from_json_file(DEFAULT_CONFIG_FILE)
     config.gpt_temperature = float(data["temperature"])
     config.gpt_max_lines = int(data["max_lines"])
 
@@ -210,7 +211,7 @@ def translate_text():
     translator = createTranslatorInstance("gpt", config=config)
 
     try:
-        script_file = ScriptFile.from_textfile(data["file_path"])
+        script_file = TextFile.from_textfile(data["file_path"])
         log_message("Translating file" + script_file.text_file_path, LogLevel.INFO)
         translator.translate_file_whole(script_file)
         script_file.generate_textfile(script_file.text_file_path, replace=True)
@@ -236,7 +237,7 @@ def request_file_info():
             script_file = ScriptFile.from_originalfile(file_path)
             result["File path"] = script_file.original_file_path
         elif file_type == "text":
-            script_file = ScriptFile.from_textfile(file_path)
+            script_file = TextFile.from_textfile(file_path)
             result["Info"] = script_file.info
             # info is a dict, so add N of parts, N of blocks each part and parts that have problems here
 

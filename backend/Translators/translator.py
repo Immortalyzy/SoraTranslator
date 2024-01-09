@@ -3,7 +3,7 @@
 
 # before translation, the translation should read a to_translate_file_list.csv file to get a list of [ScriptFile] for translation
 from abc import ABC, abstractmethod
-from scriptfile import ScriptFile
+from textfile import TextFile
 from block import Block
 from constants import SuccessStatus as success
 from config import default_config
@@ -21,7 +21,7 @@ class Translator(ABC):
         pass
 
     @abstractmethod
-    def translate_file_whole(self, script_file: ScriptFile) -> success:
+    def translate_file_whole(self, text_file: TextFile) -> success:
         """Set the path of to_translate_file_list.csv file"""
         pass
 

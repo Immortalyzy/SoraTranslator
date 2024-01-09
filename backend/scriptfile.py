@@ -5,24 +5,27 @@ import os
 from logger import log_message
 from constants import LogLevel
 from block import Block
-
-PROPERTY_LINE_LENGTH = 10
+from textfile import TextFile
 
 
 class ScriptFile:
     """The GameFile class defines a script file and info around it, the class provides a framework for integration actions defined in the game folders"""
 
     def __init__(self, file_path):
-        # a list of blocks in the file, will be filled when parsing
-        self.blocks = []
+        # a list of all blocks in the file, will be filled when parsing
+        self.blocks: list(Block) = []
         # these two are used to record the non-block content in the file
         self.non_block_string_between_blocks = []
         self.block_number_for_non_block_string = []
+
+        # this avoids error when forgot to use from_originalfile
         self.original_file_path = file_path
-        self.script_file_path = (
-            file_path  # this avoids error when forgot to use from_originalfile
-        )
-        self.text_file_path = ""  # the path of the text file in .csv
+        self.script_file_path = file_path
+
+        # separate the file into multiple text files
+        # each text file contain a reasonable amount of blocks for translation and editing
+        self.textfiles = []
+        self.blocks_count_in_textfile = []
         self.translated_script_file_path = ""
 
         self.read_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -32,6 +35,7 @@ class ScriptFile:
         self.original_package = ""  # the package the file is in
 
         # set to true if ALL the text in the file is translated
+        # !should be deprecated
         self.is_translated = False
         self.need_manual_fix = False
         self.translation_percentage = 0.0
@@ -51,41 +55,6 @@ class ScriptFile:
         scriptfile.script_file_path = file_path
         return scriptfile
 
-    @classmethod
-    def from_textfile(cls, file_path):
-        """create a game file instance from a file path"""
-        scriptfile = cls(file_path)
-        # the script file path is undefined if it is read from a text file, this is usually used for translators
-        scriptfile.script_file_path = ""
-        scriptfile.text_file_path = file_path
-        # the file type is content if it is read from a text file
-        scriptfile.file_type = "content"
-        # the original package is the directory name of the file (only the last part)
-        # scriptfile.original_package = os.path.basename(os.path.dirname(file_path))
-        # check file existence
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"Text file {file_path} does not exist")
-        with open(file_path, "r", encoding="utf_16") as file:
-            lines = file.readlines()
-            for i, line in enumerate(lines):
-                if i < PROPERTY_LINE_LENGTH:
-                    # record the property information from file
-                    scriptfile.to_property(line)
-                    # skip the first few lines
-                    continue
-                # cannot call stirp() here because the line may be empty
-                scriptfile.blocks.append(Block.from_csv_line(line))
-        print(f"Text file {file_path} loaded, {len(scriptfile.blocks)} blocks found")
-
-        # verifications
-        # if all the blocks are translated, then the file is translated
-        # scriptfile.is_translated = all(
-        #     block.is_translated for block in scriptfile.blocks
-        # )
-        # ! setting a file to translated should be done by the translator
-
-        return scriptfile
-
     def to_json(self):
         """create a json object for usage in frontend"""
         data = {}
@@ -97,8 +66,6 @@ class ScriptFile:
         data["read_date"] = self.read_date
         data["file_type"] = self.file_type
         data["original_package"] = self.original_package
-        data["is_translated"] = self.is_translated
-        data["need_manual_fix"] = self.need_manual_fix
         data["translation_percentage"] = self.translation_percentage
         data["translation_info"] = self.info["translation_info"]
         blocks_json = []
@@ -111,7 +78,10 @@ class ScriptFile:
         """create a entry in the scriptlist.csv"""
         entry = ""
         entry += self.script_file_path + "\t"
-        entry += self.text_file_path + "\t"
+        if len(self.textfiles) == 1:
+            entry += self.textfiles[0].text_file_path + "\t"
+        else:
+            entry += f"{len(self.textfiles):d} files" + "\t"
         entry += self.file_type + "\t"
         entry += str(int(self.is_translated)) + "\t"
         entry += str(int(self.need_manual_fix)) + "\t"
@@ -121,20 +91,37 @@ class ScriptFile:
         entry += str(self.read_date) + "\n"
         return entry
 
-    def parse(self, parse_file_function, parse_block_function):
+    def parse(
+        self,
+        parse_file_function,
+        parse_block_function,
+        maximum_block_count=100,
+        force_single=False,
+    ):
         """parse the script file"""
         # parse the file and save the blocks
-        (
-            self.blocks,
-            self.non_block_string_between_blocks,
-            self.block_number_for_non_block_string,
-        ) = parse_file_function(self)
+        parse_file_function(self)
 
         # parse all the blocks
         for block in self.blocks:
             block.parse(parse_block_function)
 
-    def generate_textfile(
+        # if the parser function didn't separate the file into textfiles
+        # then separate the file into textfiles automatically
+        if len(self.textfiles) == 0 and (not force_single):
+            # separate the blocks
+            subblocks = [
+                self.blocks[i : i + maximum_block_count]
+                for i in range(0, len(self.blocks), maximum_block_count)
+            ]
+            for i, subblock in enumerate(subblocks):
+                textfile = TextFile.from_blocks(subblock)
+                textfile.original_package = self.original_package
+                textfile.script_file_path = self.script_file_path
+                self.textfiles.append(textfile)
+                self.blocks_count_in_textfile.append(len(subblock))
+
+    def generate_textfiles(
         self,
         dest="",
         replace=False,
@@ -144,130 +131,46 @@ class ScriptFile:
         Generate a text file based on the script file using the provided parser file.
 
         Args:
-            parser_file (str): The path to the parser python (.py) file.
-            text_file_path (str, optional): The path to the text file. If not provided, a default path will be generated based on the script file path. Defaults to "".
-            replace (bool, optional): Whether to replace an existing text file if it already exists. Defaults to False.
-            update (bool, optional): Whether to update an existing text file if it already exists. Defaults to False.
+            dest (str, optional): The destination folder of the text file. Defaults to "".
+            replace (bool, optional): If the text file already exists, replace it. Defaults to False.
+            update (bool, optional): If the text file already exists, update it. Defaults to False.
 
         Returns:
             bool: True if the text file was generated successfully, False otherwise.
         """
-
-        # Create the text filepath if not provided
-        if self.text_file_path == "" and dest == "":
-            raise ValueError("In latest version you have to give a text file path")
-        if dest != "":
-            # if dest is a file path, then use it
-            self.text_file_path = dest
-
-        # get the directory of the text file
-        destination_directory = os.path.dirname(self.text_file_path)
-        if not os.path.exists(destination_directory):
-            os.makedirs(destination_directory, exist_ok=True)
-
-        lines_wroten = 0
-        # check if the file exists
-        if os.path.exists(self.text_file_path):
-            if replace:
-                os.remove(self.text_file_path)
+        for i, textfile in enumerate(self.textfiles):
+            # Create the text filepath if not provided
+            if dest == "":
+                raise ValueError("In latest version you have to give a text file path")
+            # generate the paths for the text file
+            if i == 0:
+                textfile.text_file_path = dest
             else:
-                if update:
-                    if self.check_coherence_with_textfile():
-                        self.update_from_textfile()
-                    else:
-                        log_message(
-                            f"Text file {self.text_file_path} is not coherent with the script file, cannot update"
-                        )
-                        return 1  # error
-                else:
-                    log_message(
-                        f"Skipping {self.text_file_path} as it already exists",
-                        log_level=LogLevel.WARNING,
-                    )
-                    return 1  # error
+                textfile.text_file_path = dest[:-4] + f"_sorasub{i:d}" + dest[-4:]
+            # generate the text file
+            textfile.generate_textfile(replace=replace, update=update)
 
-        # create the text file
-        ## save file information
-        with open(self.text_file_path, "w", encoding="utf_16") as file:
-            file.write(self.from_property("original_file_path") + "\n")
-            file.write(self.from_property("script_file_path") + "\n")
-            file.write(self.from_property("text_file_path") + "\n")
-            file.write(self.from_property("translated_script_file_path") + "\n")
+        return 1
 
-            file.write(self.from_property("read_date") + "\n")
-
-            file.write(self.from_property("file_type") + "\n")
-            file.write(self.from_property("original_package") + "\n")
-
-            file.write(self.from_property("is_translated") + "\n")
-            file.write(self.from_property("need_manual_fix") + "\n")
-            file.write(self.from_property("translation_percentage") + "\n")
-            lines_wroten += PROPERTY_LINE_LENGTH
-            for block in self.blocks:
-                lines_wroten += 1
-                file.write(block.to_csv_line() + "\n")
-
-        log_message(
-            f"Text file {self.text_file_path} created, {lines_wroten} lines wroten"
-        )
-        return lines_wroten == 0
-
-    def update_from_textfile(self) -> bool:
+    def update_from_textfiles(self, strict_verfication=False) -> bool:
         """update the content (translation) of the script file from the text file"""
-        # check if the file exists
-        if not os.path.exists(self.text_file_path):
-            log_message(
-                f"Text file {self.text_file_path} does not exist, cannot update",
-                log_level=LogLevel.ERROR,
-            )
-            return False
-        with open(self.text_file_path, "r", encoding="utf_16") as file:
-            lines = file.readlines()
-        # implement verification (total lines, etc.)
-        if len(lines) != len(self.blocks) + PROPERTY_LINE_LENGTH:
-            log_message(
-                f"Text file {self.text_file_path} is not coherent with the script file, cannot update",
-                log_level=LogLevel.ERROR,
-            )
-            return False
-        # record the translation information in the text file and write them to blocks
-        for i, line in enumerate(lines):
-            if i < PROPERTY_LINE_LENGTH:
-                # record the property information from file
-                self.to_property(line)
-                # skip the first few lines
-                continue
-            block = Block.from_csv_line(line)
-            # verify line information
-            j = i - PROPERTY_LINE_LENGTH
-            if block.text_original != self.blocks[j].text_original:
-                log_message(
-                    f"Line {j+1} in text file {self.text_file_path} does not match the script file, cannot update",
-                    log_level=LogLevel.ERROR,
-                )
-                return False
-            # update the block, cannot copy because there is no parsing information in "block"
-            self.blocks[j].text_translated = block.text_translated
-            self.blocks[j].speaker_translated = (
-                block.speaker_translated
-                if block.speaker_translated != ""
-                else self.blocks[j].speaker_original
-            )
-            # update tanslation information
-            self.blocks[j].is_translated = (
-                True if block.text_translated != "" else False
-            )
-            if self.blocks[j].is_translated:
-                self.blocks[j].translation_date = block.translation_date
-                self.blocks[j].translation_engine = block.translation_engine
+        for textfile in self.textfiles:
+            textfile.update_from_textfile()
 
-        return True
+        # repalce the blocks with the updated blocks
+        temp_blocks = []
+        for textfile in self.textfiles:
+            temp_blocks += textfile.blocks
+        # check if the blocks are the same
+        if len(temp_blocks) != len(self.blocks):
+            print("block number not the same")
+            return False
+        if strict_verfication:
+            for i, block in enumerate(temp_blocks):
+                if block.block_name != self.blocks[i].block_name:
+                    return False
+        self.blocks = temp_blocks
 
-    def check_coherence_with_textfile(self, text_file_path=None):
-        """check if the script file is coherent with the text file"""
-        text_file_path = (
-            self.text_file_path if text_file_path is None else text_file_path
-        )
         return True
 
     def generate_translated_rawfile(self, dest="", replace=False):
@@ -412,7 +315,6 @@ def from_script_filelist(listfilepath: str) -> list:
             continue
         line = line.split("\t")
         script_file = ScriptFile.from_originalfile(line[0])
-        script_file.text_file_path = line[1]
         script_file.file_type = line[2]
         script_file.is_translated = bool(int(line[3]))
         script_file.need_manual_fix = bool(int(line[4]))

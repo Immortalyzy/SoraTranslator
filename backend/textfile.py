@@ -6,7 +6,7 @@ from logger import log_message
 from constants import LogLevel
 from block import Block
 
-PROPERTY_LINE_LENGTH = 10
+PROPERTY_LINE_LENGTH = 8
 
 
 class TextFile:
@@ -14,56 +14,39 @@ class TextFile:
     The core information of text files are stored in a csv file, the data in the class is sotred in Block instances.
     """
 
-    def __init__(self, file_path):
+    def __init__(self):
         # a list of blocks in the file, will be filled when parsing
         self.blocks = []
-        # these two are used to record the non-block content in the file
-        self.non_block_string_between_blocks = []
-        self.block_number_for_non_block_string = []
-
-        # path information
-        self.original_file_path = file_path
-        self.script_file_path = (
-            file_path  # this avoids error when forgot to use from_originalfile
-        )
-        self.text_file_path = ""  # the path of the text file in .csv
-        self.translated_script_file_path = ""
 
         self.read_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.text_file_path = ""  # will be generated when generating text file
+        self.script_file_path = ""  # will be changed if the instance is created during parsing a script file
+        self.original_package = ""  # will be changed if the instance is created during parsing a script file
 
         # file type
         self.file_type = "content"
-        self.original_package = ""  # the package the file is in
 
         # set to true if ALL the text in the file is translated
         self.is_translated = False
         self.need_manual_fix = False
         self.translation_percentage = 0.0
 
-        # if file type is content, then it should content following variables for eaiser integration
-        # at the end of certain files there will be a "jump" action that indicates the name of next file
-        self.next_script_file_name = ""
-
         # ordinary info, will add here as generally needed
         # translation info, will store the translation status (including how the translation was performed and which part caused problem)
         self.info = {"translation_info": "not translated yet"}
 
     @classmethod
-    def from_originalfile(cls, file_path):
+    def from_blocks(cls, blocks: list):
         """create a game file instance from a file path"""
-        scriptfile = cls(file_path)
-        scriptfile.script_file_path = file_path
-        return scriptfile
+        textfile = cls()
+        textfile.blocks = blocks
+        return textfile
 
     @classmethod
     def from_textfile(cls, file_path):
         """create a game file instance from a file path"""
-        scriptfile = cls(file_path)
-        # the script file path is undefined if it is read from a text file, this is usually used for translators
-        scriptfile.script_file_path = ""
+        scriptfile = cls()
         scriptfile.text_file_path = file_path
-        # the file type is content if it is read from a text file
-        scriptfile.file_type = "content"
         # the original package is the directory name of the file (only the last part)
         # scriptfile.original_package = os.path.basename(os.path.dirname(file_path))
         # check file existence
@@ -79,7 +62,7 @@ class TextFile:
                     continue
                 # cannot call stirp() here because the line may be empty
                 scriptfile.blocks.append(Block.from_csv_line(line))
-        print(f"Text file {file_path} loaded, {len(scriptfile.blocks)} blocks found")
+        # print(f"Text file {file_path} loaded, {len(scriptfile.blocks)} blocks found")
 
         # verifications
         # if all the blocks are translated, then the file is translated
@@ -94,10 +77,8 @@ class TextFile:
         """create a json object for usage in frontend"""
         data = {}
         # record the property information from file
-        data["original_file_path"] = self.original_file_path
         data["script_file_path"] = self.script_file_path
         data["text_file_path"] = self.text_file_path
-        data["translated_script_file_path"] = self.translated_script_file_path
         data["read_date"] = self.read_date
         data["file_type"] = self.file_type
         data["original_package"] = self.original_package
@@ -124,19 +105,6 @@ class TextFile:
 
         entry += str(self.read_date) + "\n"
         return entry
-
-    def parse(self, parse_file_function, parse_block_function):
-        """parse the script file"""
-        # parse the file and save the blocks
-        (
-            self.blocks,
-            self.non_block_string_between_blocks,
-            self.block_number_for_non_block_string,
-        ) = parse_file_function(self)
-
-        # parse all the blocks
-        for block in self.blocks:
-            block.parse(parse_block_function)
 
     def generate_textfile(
         self,
@@ -193,10 +161,8 @@ class TextFile:
         # create the text file
         ## save file information
         with open(self.text_file_path, "w", encoding="utf_16") as file:
-            file.write(self.from_property("original_file_path") + "\n")
             file.write(self.from_property("script_file_path") + "\n")
             file.write(self.from_property("text_file_path") + "\n")
-            file.write(self.from_property("translated_script_file_path") + "\n")
 
             file.write(self.from_property("read_date") + "\n")
 
@@ -274,66 +240,6 @@ class TextFile:
         )
         return True
 
-    def generate_translated_rawfile(self, dest="", replace=False):
-        """generate a translated file from memory"""
-        # if no translated file path is provided, generate one
-        if self.translated_script_file_path == "" and dest == "":
-            raise ValueError(
-                "In latest version you have to give a translated file path"
-            )
-        if dest != "":
-            self.translated_script_file_path = dest
-
-        # todo: add dest usage,
-        # check if dest is a file path or a directory
-        # if dest is a directory, then generate a file path based on the original file path
-
-        # recreate the rawtext structure, inserting non-block content
-        # todo: implement non-block string
-        for block in self.blocks:
-            block.generate_full_rawblock()
-            # write to file
-
-        # get the directory of the text file
-        destination_directory = os.path.dirname(self.translated_script_file_path)
-        if not os.path.exists(destination_directory):
-            os.makedirs(destination_directory, exist_ok=True)
-
-        lines_wroten = 0
-        # check if the file exists
-        if os.path.exists(self.translated_script_file_path):
-            if replace:
-                log_message(
-                    f"Replacing translated script file {self.translated_script_file_path}",
-                    log_level=LogLevel.WARNING,
-                )
-                os.remove(self.translated_script_file_path)
-            else:
-                log_message(
-                    f"Translated script file {self.translated_script_file_path} already exists, skip creation",
-                    log_level=LogLevel.WARNING,
-                )
-                return 1
-
-        # create the raw file
-        with open(self.translated_script_file_path, "w", encoding="utf_16") as file:
-            for block in self.blocks:
-                lines_wroten += 1
-                file.write("\n".join(block.block_content_translated) + "\n")
-
-        log_message(
-            f"Text file {self.translated_script_file_path} created, {lines_wroten} lines wroten"
-        )
-        return lines_wroten == 0
-
-    def is_system_file(self):
-        """return if is system file"""
-        return self.file_type == "system"
-
-    def is_content_file(self):
-        """return if is content file"""
-        return self.file_type == "content"
-
     def is_Hcontent(self):
         """return if is dangerous file"""
         return self.file_type == "Hcontent"
@@ -344,7 +250,7 @@ class TextFile:
 
     def is_to_translate(self):
         """return if is to translate file"""
-        return (self.is_content_file() or self.is_Hcontent()) and not self.is_translated
+        return self.is_Hcontent() and not self.is_translated
 
     def from_property(self, property_name):
         """convert between a property of the script file and a csv line"""
@@ -387,43 +293,3 @@ def initiate_script_filelist(listfilepath, replace=False):
         file.write(
             "script_file_path\ttext_file_path\tfile_type\tis_translated\tneed_manual_fix\ttranslation_percentage\toriginal_package\tread_date\n"
         )
-
-
-def update_script_filelist(listfilepath, filelist, replace=True):
-    """update the script file list"""
-    if not os.path.exists(listfilepath):
-        print("script file list does not exist, creating a new one")
-        initiate_script_filelist(listfilepath)
-    if replace:
-        # remove the old file
-        if os.path.exists(listfilepath):
-            os.remove(listfilepath)
-    for gamefile in filelist:
-        with open(listfilepath, "a", encoding="utf_16") as file:
-            file.write(gamefile.create_entry_in_scriptlistcsv())
-
-
-def from_script_filelist(listfilepath: str) -> list:
-    """create a list of script files from a script file list"""
-    script_file_list = []
-    with open(listfilepath, "r", encoding="utf_16") as file:
-        lines = file.readlines()
-    for line in lines:
-        if line.startswith("script_file_path"):
-            continue
-        line = line.strip()
-        if line == "":
-            continue
-        line = line.split("\t")
-        script_file = ScriptFile.from_originalfile(line[0])
-        script_file.text_file_path = line[1]
-        script_file.file_type = line[2]
-        script_file.is_translated = bool(int(line[3]))
-        script_file.need_manual_fix = bool(int(line[4]))
-        script_file.translation_percentage = float(line[5])
-        script_file.original_package = line[6]
-        script_file.read_date = datetime.datetime.strptime(
-            line[7], "%Y-%m-%d %H:%M:%S.%f"
-        )
-        script_file_list.append(script_file)
-    return script_file_list
