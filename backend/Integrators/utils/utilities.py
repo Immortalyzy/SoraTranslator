@@ -12,10 +12,14 @@ XP3_UPK_info = "xp3_upk.exe doesn't support pointing output directory. It will o
 
 # ==== nsa realted ===================================================================
 # get full path to the nsa tools
+# check https://github.com/GoldbarGames/ONScripter-EN-Steam/tree/master/tools for more information
 nsaarc_file = "nsaarc.exe"
-nsamake_file = "nsamake.exe"
-nscdec_file = "nscdec.exe"
+nscmake_file = "nscmake.exe"
+nsdec_file = "nsdec.exe"
+# pack folder to .nsa
 NSAARC = os.path.join(os.path.dirname(__file__), nsaarc_file)
-NSAMAKE = os.path.join(os.path.dirname(__file__), nsamake_file)
-NSCDEC = os.path.join(os.path.dirname(__file__), nscdec_file)
+# make a nscript/0.text to a nscript.dat
+NSCMAKE = os.path.join(os.path.dirname(__file__), nscmake_file)
+# convert a nscript.dat to result.txt
+NSDEC = os.path.join(os.path.dirname(__file__), nsdec_file)
 # ==== nsa realted ===================================================================
