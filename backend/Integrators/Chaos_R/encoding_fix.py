@@ -18,6 +18,11 @@ def fix_encoding(
     """
     # read and change the encoding from Shift-JIS to UTF-8
     try:
+        # if the file is "PageBreak.asd", convert from utf-8 to utf-16
+        if os.path.basename(input_file_path) == "PageBreak.asd":
+            original_encoding = "utf_8"
+            target_encoding = "utf_16"
+
         with open(input_file_path, "r", encoding=original_encoding) as f:
             content = f.read()
     except UnicodeDecodeError:
