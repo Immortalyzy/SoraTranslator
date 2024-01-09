@@ -7,7 +7,7 @@ import importlib.util
 import shutil
 
 from game import Game
-from constants import default_config
+from config import default_config
 from Integrators.Chaos_R.chaosr_game import ChaosRGame
 
 supported_game_engines = {"ChaosR": ChaosRGame}

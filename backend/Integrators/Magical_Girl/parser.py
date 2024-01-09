@@ -37,6 +37,8 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
         log_message(
             f"File {file_path} not found for parsing", log_level=LogLevel.WARNING
         )
+    # list of all parts in this file
+    part_list = []
 
     # list of all blocks in this file
     block_list = []

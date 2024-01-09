@@ -5,7 +5,8 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from project import Project
 from scriptfile import ScriptFile
-from constants import Config, DEFAULT_CONFIG_FILE, LogLevel
+from constants import DEFAULT_CONFIG_FILE, LogLevel
+from config import Config
 from Translators.all_translators import createTranslatorInstance
 from logger import log_message
 
@@ -255,8 +256,24 @@ def request_file_info():
         }
         return response
     except Exception as e:
+        log_message("ERROR trying to get file info " + str(e), LogLevel.ERROR)
         response = {"status": False}
         return response
+
+
+@app.route("/preferences", methods=["GET", "POST"])
+def preferences():
+    """require or save settings"""
+    if request.method == "POST":
+        new_settings = request.json
+        setting_passed = request.json
+        config = Config.from_json_file(DEFAULT_CONFIG_FILE)
+        config.from_json_obj(setting_passed)
+        config.to_json_file(DEFAULT_CONFIG_FILE, replace=True)
+        return jsonify(new_settings)
+    else:  # GET request
+        setting_from_file = Config.from_json_file(DEFAULT_CONFIG_FILE)
+        return jsonify(setting_from_file.to_json_obj())
 
 
 if __name__ == "__main__":

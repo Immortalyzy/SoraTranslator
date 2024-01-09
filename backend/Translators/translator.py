@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from scriptfile import ScriptFile
 from block import Block
 from constants import SuccessStatus as success
-from constants import default_config
+from config import default_config
 
 
 class Translator(ABC):

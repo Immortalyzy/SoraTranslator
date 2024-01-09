@@ -6,7 +6,7 @@ All child classes should have these functions declared in this class as abstract
 from abc import ABC, abstractmethod
 import importlib
 import os
-from constants import default_config
+from config import default_config
 from pickle import dump, load
 
 

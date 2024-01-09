@@ -1,5 +1,5 @@
 """ stores all translatros' info """
-from constants import default_config
+from config import default_config
 from .ChatGPT_API.chatgpt_api import GPT_Translator
 
 

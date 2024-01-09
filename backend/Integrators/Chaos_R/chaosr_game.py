@@ -3,7 +3,8 @@
 import importlib.util
 import os
 import shutil
-from constants import LogLevel, default_config
+from constants import LogLevel
+from config import default_config
 from game import Game
 from scriptfile import ScriptFile, update_script_filelist
 from .encoding_fix import fix_allfiles

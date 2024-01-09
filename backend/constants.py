@@ -1,6 +1,5 @@
 """ contants that are used in the backend """
 from enum import Enum
-import json
 
 # Path specific
 DEFAULT_GAME_RESOURCES_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/"
@@ -14,13 +13,6 @@ DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY = (
 )
 
 DEFAULT_XP3_UNPACKER = "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
-
-
-def create_game_resources_directory(game_resources_directory: str) -> ():
-    """create the game resources directory, generating the subfolders"""
-    # todo: implement this
-    pass
-
 
 # Log file
 DEFAULT_LOG_FILE = "../backend_log.txt"
@@ -83,71 +75,3 @@ DEFAULT_LOG_LEVEL = LogLevel.DEBUG
 
 # log config, after project.py is implemented, this should be moved to project.py
 RAW_TEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/RawText/"
-
-
-### Configurations ============================================================
-class Config:
-    """configuraion class for the backend, saving default configurations"""
-
-    # see above LogLevel class
-    log_level = DEFAULT_LOG_LEVEL
-
-    # gpt translation settings
-    openai_api_key = "sk-xxx"
-    # context number of blocks
-    ## set to 1 for no context
-    ## set to 0 for no limit (will use maximum number of blocks calculated based on maximum token allowed)
-    gpt_context_block_count = 4
-    gpt_max_tokens = 16000
-    gpt_completion_max_tokens = 8000
-    gpt_model = "gpt-3.5-turbo-16k"
-    gpt_temperature = 0.3
-    gpt_max_lines = 50
-    gpt_second_try = False
-    gpt_speration_method = "[]"
-    gpt_enclosing_joiner = "|"
-
-    # success status
-    record_failure_text = True
-
-    # language settings
-    original_language = "Japanese"
-    target_language = "Chinese"
-    if_translate_with_speaker = False
-
-    # set xp3 unpacker
-    xp3_unpacker = DEFAULT_XP3_UNPACKER
-
-    def __init__(self):
-        self.gpt_prompt = DEFAULT_INITIATION_PROMPT
-        self.fixing_prompt = DEFAULT_FIXING_PROMPT
-
-    @classmethod
-    def from_json(cls, json_file):
-        """load config from json"""
-        # read all variables from json file if it exists
-        instance = cls()
-        with open(json_file, "r") as file:
-            json_object = json.load(file)
-        for key, value in json_object.items():
-            setattr(instance, key, value)
-
-        # post init
-        instance.post_init()
-        return instance
-
-    def post_init(self):
-        """do post init actions"""
-        # set the default prompt based on the language configuration
-        self.gpt_prompt = DEFAULT_INITIATION_PROMPT
-        self.gpt_prompt[0]["content"] = self.gpt_prompt[0]["content"].format(
-            self.original_language, self.target_language
-        )
-        pass
-
-    def to_json(self, json_file, replace=True):
-        """save config to json"""
-        # todo:implement this
-
-
-default_config = Config()
