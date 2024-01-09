@@ -13,38 +13,37 @@ from constants import (
 class Config:
     """configuraion class for the backend, saving default configurations"""
 
-    # see above LogLevel class
-    log_level = DEFAULT_LOG_LEVEL
-
-    # gpt translation settings
-    openai_api_key = "sk-xxx"
-    # context number of blocks
-    ## set to 1 for no context
-    ## set to 0 for no limit (will use maximum number of blocks calculated based on maximum token allowed)
-    gpt_context_block_count = 4
-    gpt_max_tokens = 16000
-    gpt_completion_max_tokens = 8000
-    gpt_model = "gpt-3.5-turbo-1106"
-    gpt_temperature = 0.3
-    gpt_max_lines = 50
-    gpt_second_try = False
-    gpt_speration_method = "[]"
-    gpt_enclosing_joiner = "|"
-
-    # success status
-    record_failure_text = True
-
-    # language settings
-    original_language = "Japanese"
-    target_language = "Chinese"
-    if_translate_with_speaker = False
-
-    # set xp3 unpacker
-    xp3_unpacker = DEFAULT_XP3_UNPACKER
-
     def __init__(self):
         self.gpt_prompt = DEFAULT_INITIATION_PROMPT
         self.fixing_prompt = DEFAULT_FIXING_PROMPT
+        # see above LogLevel class
+        self.log_level = DEFAULT_LOG_LEVEL
+
+        # gpt translation settings
+        self.openai_api_key = "sk-xxx"
+        # context number of blocks
+        ## set to 1 for no context
+        ## set to 0 for no limit (will use maximum number of blocks calculated based on maximum token allowed)
+        self.gpt_context_block_count = 4
+        self.gpt_max_tokens = 16000
+        self.gpt_completion_max_tokens = 8000
+        self.gpt_model = "gpt-3.5-turbo-1106"
+        self.gpt_temperature = 0.3
+        self.gpt_max_lines = 50
+        self.gpt_second_try = False
+        self.gpt_speration_method = "[]"
+        self.gpt_enclosing_joiner = "|"
+
+        # success status
+        self.record_failure_text = True
+
+        # language settings
+        self.original_language = "Japanese"
+        self.target_language = "Chinese"
+        self.if_translate_with_speaker = False
+
+        # set xp3 unpacker
+        self.xp3_unpacker = DEFAULT_XP3_UNPACKER
 
     @classmethod
     def from_json_file(cls, json_file):
@@ -59,6 +58,10 @@ class Config:
         """load config from json"""
         # read all variables from json file if it exists
         for key, value in json_object.items():
+            # check if the variable exists
+            if not hasattr(self, key):
+                print(f"Warning: {key} is not a valid config variable")
+                continue
             setattr(self, key, value)
 
         # post init

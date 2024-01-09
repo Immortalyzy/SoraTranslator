@@ -9,7 +9,7 @@ from block import Block
 PROPERTY_LINE_LENGTH = 10
 
 
-class ScriptFile:
+class TextFile:
     """A text file is a file that is ready to be translated, it contains the original text and the translated text.
     The core information of text files are stored in a csv file, the data in the class is sotred in Block instances.
     """

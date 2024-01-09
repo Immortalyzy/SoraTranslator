@@ -70,7 +70,7 @@ class SuccessStatus(Enum):
             return SuccessStatus.ERROR
 
 
-DEFAULT_LOG_LEVEL = LogLevel.DEBUG
+DEFAULT_LOG_LEVEL = 3
 
 
 # log config, after project.py is implemented, this should be moved to project.py
