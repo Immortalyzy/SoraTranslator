@@ -79,6 +79,56 @@ class GPT_Translator(Translator):
             )
             return success.SUCCESS
 
+    def translate_file_blockbyblock(self, text_file: TextFile) -> success:
+        """This method translates the text_file into the specified language line by line.
+        You should limit the number of context to consider or this will use a lot of tokens.
+        """
+        # initiate the translator
+        all_contexts = []
+        success_blocks = 0
+
+        for block in text_file.blocks:
+            # translate each block
+            # if the block has been translated, skip
+            if block.is_translated or block.is_empty():
+                continue
+
+            contexts = []
+            # add context
+            if self.config.gpt_context_block_count == 0:
+                contexts = all_contexts.copy()
+            else:
+                # Determine the number of context blocks to include
+                context_block_count = min(
+                    len(all_contexts) // 2, self.config.gpt_context_block_count
+                )
+
+                # Calculate the starting index to center the blocks if possible
+                start_index = max((len(all_contexts) // 2) - context_block_count, 0)
+
+                # Select the desired context blocks
+                contexts = all_contexts[
+                    start_index * 2 : (start_index + context_block_count) * 2
+                ]
+
+            success_status = self.translate_block(block, contexts)
+            success_blocks += 1 if success_status == success.SUCCESS else 0
+            # END of iteration over blocks
+
+        # calculate success status, if the file is empty, return SUCCESS
+        success_status = (
+            success.status_from_ratio(success_blocks / len(text_file.blocks))
+            if len(text_file.blocks) > 0
+            else success.SUCCESS
+        )
+        log_message(
+            f"Translated {success_blocks} of {len(text_file.blocks)} blocks in file {text_file.text_file_path}.",
+            log_level=LogLevel.INFO,
+        )
+
+        # translate blocks
+        return success_status
+
     def translate_file_whole(self, text_file: TextFile) -> success:
         """This method translates the text_file into the specified language in a single time."""
         # check if the number of blocks exceed line limit
