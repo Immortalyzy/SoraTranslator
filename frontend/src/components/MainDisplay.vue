@@ -6,6 +6,9 @@
     <div v-if="displayType === 'initialize_game'">
       <InitializeProject />
     </div>
+    <div v-if="displayType === 'preferences'">
+      <PreferencesWindow />
+    </div>
     <div class="raw-text" v-if="isRaw">
       <div v-for="(line, index) in lines" :key="index" class="line">
         <span class="line-number">{{ index + 1 }}</span>
@@ -22,12 +25,14 @@
 import NewProject from "./NewProject.vue";
 import InitializeProject from "./InitializeProject.vue";
 import TextDisplay from "./TextDisplay.vue";
+import PreferencesWindow from "./PreferencesWindow.vue";
 export default {
   name: "MainDisplay",
   components: {
     NewProject,
     InitializeProject,
-    TextDisplay
+    TextDisplay,
+    PreferencesWindow
   },
   props: {
     displayType: {

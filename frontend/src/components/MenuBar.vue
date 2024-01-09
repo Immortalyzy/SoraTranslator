@@ -3,7 +3,7 @@
         <button @click="create_new_project">New Project</button>
         <button @click="initialize_project">Initialize </button>
         <button @click="integrate_project"> Integrate </button>
-        <button> Preferences </button>
+        <button @click="preferences"> Preferences </button>
     </span>
 </template>
 
@@ -41,6 +41,10 @@ export default {
             }).catch((error) => {
                 console.log(error);
             })
+        },
+        preferences() {
+            // change the display type to preferences
+            this.$emit('change-display-type', 'preferences', "none");
         }
 
     }
