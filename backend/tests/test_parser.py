@@ -27,16 +27,16 @@ def test_default_text_separator():
 
 def test_parser():
     """test the parser of chaosr games"""
-    test_file = "U:/Toys/Games/Gal/chaosr/ZSSS_神聖昂燐/GameResources_chaosr1/RawText/k_scenario/01本編/luna003.ks"
+    test_file = "U:/Toys/Games/Gal/chaosr/神聖昂燐エストランジェ/SoraTranslator/RawText/k_scenario/est002.ks"
     script_file = ScriptFile.from_originalfile(test_file)
-    blocks, _, _ = parse_file(script_file)
+    parse_file(script_file)
 
-    for block in blocks:
-        block.parse(parse_block_function=parse_block)
+    blocks = script_file.blocks
 
-    block: Block = blocks[14]
+    block: Block = blocks[136]
+    block.parse(parse_block_function=parse_block)
     block.text_translated = "5418128/529453489545"
-    block.text_translated = "「停下！好臭啊，好热啊，……哇啊啊啊」"
+    block.text_translated = "「停下！好啊，好热啊，……哇啊啊啊」"
     block.speaker_translated = "54188"
     result = block.generate_full_rawblock()
 

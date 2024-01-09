@@ -58,11 +58,10 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
         f"File {file_path} parsed, {len(block_list)} blocks found",
         log_level=LogLevel.INFO,
     )
-    return (
-        block_list,
-        non_block_string_between_blocks,
-        block_number_for_non_block_string,
-    )
+    script_file.blocks = block_list
+    script_file.non_block_string_between_blocks = non_block_string_between_blocks
+    script_file.block_number_for_non_block_string = block_number_for_non_block_string
+    return 0
 
 
 # speaker indicator for non-heroine speakers
@@ -156,6 +155,25 @@ def parse_text(text):
 
     # Combine and sort the positions of both types of macros
     all_macros = sorted(macros1 + macros2 + macros3, key=lambda x: x[0])
+
+    # Remove nested macros
+    non_nested_macros = []
+    for current_macro in all_macros:
+        is_nested = False
+        for other_macro in all_macros:
+            if (
+                current_macro != other_macro
+                and other_macro[0]
+                <= current_macro[0]
+                < current_macro[1]
+                <= other_macro[1]
+            ):
+                is_nested = True
+                break
+        if not is_nested:
+            non_nested_macros.append(current_macro)
+
+    all_macros = non_nested_macros
 
     # Initialize arrays
     text_array = []
