@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from openai import OpenAI
-from scriptfile import ScriptFile
+from textfile import TextFile
 from block import Block
 from config import Config, default_config
 from constants import SuccessStatus as success
@@ -79,102 +79,55 @@ class GPT_Translator(Translator):
             )
             return success.SUCCESS
 
-    def translate_file_linebyline(self, script_file: ScriptFile) -> success:
-        """This method translates the script_file into the specified language line by line.
-        You should limit the number of context to consider or this will use a lot of tokens.
-        """
-        # initiate the translator
-        all_contexts = []
-        success_blocks = 0
-
-        for block in script_file.blocks:
-            # translate each block
-            # if the block has been translated, skip
-            if block.is_translated or block.is_empty():
-                continue
-
-            contexts = []
-            # add context
-            if self.config.gpt_context_block_count == 0:
-                contexts = all_contexts.copy()
-            else:
-                # Determine the number of context blocks to include
-                context_block_count = min(
-                    len(all_contexts) // 2, self.config.gpt_context_block_count
-                )
-
-                # Calculate the starting index to center the blocks if possible
-                start_index = max((len(all_contexts) // 2) - context_block_count, 0)
-
-                # Select the desired context blocks
-                contexts = all_contexts[
-                    start_index * 2 : (start_index + context_block_count) * 2
-                ]
-
-            success_status = self.translate_block(block, contexts)
-            success_blocks += 1 if success_status == success.SUCCESS else 0
-            # END of iteration over blocks
-
-        # calculate success status, if the file is empty, return SUCCESS
-        success_status = (
-            success.status_from_ratio(success_blocks / len(script_file.blocks))
-            if len(script_file.blocks) > 0
-            else success.SUCCESS
-        )
-        log_message(
-            f"Translated {success_blocks} of {len(script_file.blocks)} blocks in file {script_file.text_file_path}.",
-            log_level=LogLevel.INFO,
-        )
-
-        # translate blocks
-        return success_status
-
-    def translate_file_whole(self, script_file: ScriptFile) -> success:
-        """This method translates the script_file into the specified language in a single time."""
+    def translate_file_whole(self, text_file: TextFile) -> success:
+        """This method translates the text_file into the specified language in a single time."""
         # check if the number of blocks exceed line limit
-        script_file.need_manual_fix = False
-        if len(script_file.blocks) > self.config.gpt_max_lines:
+        text_file.need_manual_fix = False
+        log_message(
+            f"Translating file with model: {self.model}", log_level=LogLevel.INFO
+        )
+        if len(text_file.blocks) > self.config.gpt_max_lines:
             # log
             # if exceed, divide the file into multiple parts
-            n_parts = len(script_file.blocks) // self.config.gpt_max_lines + 1
-            n_blocks_per_part = len(script_file.blocks) // n_parts + 1
+            n_parts = len(text_file.blocks) // self.config.gpt_max_lines + 1
+            n_blocks_per_part = len(text_file.blocks) // n_parts + 1
             all_parts = []
             log_message(
-                f"File {script_file.text_file_path} has too many blocks dividing to {n_parts} parts with each having {n_blocks_per_part} blocks.",
+                f"File {text_file.text_file_path} has too many blocks dividing to {n_parts} parts with each having {n_blocks_per_part} blocks.",
                 log_level=LogLevel.WARNING,
             )
             for i in range(n_parts):
                 if i == n_parts - 1:
-                    sub_blocks = script_file.blocks[i * n_blocks_per_part :]
-                sub_blocks = script_file.blocks[
+                    sub_blocks = text_file.blocks[i * n_blocks_per_part :]
+                sub_blocks = text_file.blocks[
                     i * n_blocks_per_part : (i + 1) * n_blocks_per_part
                 ]
                 all_parts.append(sub_blocks)
 
             for i, part in enumerate(all_parts):
                 description = (
-                    f"part {i+1} of {n_parts} of file {script_file.text_file_path}"
+                    f"part {i+1} of {n_parts} of file {text_file.text_file_path}"
                 )
                 success_translation = self.translate_once(
                     target=part, target_description=description
                 )
                 if success_translation == success.ERROR:
-                    script_file.need_manual_fix = True
+                    text_file.need_manual_fix = True
         else:
             # translate the whole file
             success_translation = self.translate_once(
-                target=script_file, target_description=script_file.text_file_path
+                target=text_file, target_description=text_file.text_file_path
             )
             if success_translation == success.ERROR:
-                script_file.need_manual_fix = True
+                text_file.need_manual_fix = True
 
         # evaluate the success status
         success_blocks = 0
-        for block in script_file.blocks:
+        for block in text_file.blocks:
             if block.is_translated:
                 success_blocks += 1
-        translated_ratio = success_blocks / len(script_file.blocks)
-        script_file.translation_percentage = translated_ratio
+        translated_ratio = success_blocks / len(text_file.blocks)
+        text_file.translation_percentage = translated_ratio
 
         success_status = success.status_from_ratio(translated_ratio)
         if (
@@ -182,30 +135,30 @@ class GPT_Translator(Translator):
             or success_status == success.SUCCESS
         ):
             log_message(
-                f"Translated file {script_file.text_file_path} successfully.",
+                f"Translated file {text_file.text_file_path} successfully.",
                 log_level=LogLevel.INFO,
             )
         else:
             log_message(
-                f"Translated file {script_file.text_file_path} failed.",
+                f"Translated file {text_file.text_file_path} failed.",
                 log_level=LogLevel.WARNING,
             )
-        script_file.is_translated = True
-        if script_file.need_manual_fix:
+        text_file.is_translated = True
+        if text_file.need_manual_fix:
             log_message(
-                f"Manual fix required for file {script_file.text_file_path}.",
+                f"Manual fix required for file {text_file.text_file_path}.",
                 log_level=LogLevel.WARNING,
             )
         return success_status
 
     def translate_once(
-        self, target: ScriptFile or list(Block), target_description: str = ""
+        self, target: TextFile or list(Block), target_description: str = ""
     ) -> success:
-        """This method translates the script_file into the specified language in a single time."""
+        """This method translates the text_file into the specified language in a single time."""
         log_message(
             f'Translating target " {target_description} "...', log_level=LogLevel.INFO
         )
-        if isinstance(target, ScriptFile):
+        if isinstance(target, TextFile):
             all_blocks = target.blocks
         # if the target is a list of blocks
         elif isinstance(target, list):
@@ -313,6 +266,8 @@ class GPT_Translator(Translator):
                     # skip the block if it contains aaaa
                     if utils.find_aaaa(block.text_original) is not None:
                         continue
+                    if translation_index >= len(translations):
+                        break
                     # record the translation
                     block.text_translated = translations[translation_index]
                     block = utils_post.fix_text_after_translation(block)
@@ -325,8 +280,6 @@ class GPT_Translator(Translator):
                     )
                     block.translation_engine = self.config.gpt_model
 
-                    if translation_index >= len(translations):
-                        break
                 return success.ERROR
 
             for block in all_blocks:
