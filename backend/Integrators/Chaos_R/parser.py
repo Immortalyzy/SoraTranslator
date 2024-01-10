@@ -11,7 +11,7 @@ from block import Block
 
 
 def parse_file(script_file: ScriptFile) -> List[Block]:
-    """this function will parse a script file to blocks, this parser will omit the text at the beging of file outside of any blocks"""
+    """this function will parse a script file to parsed blocks, this parser will omit the text at the beging of file outside of any blocks"""
     file_path = script_file.script_file_path
     try:
         with open(file_path, "r", encoding="utf_16") as file:
@@ -58,6 +58,11 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
         f"File {file_path} parsed, {len(block_list)} blocks found",
         log_level=LogLevel.INFO,
     )
+
+    # parse each block before pushing them to the script file
+    for block in block_list:
+        parse_block(block)
+
     script_file.blocks = block_list
     script_file.non_block_string_between_blocks = non_block_string_between_blocks
     script_file.block_number_for_non_block_string = block_number_for_non_block_string

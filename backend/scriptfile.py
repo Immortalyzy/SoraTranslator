@@ -93,17 +93,13 @@ class ScriptFile:
     def parse(
         self,
         parse_file_function,
-        parse_block_function,
         maximum_block_count=100,
         force_single=False,
+        **kwargs,
     ):
         """parse the script file"""
-        # parse the file and save the blocks
-        parse_file_function(self)
-
-        # parse all the blocks
-        for block in self.blocks:
-            block.parse(parse_block_function)
+        # parse the file and save the parsed blocks
+        parse_file_function(self, **kwargs)
 
         # if the parser function didn't separate the file into textfiles
         # then separate the file into textfiles automatically

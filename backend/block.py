@@ -166,7 +166,7 @@ class Block:
         }
         return data
 
-    def parse(self, parse_block_function=None):
+    def parse(self, parse_block_function=None, **kwargs):
         """parse the block"""
         (
             speaker,
@@ -176,7 +176,7 @@ class Block:
             text_lines,
             text_positions,
             texts,
-        ) = parse_block_function(self)
+        ) = parse_block_function(self, **kwargs)
         self.speaker_original = speaker
         self.text_original = text
         self.texts_original = texts
