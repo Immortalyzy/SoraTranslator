@@ -20,6 +20,10 @@ class TextFile:
         self.blocks: List[Block] = []
         self.is_empty = False
 
+        # sub name usually is the name of the part when parsing a big file
+        # if automatically parsed it will be the index of the file in ScriptFile's textfiles list
+        self.subname = ""
+
         self.read_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.text_file_path = ""  # will be generated when generating text file
         self.script_file_path = ""  # will be changed if the instance is created during parsing a script file
