@@ -21,7 +21,7 @@ class TextFile:
         self.is_empty = False
 
         # sub name usually is the name of the part when parsing a big file
-        # if automatically parsed it will be the index of the file in ScriptFile's textfiles list
+        # if empty, the sub text file generated will be assigned a name automatically
         self.subname = ""
 
         self.read_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

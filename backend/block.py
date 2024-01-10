@@ -166,29 +166,6 @@ class Block:
         }
         return data
 
-    def parse(self, parse_block_function=None, **kwargs):
-        """parse the block"""
-        (
-            speaker,
-            text,
-            speaker_line,
-            speak_start_end,
-            text_lines,
-            text_positions,
-            texts,
-        ) = parse_block_function(self, **kwargs)
-        self.speaker_original = speaker
-        self.text_original = text
-        self.texts_original = texts
-        self.speaker_line = speaker_line
-        self.speaker_start_end = speak_start_end
-        self.text_lines = text_lines
-        self.text_positions = text_positions
-
-        self.is_parsed = True
-        if text == "":
-            self.is_translated = True
-
     def generate_full_rawblock(self, text_separater=default_text_separater) -> str:
         """generate the full translated content, to be replaced in the script file
         The function will return the text AND set the block_content_translated variable
