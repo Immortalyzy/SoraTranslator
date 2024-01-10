@@ -8,7 +8,7 @@ from config import default_config
 from game import Game
 from scriptfile import ScriptFile, update_script_filelist
 from logger import log_message
-from .encoding_fix import fix_allfiles
+from ..utils.encoding_fix import fix_allfiles
 from .parser import guess_file_type, parse_file, parse_block
 
 
