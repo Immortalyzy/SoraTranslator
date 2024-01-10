@@ -2,6 +2,7 @@
 
 import datetime
 import os
+from typing import List
 from logger import log_message
 from constants import LogLevel
 from block import Block
@@ -16,7 +17,8 @@ class TextFile:
 
     def __init__(self):
         # a list of blocks in the file, will be filled when parsing
-        self.blocks = []
+        self.blocks: List[Block] = []
+        self.is_empty = False
 
         self.read_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.text_file_path = ""  # will be generated when generating text file
@@ -36,10 +38,15 @@ class TextFile:
         self.info = {"translation_info": "not translated yet"}
 
     @classmethod
-    def from_blocks(cls, blocks: list):
+    def from_blocks(cls, blocks: List[Block]):
         """create a game file instance from a file path"""
         textfile = cls()
         textfile.blocks = blocks
+        textfile.is_empty = True
+        for block in blocks:
+            if not block.is_empty():
+                textfile.is_empty = False
+                break
         return textfile
 
     @classmethod
@@ -124,6 +131,13 @@ class TextFile:
         Returns:
             bool: True if the text file was generated successfully, False otherwise.
         """
+        # check if the file is empty
+        if self.is_empty:
+            log_message(
+                f"Skipping {self.text_file_path} as it is empty",
+                log_level=LogLevel.INFO,
+            )
+            return 1
 
         # Create the text filepath if not provided
         if self.text_file_path == "" and dest == "":
@@ -184,6 +198,14 @@ class TextFile:
 
     def update_from_textfile(self) -> bool:
         """update the content (translation) of the script file from the text file"""
+        # check if the file is empty
+        if self.is_empty:
+            log_message(
+                f"Skipping {self.text_file_path} as it is empty",
+                log_level=LogLevel.INFO,
+            )
+            return True
+
         # check if the file exists
         if not os.path.exists(self.text_file_path):
             log_message(

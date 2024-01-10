@@ -61,7 +61,6 @@ class ScriptFile:
         # record the property information from file
         data["original_file_path"] = self.original_file_path
         data["script_file_path"] = self.script_file_path
-        data["text_file_path"] = self.text_file_path
         data["translated_script_file_path"] = self.translated_script_file_path
         data["read_date"] = self.read_date
         data["file_type"] = self.file_type
@@ -182,10 +181,6 @@ class ScriptFile:
             )
         if dest != "":
             self.translated_script_file_path = dest
-
-        # todo: add dest usage,
-        # check if dest is a file path or a directory
-        # if dest is a directory, then generate a file path based on the original file path
 
         # recreate the rawtext structure, inserting non-block content
         # todo: implement non-block string

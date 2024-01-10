@@ -248,7 +248,7 @@ class Block:
 
     def is_empty(self):
         """return if the block is empty"""
-        return self.is_parsed and self.text_original == ""
+        return self.is_parsed and self.text_original.strip() == ""
 
     def is_text_separated(self):
         """return if the text is separated"""
