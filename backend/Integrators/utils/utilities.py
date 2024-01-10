@@ -22,4 +22,20 @@ NSAARC = os.path.join(os.path.dirname(__file__), nsaarc_file)
 NSCMAKE = os.path.join(os.path.dirname(__file__), nscmake_file)
 # convert a nscript.dat to result.txt
 NSDEC = os.path.join(os.path.dirname(__file__), nsdec_file)
+
+# official command list
+# from https://kaisernet.org/onscripter/api/NScrAPI-framed.html
+NS_COMMAND_LIST = os.path.join(
+    os.path.dirname(__file__), "nscripter_official_comands.txt"
+)
+
+
+def get_ns_command_list():
+    """return a list of official nscripter commands"""
+    with open(NS_COMMAND_LIST, "r", encoding="utf_8_sig") as file:
+        lines = file.readlines()
+        official_commands = [line.strip() for line in lines]
+    return official_commands
+
+
 # ==== nsa realted ===================================================================
