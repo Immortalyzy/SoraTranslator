@@ -18,16 +18,67 @@ import os
 from logger import log_message
 from constants import LogLevel
 from scriptfile import ScriptFile
+from textfile import TextFile
 from block import Block
+from ..utils import utilities as util
 
-marco_indicator = r"\[ns\].*?\[nse\]"
-macro_indicator2 = r"\[([^\[\]]*)\]"
-
-# there cannot be any "?" symbol in the BGK format
-# the script file is singular so no need to write scripts for integration
+# lines starting with this will be ignored
+COMMENT = ";"
+SPLITER = r"[ \t]+"
 
 
-def parse_file(script_file: ScriptFile) -> List[Block]:
+def create_nscripter_command_list(lines: List[str]) -> List[str]:
+    """based on the file content, check for defined commands"""
+    # read official command list
+    official_commands = util.get_ns_command_list()
+    # custom commands are defined uisng defsub
+    custom_commands = []
+    for line in lines:
+        if line.startswith("defsub"):
+            # get the command name
+            command_name = re.split(SPLITER, line)[1].strip()
+            # add the command name to the custom command list
+            custom_commands.append(command_name)
+    # combine the two lists
+    command_list = official_commands + custom_commands
+    return command_list
+
+
+def parse_part(lines: List[str]) -> List[Block]:
+    """parse a part of the script file, return a list of blocks"""
+    block_list: List[Block] = []
+
+    block_name = ""
+    block_content = []  # a list of lines
+
+    for line in lines:
+        # check if is a comment line
+        if line.strip().startswith(";"):
+            continue
+        # Check if the line is the end of a block
+        if line.strip().endswith("\\"):
+            # if there is a block being recorded, save it to the block list
+            block_content.append(line)
+
+            # Save the new block name, the block name is set to be the number of the block
+            block_name = str(len(block_list) + 1)
+            block = Block(block_name, block_content)
+            block_list.append(block)
+
+            # reset the block content
+            block_content = []
+        else:
+            # Add line to the current block's content
+            block_content.append(line)
+
+    # Add the last block's content if there is any
+    if block_content:
+        block = Block(block_name, block_content)
+        block_list.append(block)
+    return block_list
+
+
+def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
     """this function will parse a script file to blocks, this parser will omit the text at the beging of file outside of any blocks"""
     file_path = script_file.script_file_path
     try:
@@ -37,133 +88,143 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
         log_message(
             f"File {file_path} not found for parsing", log_level=LogLevel.WARNING
         )
-    # list of all parts in this file
+
+    # in nscript parts are separated by "*"
     part_list = []
+    # this is a list of list of blocks
+    # each list of blocks inside this list is a part
+    block_list_list = []
 
-    # list of all blocks in this file
-    block_list = []
-    non_block_string_between_blocks = []
-    block_number_for_non_block_string = []
+    part_content = []  # a list of lines
+    part_names = []  # a list of part names
 
-    block_name = "start_of_file"
-    block_content = []  # a list of lines
+    # ingore everything before *define
+    defining = False
+
+    # leave everything unchagned between *define and *start
+    started = False
 
     for line in lines:
         # check if is a comment line
-        if line.strip().startswith(";"):
+        if line.strip().startswith(COMMENT):
             continue
-        # Check if the line is the start of a block
-        if line.startswith("*"):
-            # If there is an ongoing block, save its content first
-            if block_content:
-                # if there is a block being recorded, save it to the block list
-                block = Block(block_name, block_content)
-                block_list.append(block)
-                # reset the block content
-                block_content = []
-            # Save the new block name
-            block_name = line[1:].strip()  # remove '*' and strip whitespace
-            block_content.append(line)
-        else:
-            # Add line to the current block's content
-            block_content.append(line)
+        # check if start defining
+        if not defining and line.strip().startswith("*define"):
+            defining = True
+            part_content.append(line)
+            continue
 
-    # Add the last block's content if there is any
-    if block_content:
-        block = Block(block_name, block_content)
-        block_list.append(block)
+        # during defining, record everything until *start
+        if line.strip().startswith(kwargs.get("start_indicator", "*start")):
+            started = True
+            defining = False
+
+            # push define part
+            part_names.append("define")
+            part_list.append(part_content)
+
+            # push start part name
+            part_names.append(kwargs.get("start_indicator", "*start").strip()[1:])
+
+            part_content = []
+            part_content.append(line)
+            continue
+
+        # skip everything before *define
+        if (not defining) and (not started):
+            continue
+        # record everything beween *define and *start without change
+        if defining:
+            part_content.append(line)
+            continue
+
+        # started here
+        if line.strip().startswith("*"):
+            # If there is an ongoing block, save its content first
+            if part_content:
+                # if there is a block being recorded, save it to the block list
+                part_list.append(part_content)
+                # push name of next part
+                part_names.append(line[1:].strip())
+                # reset the block content
+                part_content = []
+            # save the part content
+            part_content.append(line)
+
+        else:
+            # Add line to the current part's content
+            part_content.append(line)
+
+    # Add the last part's content if there is any
+    if part_content:
+        part_list.append(part_content)
+
+    # parse each part
+    for part in part_list:
+        blocks = parse_part(part)
+        block_list_list.append(blocks)
+
+    # combine all blocks
+    all_blocks = []
+    # empty the textfile list
+    script_file.textfiles = []
+    for i, block_list in enumerate(block_list_list):
+        # do not parse the define part
+        if part_names[i] == "define":
+            all_blocks += block_list
+        else:
+            for block in block_list:
+                parse_block(block, **kwargs)
+            all_blocks += block_list
+
+        # create a TextFile for each list
+        textfile = TextFile.from_blocks(blocks=block_list)
+        textfile.original_package = script_file.original_package
+        textfile.script_file_path = script_file.script_file_path
+        textfile.subname = util.to_valid_filename(part_names[i])
+        if part_names[i] == "define":
+            textfile.subname = "define"
+            textfile.is_empty = True
+            textfile.file_type = "system"
+
+        script_file.textfiles.append(textfile)
+        script_file.blocks_count_in_textfile.append(len(block_list))
 
     log_message(
-        f"File {file_path} parsed, {len(block_list)} blocks found",
+        f"File {file_path} parsed, {len(block_list_list)} parts, {len(all_blocks)} blocks in total found",
         log_level=LogLevel.INFO,
     )
-    return (
-        block_list,
-        non_block_string_between_blocks,
-        block_number_for_non_block_string,
-    )
+    script_file.blocks = all_blocks
+    return 0
 
 
-def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
+def parse_block(block: Block, **kwargs) -> (str, str, (int, int), (int, int)):
     """parse the block"""
     speaker = ""
     speaker_line = 0
     speaker_start_end = (0, 0)
     text = ""
-    text_line = 0
-    text_start_end = (0, 0)
+    texts = []
     # indicator for "other" speakers, this MUST be kept in this order
     # Keep replacing innermost brackets until there are none left
 
-    # this only works when there is only one text in one line
-    for i, line in enumerate(block.block_content):
-        # skip the block name line
-        if "*" in line:
-            continue
-        clean_block = re.sub(marco_indicator, "", line)
-        while True:
-            clean_block, count = re.subn(macro_indicator2, "", clean_block)
-            if count == 0:
-                break
-        text += clean_block.strip()
-
-    if text == "":
-        # empty block
-        return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
-
-    for i, line in enumerate(block.block_content):
-        found_text = re.search(text, line)
-        if found_text:
-            text_line = i
-            text_start_end = found_text.span()
-            break
-        else:
-            log_message(
-                f"Text found in block {block.block_name} but cannot locate in block_content",
-                log_level=LogLevel.ERROR,
-            )
-            # add a temporary solution by remove all middle script commands
-            # find the start of the text, take the first 2 characters
-            text_start = text[:1]
-            found_text = re.search(text_start, line)
-            if found_text:
-                text_line = i
-                text_start_end = (found_text.span()[0], text_start_end[1])
-            # find the end of the text, take the last 2 characters
-            text_end = text[-1:]
-            matches = list(re.finditer(text_end, line))
-            if matches:
-                last_match = matches[-1]
-                text_start_end = (text_start_end[0], last_match.span()[1])
-
-            if text_start_end[1] < text_start_end[0]:  # it HAS TO BE < instead of <=
-                # this usually means that the text is not in the same line
-                return parse_block(fix_multiline_block(block))
-            if found_text and matches:
-                break
+    texts, text_lines, text_positions = parse_text(
+        "".join(block.block_content),
+        command_strings=kwargs.get("command_strings", []),
+    )
+    text = "".join(texts)
 
     # find the speaker if any
     search_pattern = r"\[【(.*?)】\]"
-    # this marks the "other" speakers (other than heroines)
-    search_pattern2 = r"\[ns\](.*?)\[nse\]"
     found_speakers = []
     for i, line in enumerate(block.block_content):
         # check if the line contains the [【speaker】]
-        if "*" in line:
-            continue
         found_speaker = re.search(search_pattern, line)
-        found_speaker2 = re.search(search_pattern2, line)
-        if found_speaker2:
-            found_speakers.append(found_speaker2.group(1))
-            speaker_line = i
-            speaker_start_end = found_speaker2.span(1)
-            break
         if found_speaker:
             found_speakers.append(found_speaker.group(1))
             speaker_line = i
             speaker_start_end = found_speaker.span(1)
             break
-        # ! warning: if both exist, only the second one will be used
 
     if len(found_speakers) > 1:
         log_message(
@@ -180,69 +241,95 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
         f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}",
         log_level=LogLevel.DEBUG,
     )
-    return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
+    block.speaker_original = speaker
+    block.text_original = text
+    block.texts_original = texts
+    block.speaker_line = speaker_line
+    block.speaker_start_end = speaker_start_end
+    block.text_lines = text_lines
+    block.text_positions = text_positions
+
+    block.is_parsed = True
+    if block.text_original == "":
+        block.is_translated = True
+
+    return True
 
 
-def fix_multiline_block(block: Block):
-    """This function will fix the multiline block, combine all lines with text to one line
-    !!! this function will modify the block, generated block will be different from the original block
-    """
-    lines_containing_text = []
-    for i, line in enumerate(block.block_content):
-        # skip the block name line
-        if "*" in line:
-            continue
-        clean_line = re.sub(marco_indicator, "", line)
-        while True:
-            clean_line, count = re.subn(macro_indicator2, "", clean_line)
-            if count == 0:
+# speaker indicator
+speaker_indicator = r"\[([^\[\]]*)\]"
+
+
+def parse_text(text, command_strings):
+    """parse the text and return the text array, line numbers and positions, generated by chatgpt"""
+    escaped_command_strings = [re.escape(cmd) for cmd in command_strings]
+    safe_command_pattern = r"(" + "|".join(escaped_command_strings) + r").*?\n"
+
+    # Find all positions of macros using regular expressions
+    macros_general = [
+        (m.start(), m.end()) for m in re.finditer(speaker_indicator, text)
+    ]
+    macros_ns = [(m.start(), m.end()) for m in re.finditer(safe_command_pattern, text)]
+
+    # Combine and sort the positions of both types of macros
+    all_macros = sorted(macros_general + macros_ns, key=lambda x: x[0])
+
+    # Remove nested macros
+    non_nested_macros = []
+    for current_macro in all_macros:
+        is_nested = False
+        for other_macro in all_macros:
+            if (
+                current_macro != other_macro
+                and other_macro[0]
+                <= current_macro[0]
+                < current_macro[1]
+                <= other_macro[1]
+            ):
+                is_nested = True
                 break
+        if not is_nested:
+            non_nested_macros.append(current_macro)
 
-        if clean_line.strip() != "":
-            lines_containing_text.append(i)
-    # check if the lines are continuous
-    for i in range(len(lines_containing_text) - 1):
-        if lines_containing_text[i + 1] - lines_containing_text[i] != 1:
-            # raise ValueError("Lines are not continuous")
-            log_message(
-                "Lines are not continuous, moving all text to first line",
-                log_level=LogLevel.WARNING,
-            )
+    all_macros = non_nested_macros
 
-    # combine all lines with text to one line
-    all_text_lines = ""
-    for i in lines_containing_text:
-        # remove "\n" before adding to the all text
-        all_text_lines += block.block_content[i].strip()
+    # Initialize arrays
+    text_array = []
+    line_numbers = []
+    positions = []
 
-    # replace first line with all text
-    block.block_content[lines_containing_text[0]] = all_text_lines
+    # Current position in file, line, and line number
+    current_pos = 0
+    line_number = 1
 
-    # remove all other lines
-    for i in lines_containing_text[1:]:
-        block.block_content[i] = ""
+    # Iterate over each character in the text
+    for i, char in enumerate(text):
+        # Check if we've reached a macro
+        if all_macros and i == all_macros[0][0]:
+            # Add the text before the macro to the arrays
+            if current_pos < i:
+                text_array.append(text[current_pos:i])
+                line_numbers.append(line_number)
+                positions.append((current_pos, i))
 
-    return block
+            # Update current position and remove the found macro from the list
+            current_pos = all_macros.pop(0)[1]
 
+        # Check for line breaks
+        if char == "\n":
+            line_number += 1
+            if current_pos < i:
+                text_array.append(text[current_pos:i])
+                line_numbers.append(line_number - 1)
+                positions.append((current_pos, i))
+            current_pos = i + 1
 
-possible_content_re = [r"^(?!_).*dakr.*\.ks", r"^(?!_)luna.*\.ks", r"est.*\.ks"]
+    # Add the last segment of text if any
+    if current_pos < len(text) and not any(
+        text[current_pos:].lstrip().startswith(cmd) for cmd in command_strings
+    ):
+        text_array.append(text[current_pos:])
+        line_numbers.append(line_number)
+        positions.append((current_pos, len(text)))
 
-
-def guess_file_type(script_file: ScriptFile) -> str:
-    """guess the file type based on the file name"""
-    # get the file extension
-    file_extension = os.path.splitext(script_file.script_file_path)[1]
-
-    if file_extension != ".ks":
-        return "system"
-
-    # get the file basename
-    file_basename = os.path.basename(script_file.script_file_path)
-    # match the file with possible content file re
-    for re_string in possible_content_re:
-        if re.match(re_string, file_basename):
-            if file_basename.endswith("H.ks"):
-                return "Hcontent"
-            return "content"
-
-    return "other"
+    return text_array, line_numbers, positions

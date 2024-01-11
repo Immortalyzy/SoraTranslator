@@ -1,6 +1,18 @@
 """ information about utilities used by the integrators """
 
 import os
+import re
+
+
+# ==== general =======================================================================
+def to_valid_filename(filename: str) -> str:
+    """check if the filename is valid in windows"""
+    invalid_chars = r"[<>:\"/\\|?*\x00-\x1F]"
+    valid_filename = re.sub(invalid_chars, "_", filename)
+    return valid_filename
+
+
+# ==== general =======================================================================
 
 # ==== xp3_upk =======================================================================
 # get full path to the xp3 unpacker
