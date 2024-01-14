@@ -18,9 +18,9 @@ from config import default_config
 from game import Game
 from scriptfile import ScriptFile, update_script_filelist
 from logger import log_message
-from .encoding_fix import fix_allfiles
+from ..utils.encoding_fix import fix_allfiles
 from .parser import parse_file, parse_block
-from ..utils import NSDEC, NSCMAKE
+from ..utils.utilities import NSDEC, NSCMAKE
 
 
 class MagicalGirlGame(Game):
@@ -67,7 +67,9 @@ class MagicalGirlGame(Game):
         instance.directory = module.DIRECTORY
 
         # script file is required
-        instance.original_script_file = module.SCRIPT_FILE
+        instance.original_script_file = os.path.join(
+            instance.directory, module.SCRIPT_FILE
+        )
 
         # get original encoding
         if hasattr(module, "ORIGINAL_ENCODING"):
@@ -85,7 +87,7 @@ class MagicalGirlGame(Game):
         if not os.path.exists(instance.directory):
             raise FileNotFoundError("The directory does not exist.")
 
-        if not os.path.exists(instance.script_file):
+        if not os.path.exists(instance.original_script_file):
             raise FileNotFoundError("The script file does not exist.")
 
         instance.post_init()
@@ -109,17 +111,15 @@ class MagicalGirlGame(Game):
         """
         Prepare the raw text for Chaos_R games. This method will put all script files into the SoraTranslator/RawText folder.
         """
-        # unpack files
+        # unpack files, put them in the temp_unpack_directory
         self.unpack_allfiles(replace=False)
 
-        # read script files
-        self.read_script_files()
+        # copy the raw text to the RawText directory
+        # creation of the self.script_file instance
+        self.copy_raw_text(replace=replace)
 
         # fix encoding
         self.fix_encoding()
-
-        # copy raw text
-        self.copy_raw_text(replace=replace)
 
     def prepare_translation(self, replace=False):
         """
@@ -130,15 +130,11 @@ class MagicalGirlGame(Game):
         # chaos-R game permits the auto detection of file types
         self.update_script_filelist()
 
-        # update to_translate_file_list
-        for script_file in self.script_file_list:
-            if script_file.is_to_translate():
-                self.to_translate_file_list.append(script_file)
+        # update parent class variables
+        self.script_file_list.append(self.script_file)
+        self.to_translate_file_list.append(self.script_file)
+        self.dangerous_file_list.append(self.script_file)
         self.update_to_translate_filelist()
-
-        for script_file in self.to_translate_file_list:
-            if script_file.is_Hcontent():
-                self.dangerous_file_list.append(script_file)
 
         log_message(
             f"Indentified {len(self.to_translate_file_list)} files to translate. ",
@@ -171,36 +167,23 @@ class MagicalGirlGame(Game):
         """copy the raw text from the temp_unpack_directory to the RawText directory
         after running this function, the script_file_path of the ScriptFile instances will be updated to the new location
         """
+        # now the scriptfile is "result.txt" in the temp_unpack_directory after unpacking
+        current_path = os.path.join(self.temp_unpack_directory, "result.txt")
+        full_desitnation_path = os.path.join(self.rawtext_directory, "result.txt")
 
-        # copy script files to the RawText folder (KEEPING the directory structure)
-        for scriptfile in self.script_file_list:
-            # duplicate directory structure of temp_unpack_directory in the RawText directory
-            # get the relative path of the script file
-            relative_path = os.path.relpath(
-                scriptfile.script_file_path, self.temp_unpack_directory
-            )
-
-            full_desitnation_path = os.path.join(self.rawtext_directory, relative_path)
-            destination_directory = os.path.dirname(full_desitnation_path)
-            # create the directory if it does not exist
-            if not os.path.exists(destination_directory):
-                os.makedirs(destination_directory, exist_ok=True)
-
-            # check if the file already exists
-            if os.path.exists(full_desitnation_path):
-                if replace:
-                    os.remove(full_desitnation_path)
-                else:
-                    print(
-                        f"Skipping {scriptfile.script_file_path} since it already exists."
-                    )
-                    scriptfile.script_file_path = full_desitnation_path
-                    continue
-            shutil.copy2(scriptfile.script_file_path, full_desitnation_path)
-            # update the script file information
-            scriptfile.script_file_path = full_desitnation_path
+        # check if the file already exists
+        if os.path.exists(full_desitnation_path):
+            if replace:
+                os.remove(full_desitnation_path)
+            else:
+                print(f"Skipping {full_desitnation_path} since it already exists.")
+        shutil.copy2(current_path, full_desitnation_path)
+        # update the script file information
+        self.script_file = ScriptFile.from_originalfile(full_desitnation_path)
+        self.script_file.script_file_path = full_desitnation_path
+        self.script_file.original_package = "nscript.dat"
         log_message(
-            f"{len(self.script_file_list):d} raw text files are copied to {self.rawtext_directory}.",
+            f"{self.script_file.script_file_path} raw text is copied to {self.rawtext_directory}.",
             log_level=LogLevel.INFO,
         )
 
@@ -234,13 +217,15 @@ class MagicalGirlGame(Game):
     def unpack_allfiles(self, replace=False):
         """unpack all files in the file list to temp_unpack_directory"""
         # unpack all files
-        # extract the nscript.dat file
-        success = self.unpack(self.unpacker, self.original_script_file)
-        if not success:
-            raise ValueError("Failed to unpack the nscript file.")
-
         result_file_basename = "result.txt"
         result_file_fullpath = os.path.join(self.directory, result_file_basename)
+
+        # extract the nscript.dat file
+        success = self.unpack(
+            self.unpacker, self.original_script_file, result_file_fullpath
+        )
+        if not success:
+            raise ValueError("Failed to unpack the nscript file.")
 
         # check if target directory exists to avoid overwriting
         after_file_name = os.path.join(self.temp_unpack_directory, result_file_basename)
@@ -259,9 +244,18 @@ class MagicalGirlGame(Game):
 
     def repack_all_files(self):
         """repack all files in the temp_unpack_directory, results files will be put under that directory"""
+        # create input directory
+
+        # output file name
+        basename = "nscript.dat"
+        full_path = os.path.join(self.temp_unpack_directory, basename)
 
         # repack all files
-        self.repack(self.packer, self.temp_unpack_directory)
+        self.repack(
+            self.packer,
+            self.temp_unpack_directory,
+            output_file=full_path,
+        )
         return
 
     def replace_translated_rawfiles(self):
@@ -282,12 +276,11 @@ class MagicalGirlGame(Game):
     def fix_encoding(self):
         """fix the encoding of the script files for the game, can only be called after unpacking the collection of the script files"""
         fix_allfiles(
-            self.script_file_list,
+            [self.script_file],
             replace=True,
             original_encoding=self.original_encoding,
             target_encoding=self.target_encoding,
         )
-        self.is_encoding_fixed = True
 
     # ==== methods for script files management ====================================================
     def create_temp_unpack_directory(self, clear=False):
@@ -313,28 +306,6 @@ class MagicalGirlGame(Game):
                 )
         return
 
-    def read_script_files(self):
-        """select script files from the temp_unpack_directory"""
-        # get all files with the given extensions
-        for xp3_file in self.xp3_file_list:
-            base_xp3_file_name = os.path.splitext(os.path.basename(xp3_file))[0]
-            path_of_unpacked_xp3 = os.path.join(
-                self.temp_unpack_directory, base_xp3_file_name
-            )
-            script_filepath_list_xp3 = self.select_files(
-                path_of_unpacked_xp3, self.script_extensions
-            )
-            # create instances of ScriptFile for each file, note the original package
-            for filepath in script_filepath_list_xp3:
-                scriptfile = ScriptFile.from_originalfile(filepath)
-                scriptfile.original_package = base_xp3_file_name
-                self.script_file_list.append(scriptfile)
-        # todo: set the paths for various files of the script file to avoid problems
-
-        # save the script file list to a .csv file under the temp_unpack_directory
-        update_script_filelist(self.scriptfile_list_file, self.script_file_list)
-        return
-
     def update_script_filelist(self):
         """update the script file list to the local from memory"""
         # ! warning: this function is loaded only when scriptfile.py is loaded,
@@ -349,10 +320,13 @@ class MagicalGirlGame(Game):
 
     # ==== utility methods =========================================================================
     @staticmethod
-    def unpack(nsa_unpacker, input_file):
+    def unpack(nsa_unpacker, input_file, output_file=""):
         """Extract the .xp3 file, xp3_u"""
         # extract the .xp3 file
-        return_code = os.system(f'{nsa_unpacker} "{input_file}"')
+        command = f'{nsa_unpacker} "{input_file}"'
+        if output_file != "":
+            command += f' "{output_file}"'
+        return_code = os.system(command=command)
         return return_code == 0
 
     @staticmethod

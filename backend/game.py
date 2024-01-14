@@ -6,7 +6,9 @@ All child classes should have these functions declared in this class as abstract
 from abc import ABC, abstractmethod
 import importlib
 import os
+from typing import List
 from config import default_config
+from scriptfile import ScriptFile
 from pickle import dump, load
 
 
@@ -27,17 +29,17 @@ class Game(ABC):
         self.directory = ""
 
         # script file list, stores all script files
-        self.script_file_list = []
+        self.script_file_list: List[ScriptFile] = []
         self.scriptfile_list_file = ""
 
         # to_translate file list, stores ScriptFile instances
-        self.to_translate_file_list = []
-        self.to_translate_file_list_file = ""
+        self.to_translate_file_list: List[ScriptFile] = []
+        self.to_translate_file_list_file: str = ""
 
         # for H game, there should be a list of dangerous files
         # dangerous files cannot be directly translated by openAI GPT
-        self.dangerous_file_list = []
-        self.dangerous_file_list_file = ""
+        self.dangerous_file_list: List[ScriptFile] = []
+        self.dangerous_file_list_file: str = ""
 
     @classmethod
     @abstractmethod
