@@ -63,6 +63,10 @@ def replace_substrings(original, positions, new_texts):
     # split by line
     results = total.split("\n")
 
+    # readd the \n
+    for i in range(len(results) - 1):
+        results[i] += "\n"
+
     return results
 
 
@@ -210,9 +214,9 @@ class Block:
                 new_texts=total_replacement_texts,
             )
         # remove empty lines
-        temp_block_content = [line for line in temp_block_content if line.strip() != ""]
+        # temp_block_content = [line for line in temp_block_content if line.strip() != ""]
         # add an empty line at the end
-        temp_block_content.append("")
+        # temp_block_content.append("")
 
         # note the result
         self.block_content_translated = temp_block_content

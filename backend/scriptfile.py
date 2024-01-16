@@ -2,6 +2,7 @@
 
 import datetime
 import os
+from typing import List
 from logger import log_message
 from constants import LogLevel
 from block import Block
@@ -24,7 +25,7 @@ class ScriptFile:
 
         # separate the file into multiple text files
         # each text file contain a reasonable amount of blocks for translation and editing
-        self.textfiles = []
+        self.textfiles: List[TextFile] = []
         self.blocks_count_in_textfile = []
         self.translated_script_file_path = ""
 
@@ -120,7 +121,6 @@ class ScriptFile:
         self,
         dest="",
         replace=False,
-        update=False,
     ):
         """
         Generate a text file based on the script file using the provided parser file.
@@ -148,7 +148,7 @@ class ScriptFile:
                 else:
                     textfile.text_file_path = dest[:-4] + f"_sorasub{i:d}" + dest[-4:]
             # generate the text file
-            textfile.generate_textfile(replace=replace, update=update)
+            textfile.generate_textfile(replace=replace)
 
         return 1
 
@@ -214,7 +214,7 @@ class ScriptFile:
         with open(self.translated_script_file_path, "w", encoding=encoding) as file:
             for block in self.blocks:
                 lines_wroten += 1
-                file.write("\n".join(block.block_content_translated) + "\n")
+                file.write("".join(block.block_content_translated))
 
         log_message(
             f"Text file {self.translated_script_file_path} created, {lines_wroten} lines wroten"

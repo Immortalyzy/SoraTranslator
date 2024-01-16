@@ -121,7 +121,6 @@ class TextFile:
         self,
         dest="",
         replace=False,
-        update=False,
     ):
         """
         Generate a text file based on the script file using the provided parser file.
@@ -161,20 +160,11 @@ class TextFile:
             if replace:
                 os.remove(self.text_file_path)
             else:
-                if update:
-                    if self.check_coherence_with_textfile():
-                        self.update_from_textfile()
-                    else:
-                        log_message(
-                            f"Text file {self.text_file_path} is not coherent with the script file, cannot update"
-                        )
-                        return 1  # error
-                else:
-                    log_message(
-                        f"Skipping {self.text_file_path} as it already exists",
-                        log_level=LogLevel.WARNING,
-                    )
-                    return 1  # error
+                log_message(
+                    f"Skipping {self.text_file_path} as it already exists",
+                    log_level=LogLevel.WARNING,
+                )
+                return 1  # error
 
         # create the text file
         ## save file information
