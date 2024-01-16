@@ -42,6 +42,9 @@ class MagicalGirlGame(Game):
         # temp file info storage
         self.temp_unpack_directory = ""
 
+        # possible first block
+        self.first_block = "*n0101"
+
     @classmethod
     def from_pythonfile(cls, paths, python_file, config=default_config):
         """
@@ -83,6 +86,10 @@ class MagicalGirlGame(Game):
         else:
             instance.target_encoding = "gbk"
 
+        # get first block
+        if hasattr(module, "FIRST_BLOCK"):
+            instance.first_block = module.FIRST_BLOCK
+
         # verify the existence of the directory
         if not os.path.exists(instance.directory):
             raise FileNotFoundError("The directory does not exist.")
@@ -112,14 +119,14 @@ class MagicalGirlGame(Game):
         Prepare the raw text for Chaos_R games. This method will put all script files into the SoraTranslator/RawText folder.
         """
         # unpack files, put them in the temp_unpack_directory
-        self.unpack_allfiles(replace=False)
+        # self.unpack_allfiles(replace=False)
 
         # copy the raw text to the RawText directory
         # creation of the self.script_file instance
         self.copy_raw_text(replace=replace)
 
         # fix encoding
-        self.fix_encoding()
+        # self.fix_encoding()
 
     def prepare_translation(self, replace=False):
         """
@@ -145,7 +152,9 @@ class MagicalGirlGame(Game):
         for script_file in self.to_translate_file_list:
             # parsing
             script_file.parse(
-                parse_file_function=parse_file, parse_block_function=parse_block
+                parse_file_function=parse_file,
+                parse_block_function=parse_block,
+                start_indicator=self.first_block,
             )
             # generate text file
             # generate the destination path for the text file
@@ -177,6 +186,10 @@ class MagicalGirlGame(Game):
                 os.remove(full_desitnation_path)
             else:
                 print(f"Skipping {full_desitnation_path} since it already exists.")
+                self.script_file = ScriptFile.from_originalfile(full_desitnation_path)
+                self.script_file.script_file_path = full_desitnation_path
+                self.script_file.original_package = "nscript.dat"
+                return
         shutil.copy2(current_path, full_desitnation_path)
         # update the script file information
         self.script_file = ScriptFile.from_originalfile(full_desitnation_path)
@@ -200,7 +213,9 @@ class MagicalGirlGame(Game):
                 self.translated_files_directory, relative_path
             )
 
-            script_file.generate_translated_rawfile(dest=translated_path, replace=True)
+            script_file.generate_translated_rawfile(
+                dest=translated_path, replace=True, encoding=self.target_encoding
+            )
 
             # get the relative path
             relative_path = os.path.relpath(
@@ -245,6 +260,16 @@ class MagicalGirlGame(Game):
     def repack_all_files(self):
         """repack all files in the temp_unpack_directory, results files will be put under that directory"""
         # create input directory
+        temp_nscript_dir = os.path.join(self.temp_unpack_directory, "nscript")
+
+        # copy translated result file to the input directory
+        translated_result_file = os.path.join(
+            self.translated_files_directory, "result.txt"
+        )
+        shutil.copyfile(translated_result_file, temp_nscript_dir)
+        temp_0_file = os.path.join(temp_nscript_dir, "result.txt")
+        # rename to 0.txt
+        os.rename(temp_0_file, os.path.join(temp_nscript_dir, "0.txt"))
 
         # output file name
         basename = "nscript.dat"
@@ -253,7 +278,7 @@ class MagicalGirlGame(Game):
         # repack all files
         self.repack(
             self.packer,
-            self.temp_unpack_directory,
+            temp_nscript_dir,
             output_file=full_path,
         )
         return

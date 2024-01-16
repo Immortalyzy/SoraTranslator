@@ -53,8 +53,6 @@ def parse_part(lines: List[str]) -> List[Block]:
 
     for line in lines:
         # check if is a comment line
-        if line.strip().startswith(";"):
-            continue
         # Check if the line is the end of a block
         if line.strip().endswith("\\"):
             # if there is a block being recorded, save it to the block list
@@ -91,6 +89,8 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
 
     # create command list
     command_strings = create_nscripter_command_list(lines)
+    # add ; to the command list, this is for comments
+    command_strings.append(";")
 
     # in nscript parts are separated by "*"
     part_list = []
@@ -110,6 +110,7 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
     for line in lines:
         # check if is a comment line
         if line.strip().startswith(COMMENT):
+            part_content.append("\n")
             continue
         # check if start defining
         if not defining and line.strip().startswith("*define"):
@@ -118,7 +119,7 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
             continue
 
         # during defining, record everything until *start
-        if line.strip().startswith(kwargs.get("start_indicator", "*start")):
+        if line.strip() == (kwargs.get("start_indicator", "*start")):
             started = True
             defining = False
 
@@ -135,6 +136,8 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
 
         # skip everything before *define
         if (not defining) and (not started):
+            # push first lines
+            part_content.append(line)
             continue
         # record everything beween *define and *start without change
         if defining:

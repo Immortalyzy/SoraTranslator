@@ -2,7 +2,8 @@
 
 from scriptfile import ScriptFile
 from Translators.ChatGPT_API.chatgpt_api import GPT_Translator
-from constants import Config, DEFAULT_CONFIG_FILE
+from constants import DEFAULT_CONFIG_FILE
+from config import Config
 from Integrators.Chaos_R.chaosr_game import ChaosRGame
 from pickle import dump, load
 

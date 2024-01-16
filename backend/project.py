@@ -9,8 +9,12 @@ import shutil
 from game import Game
 from config import default_config
 from Integrators.Chaos_R.chaosr_game import ChaosRGame
+from Integrators.Magical_Girl.magical_girl_game import MagicalGirlGame
 
-supported_game_engines = {"ChaosR": ChaosRGame}
+supported_game_engines = {
+    "ChaosR": ChaosRGame,
+    "NScript": MagicalGirlGame,
+}
 
 
 class Project:
