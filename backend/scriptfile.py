@@ -173,7 +173,7 @@ class ScriptFile:
 
         return True
 
-    def generate_translated_rawfile(self, dest="", replace=False):
+    def generate_translated_rawfile(self, dest="", replace=False, encoding="utf_16"):
         """generate a translated file from memory"""
         # if no translated file path is provided, generate one
         if self.translated_script_file_path == "" and dest == "":
@@ -211,7 +211,7 @@ class ScriptFile:
                 return 1
 
         # create the raw file
-        with open(self.translated_script_file_path, "w", encoding="utf_16") as file:
+        with open(self.translated_script_file_path, "w", encoding=encoding) as file:
             for block in self.blocks:
                 lines_wroten += 1
                 file.write("\n".join(block.block_content_translated) + "\n")
