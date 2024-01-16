@@ -89,6 +89,9 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
             f"File {file_path} not found for parsing", log_level=LogLevel.WARNING
         )
 
+    # create command list
+    command_strings = create_nscripter_command_list(lines)
+
     # in nscript parts are separated by "*"
     part_list = []
     # this is a list of list of blocks
@@ -174,7 +177,7 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
             all_blocks += block_list
         else:
             for block in block_list:
-                parse_block(block, **kwargs)
+                parse_block(block, command_strings=command_strings)
             all_blocks += block_list
 
         # create a TextFile for each list
@@ -198,7 +201,7 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
     return 0
 
 
-def parse_block(block: Block, **kwargs) -> (str, str, (int, int), (int, int)):
+def parse_block(block: Block, command_strings) -> (str, str, (int, int), (int, int)):
     """parse the block"""
     speaker = ""
     speaker_line = 0
@@ -209,8 +212,7 @@ def parse_block(block: Block, **kwargs) -> (str, str, (int, int), (int, int)):
     # Keep replacing innermost brackets until there are none left
 
     texts, text_lines, text_positions = parse_text(
-        "".join(block.block_content),
-        command_strings=kwargs.get("command_strings", []),
+        "".join(block.block_content), command_strings=command_strings
     )
     text = "".join(texts)
 
