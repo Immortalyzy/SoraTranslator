@@ -20,7 +20,7 @@ from scriptfile import ScriptFile, update_script_filelist
 from logger import log_message
 from ..utils.encoding_fix import fix_allfiles
 from .parser import parse_file, parse_block
-from ..utils.utilities import NSDEC, NSCMAKE
+from ..utils.utilities import NSDEC, NSCMAKE, NSDEC_PYFUN
 
 
 class MagicalGirlGame(Game):
@@ -29,6 +29,7 @@ class MagicalGirlGame(Game):
     def __init__(self, paths, name="Chaos_R", config=default_config):
         super().__init__(paths=paths, name=name, config=config)
         self.unpacker = NSDEC
+        self.unpacker_fy = NSDEC_PYFUN
         self.packer = NSCMAKE
 
         # original script file is nscript.dat
@@ -119,7 +120,7 @@ class MagicalGirlGame(Game):
         Prepare the raw text for Chaos_R games. This method will put all script files into the SoraTranslator/RawText folder.
         """
         # unpack files, put them in the temp_unpack_directory
-        # self.unpack_allfiles(replace=False)
+        self.unpack_allfiles(replace=replace)
 
         # copy the raw text to the RawText directory
         # creation of the self.script_file instance
@@ -236,9 +237,12 @@ class MagicalGirlGame(Game):
         result_file_fullpath = os.path.join(self.directory, result_file_basename)
 
         # extract the nscript.dat file
-        success = self.unpack(
-            self.unpacker, self.original_script_file, result_file_fullpath
-        )
+        if self.unpacker_fy is not None:
+            success = self.unpacker_fy(self.original_script_file, result_file_fullpath)
+        elif self.unpacker is not None:
+            success = self.unpack(
+                self.unpacker, self.original_script_file, result_file_fullpath
+            )
         if not success:
             raise ValueError("Failed to unpack the nscript file.")
 

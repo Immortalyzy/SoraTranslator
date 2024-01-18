@@ -2,6 +2,7 @@
 
 import os
 import re
+from . import nsdec
 
 
 # ==== general =======================================================================
@@ -34,6 +35,8 @@ NSAARC = os.path.join(os.path.dirname(__file__), nsaarc_file)
 NSCMAKE = os.path.join(os.path.dirname(__file__), nscmake_file)
 # convert a nscript.dat to result.txt
 NSDEC = os.path.join(os.path.dirname(__file__), nsdec_file)
+## python implementation of nsdec.exe
+NSDEC_PYFUN = nsdec.decode_ns_file
 
 # official command list
 # from https://kaisernet.org/onscripter/api/NScrAPI-framed.html
