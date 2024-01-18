@@ -16,7 +16,7 @@ from ..Integrators.Magical_Girl.parser import (
     create_nscripter_command_list,
 )
 
-ns_file = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/RawText/nscript.txt"
+ns_file = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/RawText/result.txt"
 project_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator"
 game_object_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/game_object.pkl"
 
@@ -35,7 +35,7 @@ def test_parsing():
     blocks = scriptfile.blocks
     textfiles = scriptfile.textfiles
 
-    block: Block = blocks[56]
+    block: Block = blocks[4]
     parse_block(block, command_strings=command_strings)
 
     block.text_translated = "测试翻译结果？这只是个测试结果"
@@ -43,6 +43,15 @@ def test_parsing():
     block.generate_full_rawblock()
 
     return
+
+
+def test_nsdec_pyfun():
+    """test the py version of nsdec"""
+    nsdec_pyfun = util.NSDEC_PYFUN
+
+    in_filename = "U:/Toys/Games/Gal/MagicalGirl/1/nscript.dat"
+    out_filename = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslatorTemp/result.txt"
+    nsdec_pyfun(in_filename, out_filename)
 
 
 def test_extraction():
