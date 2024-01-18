@@ -134,19 +134,27 @@ class ScriptFile:
             bool: True if the text file was generated successfully, False otherwise.
         """
         for i, textfile in enumerate(self.textfiles):
+            # create a numerical subname for the text file, keeping the same length of digits
+            # this keeps the text files in order
+            total_digits = len(str(len(self.textfiles)))
+            numerical_subname = f"{i+1:0{total_digits}d}"
             # Create the text filepath if not provided
             if dest == "":
                 raise ValueError("In latest version you have to give a text file path")
             # if the text file has a subname, add it to the text file path
             if textfile.subname != "":
-                textfile.text_file_path = dest[:-4] + f"_{textfile.subname}" + dest[-4:]
+                textfile.text_file_path = (
+                    dest[:-4] + f"_{numerical_subname}_{textfile.subname}" + dest[-4:]
+                )
             # if the text file doesn't have a subname, add a subname if there are multiple text files
             else:
                 # generate the paths for the text file
                 if i == 0:
                     textfile.text_file_path = dest
                 else:
-                    textfile.text_file_path = dest[:-4] + f"_sorasub{i:d}" + dest[-4:]
+                    textfile.text_file_path = (
+                        dest[:-4] + f"_sorasub{numerical_subname}" + dest[-4:]
+                    )
             # generate the text file
             textfile.generate_textfile(replace=replace)
 
