@@ -18,6 +18,7 @@ from ..Integrators.Magical_Girl.parser import (
 
 ns_file = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/RawText/nscript.txt"
 project_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator"
+game_object_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/game_object.pkl"
 
 
 def test_parsing():
@@ -54,21 +55,15 @@ def test_extraction():
         config=default_config,
     )
     game.prepare_translation(replace=True)
+    with open(game_object_path, "wb") as file:
+        dump(game, file)
 
 
 def test_integration():
     """test integration with nscmake"""
 
-    # create paths
-    paths = Project.create_paths(project_path)
-    game = MagicalGirlGame.from_pythonfile(
-        paths=paths,
-        python_file="U:/Toys/Games/Gal/MagicalGirl/1/game_file.py",
-        config=default_config,
-    )
-    # virtually create the scriptfile
-    game.copy_raw_text(replace=False)
-    game.prepare_translation(replace=False)
+    with open(game_object_path, "rb") as file:
+        game = load(file)
     scriptfile = game.script_file
     # parse the scriptfile
     # test update from textfile

@@ -31,13 +31,6 @@ def find_shiftjis_not_in_gbk_full():
     return shiftjis_not_in_gbk
 
 
-shiftjis_gbk_replacements = {
-    "〜": "~",  # Wave Dash to Tilde
-    "・": ".",  # Katakana Middle Dot to Period
-    # Add more mappings as needed
-}
-
-
 def fix_encoding(
     input_file_path,
     output_file_path,
@@ -58,6 +51,18 @@ def fix_encoding(
 
         # Replace characters not supported in GBK if target encoding is GBK
         if target_encoding.lower() == "gbk":
+            # get a full list of unsupported characters
+            shiftjis_not_in_gbk = find_shiftjis_not_in_gbk_full()
+            # map for replacements
+            shiftjis_gbk_replacements = {
+                "〜": "~",  # Wave Dash to Tilde
+                "・": " ",  # Katakana Middle Dot to Period
+            }
+            # other characters are replaced with a space
+            for char in shiftjis_not_in_gbk:
+                if char not in shiftjis_gbk_replacements:
+                    shiftjis_gbk_replacements[char] = " "
+
             for orig_char, replacement in shiftjis_gbk_replacements.items():
                 content = content.replace(orig_char, replacement)
 

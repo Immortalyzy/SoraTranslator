@@ -126,7 +126,7 @@ class MagicalGirlGame(Game):
         self.copy_raw_text(replace=replace)
 
         # fix encoding
-        # self.fix_encoding()
+        self.fix_encoding()
 
     def prepare_translation(self, replace=False):
         """
