@@ -353,4 +353,9 @@ def parse_text(text, command_strings):
         line_numbers.append(line_number)
         positions.append((current_pos, len(text)))
 
+    # remove the \\ at the end of the last text at each block
+    if len(text_array) >= 1 and text_array[-1].endswith("\\"):
+        text_array[-1] = text_array[-1][:-1]
+        positions[-1] = (positions[-1][0], positions[-1][1] - 1)
+
     return text_array, line_numbers, positions
