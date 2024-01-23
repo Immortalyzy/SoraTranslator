@@ -101,7 +101,8 @@ There can be multiple translators for the program. However, the program is desig
 - [ ] Too many to-dos are listed in the issues -_-
 
 #### Thanks
-- OpenAI for the possibility, which helps me to translate that I've been wanting to play for centuries
+- OpenAI for the possibility, which helps me to translate what I've been wanting to play for centuries
+- ChatGPT for the help with programming both the frontend (I know nothing about this before) and the backend
 - [Handsontable](https://handsontable.com/) for the table
 - [ONScripter-EN-Steam](https://github.com/GoldbarGames/ONScripter-EN-Steam) for the tools around NScripter
 - [XP3Unpacker](Unknown) for the tools around Kirikiri
