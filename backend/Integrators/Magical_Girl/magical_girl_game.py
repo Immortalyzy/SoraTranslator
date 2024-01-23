@@ -270,14 +270,12 @@ class MagicalGirlGame(Game):
         translated_result_file = os.path.join(
             self.translated_files_directory, "result.txt"
         )
-        shutil.copyfile(translated_result_file, temp_nscript_dir)
-        temp_0_file = os.path.join(temp_nscript_dir, "result.txt")
-        # rename to 0.txt
-        os.rename(temp_0_file, os.path.join(temp_nscript_dir, "0.txt"))
+        os.mkdir(temp_nscript_dir)
+        shutil.copyfile(translated_result_file, os.path.join(temp_nscript_dir, "0.txt"))
 
         # output file name
         basename = "nscript.dat"
-        full_path = os.path.join(self.temp_unpack_directory, basename)
+        full_path = os.path.join(temp_nscript_dir, basename)
 
         # repack all files
         self.repack(
