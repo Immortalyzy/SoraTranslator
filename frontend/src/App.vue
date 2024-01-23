@@ -99,7 +99,7 @@ body {
   right: 0;
   bottom: 0;
   left: 0;
-  background-image: url('~@/assets/sora.png');
+  background-image: url('./assets/sora.png');
   background-size: cover;
   background-position: center;
   opacity: 1;
