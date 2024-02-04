@@ -189,9 +189,7 @@ class ChaosRGame(Game):
         # generate text files for all to_translate files
         for script_file in self.to_translate_file_list:
             # parsing
-            script_file.parse(
-                parse_file_function=parse_file, parse_block_function=parse_block
-            )
+            script_file.parse(parse_file_function=parse_file, force_single=True)
             # generate text file
             # generate the destination path for the text file
             # get the base name of the file without the extension
@@ -375,6 +373,9 @@ class ChaosRGame(Game):
             for filepath in script_filepath_list_xp3:
                 scriptfile = ScriptFile.from_originalfile(filepath)
                 scriptfile.original_package = base_xp3_file_name
+
+                # do not try to separate chaosr files
+                scriptfile.force_single = True
                 self.script_file_list.append(scriptfile)
         # todo: set the paths for various files of the script file to avoid problems
 

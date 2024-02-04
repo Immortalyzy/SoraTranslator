@@ -116,6 +116,13 @@ class ScriptFile:
                 textfile.script_file_path = self.script_file_path
                 self.textfiles.append(textfile)
                 self.blocks_count_in_textfile.append(len(subblock))
+        # if the parser function didn't separate the file into textfiles and force_single is True
+        elif len(self.textfiles) == 0 and force_single:
+            textfile = TextFile.from_blocks(self.blocks)
+            textfile.original_package = self.original_package
+            textfile.script_file_path = self.script_file_path
+            self.textfiles.append(textfile)
+            self.blocks_count_in_textfile.append(len(self.blocks))
 
     def generate_textfiles(
         self,

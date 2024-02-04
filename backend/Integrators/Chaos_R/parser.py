@@ -140,8 +140,9 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
         f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}",
         log_level=LogLevel.DEBUG,
     )
-    block.speaker = speaker
-    block.text = text
+    block.speaker_original = speaker
+    block.text_original = text
+    block.texts_original = texts
     block.speaker_line = speaker_line
     block.speaker_start_end = speaker_start_end
     block.text_lines = text_lines
