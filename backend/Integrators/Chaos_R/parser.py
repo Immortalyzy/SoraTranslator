@@ -34,7 +34,7 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
         if line.strip().startswith(";"):
             continue
         # Check if the line is the start of a block
-        if line.startswith("*"):
+        if line.strip().startswith("*"):
             # If there is an ongoing block, save its content first
             if block_content:
                 # if there is a block being recorded, save it to the block list
