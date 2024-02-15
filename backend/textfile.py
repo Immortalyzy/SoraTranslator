@@ -226,7 +226,7 @@ class TextFile:
             block = Block.from_csv_line(line)
             # verify line information
             j = i - PROPERTY_LINE_LENGTH
-            if block.text_original != self.blocks[j].text_original:
+            if block.text_original.strip() != self.blocks[j].text_original.strip():
                 log_message(
                     f"Line {j+1} in text file {self.text_file_path} does not match the script file, cannot update",
                     log_level=LogLevel.ERROR,
