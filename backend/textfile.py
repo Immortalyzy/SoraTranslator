@@ -231,7 +231,9 @@ class TextFile:
                     f"Line {j+1} in text file {self.text_file_path} does not match the script file, cannot update",
                     log_level=LogLevel.ERROR,
                 )
-                return False
+                # WARING
+                # return False
+
             # update the block, cannot copy because there is no parsing information in "block"
             self.blocks[j].text_translated = block.text_translated
             self.blocks[j].speaker_translated = (

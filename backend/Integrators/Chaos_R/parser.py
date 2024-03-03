@@ -74,7 +74,7 @@ macro_indicator = r"\[ns\].*?\[nse\]"
 # general macro indicator
 macro_indicator2 = r"\[([^\[\]]*)\]"
 # block name
-block_name_indicator = r"^\*.*\n"
+block_name_indicator = r"\*.*\n"
 
 
 def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
@@ -218,13 +218,33 @@ def parse_text(text):
         line_numbers.append(line_number)
         positions.append((current_pos, len(text)))
 
+    ## Remove empty lines
+    # Create new lists to hold the filtered elements
+    filtered_text_array = []
+    filtered_line_numbers = []
+    filtered_positions = []
+
+    # Iterate over the original list and only add non-empty lines and corresponding elements
+    for i, line in enumerate(text_array):
+        if line.strip() != "":  # Check if the line is not just whitespace
+            filtered_text_array.append(line)
+            filtered_line_numbers.append(line_numbers[i])
+            filtered_positions.append(positions[i])
+
+    # Now, if you want to replace the original lists with the filtered lists:
+    text_array = filtered_text_array
+    line_numbers = filtered_line_numbers
+    positions = filtered_positions
+
     return text_array, line_numbers, positions
 
 
-possible_content_re = [r"^(?!_).*dakr.*\.ks", r"^(?!_)luna.*\.ks", r"est.*\.ks"]
+possible_content_re_default = [r"^(?!_).*dakr.*\.ks", r"^(?!_)luna.*\.ks", r"est.*\.ks"]
 
 
-def guess_file_type(script_file: ScriptFile) -> str:
+def guess_file_type(
+    script_file: ScriptFile, possible_content_re=possible_content_re_default
+) -> str:
     """guess the file type based on the file name"""
     # get the file extension
     file_extension = os.path.splitext(script_file.script_file_path)[1]

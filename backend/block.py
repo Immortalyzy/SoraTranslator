@@ -218,6 +218,11 @@ class Block:
         # add an empty line at the end
         # temp_block_content.append("")
 
+        # replace starting "  " with "\t"
+        for i, line in enumerate(temp_block_content):
+            if line.startswith("  "):
+                temp_block_content[i] = "\t" + line[2:]
+
         # note the result
         self.block_content_translated = temp_block_content
         self.is_translated = True
