@@ -9,7 +9,7 @@ from game import Game
 from scriptfile import ScriptFile, update_script_filelist
 from logger import log_message
 from ..utils.encoding_fix import fix_allfiles
-from .parser import guess_file_type, parse_file, parse_block
+from .parser import guess_file_type, parse_file, possible_content_re_default
 
 
 class ChaosRGame(Game):
@@ -20,7 +20,6 @@ class ChaosRGame(Game):
         self.unpacker = config.xp3_unpacker
         # extensions of the script files
         self.script_extensions = [
-            ".asd",
             ".func",
             ".ks",
             ".txt",
@@ -28,6 +27,7 @@ class ChaosRGame(Game):
             ".csv",
             ".tjs",
         ]
+        self.content_indicators = []
 
         # encoding fix for Chaos_R
         self.original_encoding = "cp932"
@@ -91,6 +91,11 @@ class ChaosRGame(Game):
         else:
             # no FILE_LIST is provided, get the file list from the directory
             instance.xp3_file_list = instance.get_xp3file_list(instance.directory)
+
+        if hasattr(module, "CONTENT_INDICATORS"):
+            instance.content_indicators = module.CONTENT_INDICATORS
+        else:
+            instance.content_indicators = possible_content_re_default
 
         # get original encoding
         if hasattr(module, "ORIGINAL_ENCODING"):
@@ -168,7 +173,9 @@ class ChaosRGame(Game):
         self.prepare_raw_text(replace=replace)
         # chaos-R game permits the auto detection of file types
         for scriptfile in self.script_file_list:
-            scriptfile.file_type = guess_file_type(scriptfile)
+            scriptfile.file_type = guess_file_type(
+                scriptfile, possible_content_re=self.content_indicators
+            )
         self.update_script_filelist()
 
         # update to_translate_file_list
