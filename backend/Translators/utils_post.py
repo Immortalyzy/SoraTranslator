@@ -8,6 +8,10 @@ possible_ending_characters = ["』", "”", '"', "'", "’", "/", "\\"]
 standard_starting_character = "「"
 standard_ending_character = "」"
 
+# macro symbols to avoid in output text
+macro_symbols = ["[", "]", "*"]
+replace_macro_symbols = ["(", ")", "+"]
+
 
 def fix_quoting_symbol(block: Block) -> Block:
     """fix the quoting symbol in the text,
@@ -33,7 +37,20 @@ def fix_quoting_symbol(block: Block) -> Block:
     return block
 
 
+def fix_macros(text: str) -> str:
+    """fix the macros in the text,
+    Args:
+        text (str): the text to be fixed
+    Returns:
+        str: the text with the macros fixed
+    """
+    for i, symbol in enumerate(macro_symbols):
+        text = text.replace(symbol, replace_macro_symbols[i])
+    return text
+
+
 def fix_text_after_translation(block: Block) -> Block:
     """A combination of fixing methods after translation"""
     block = fix_quoting_symbol(block)
+    block.text_translated = fix_macros(block.text_translated)
     return block
