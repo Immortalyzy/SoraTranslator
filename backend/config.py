@@ -51,8 +51,15 @@ class Config:
         """load config from json"""
         # read all variables from json file if it exists
         instance = cls()
-        with open(json_file, "r") as file:
-            json_object = json.load(file)
+        # test if the file exists
+        if not os.path.exists(json_file):
+            # save the default config to the file
+            print(f"Warning: {json_file} does not exist, creating a new one")
+            instance.to_json_file(json_file)
+            return instance
+        else:
+            with open(json_file, "r") as file:
+                json_object = json.load(file)
         return instance.from_json_obj(json_object)
 
     def from_json_obj(self, json_object):
