@@ -8,6 +8,7 @@ colorama==0.4.6
 distro==1.8.0
 exceptiongroup==1.2.0
 Flask==3.0.0
+Flask-Cors==4.0.1
 h11==0.14.0
 httpcore==1.0.2
 httpx==0.25.2
