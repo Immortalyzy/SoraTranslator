@@ -35,6 +35,8 @@ aaaa_possible_list = [
     "んんん",
     "あぁっ",
     "ぅぅん",
+    "ふふふ",
+    "ぁぁあ",
 ]
 surrounding_characters = ["”"]
 
