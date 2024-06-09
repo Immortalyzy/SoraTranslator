@@ -36,6 +36,8 @@ class Config:
         self.gpt_enclosing_joiner = "|"
 
         # success status
+        self.translate_line_by_line_in_failure = True
+        self.translate_aaaa_by_single_request = True
         self.record_failure_text = True
 
         # language settings
