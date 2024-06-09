@@ -11,5 +11,6 @@ if not exist ".venv" (
 start cmd /k "python -m flask run"
 
 cd ../frontend
+REM npm config set registry https://registry.npm.taobao.org
 call npm install
 call npm run electron:serve
