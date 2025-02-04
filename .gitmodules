@@ -1,0 +1,3 @@
+[submodule "backend/Translators/GalTransl"]
+	path = backend/Translators/GalTransl
+	url = https://github.com/xd2333/GalTransl.git
