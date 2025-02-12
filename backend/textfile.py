@@ -2,6 +2,7 @@
 
 import datetime
 import os
+import json
 from typing import List
 from logger import log_message
 from constants import LogLevel
@@ -117,6 +118,43 @@ class TextFile:
         entry += str(self.read_date) + "\n"
         return entry
 
+    def generate_galtransl_json(self, dest="", replace=False):
+        """Create a json file for Galtransl"""
+        if self.is_empty:
+            log_message(
+                f"Skipping {self.text_file_path} as it is empty",
+                log_level=LogLevel.INFO,
+            )
+            return 1
+        # Create the text filepath if not provided
+        if self.text_file_path == "" and dest == "":
+            raise ValueError("In latest version you have to give a text file path")
+        if dest != "":
+            # if dest is a file path, then use it
+            self.text_file_path = dest
+        else:
+            # use the same path as the text file, but with a json extension
+            self.text_file_path = self.text_file_path.append(".json")
+
+        # start creating the json file
+        data = [{"name": block.speaker_original, "text": block.text_original} for block in self.blocks]
+
+        # write the json file, replace if needed
+        # check if the file exists
+        if os.path.exists(self.text_file_path):
+            if replace:
+                os.remove(self.text_file_path)
+            else:
+                log_message(
+                    f"Skipping {self.text_file_path} as it already exists",
+                    log_level=LogLevel.WARNING,
+                )
+                return 1
+        with open(self.text_file_path, "w", encoding="utf_16") as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
+
+        return 0
+
     def generate_textfile(
         self,
         dest="",
@@ -185,9 +223,7 @@ class TextFile:
                 lines_wroten += 1
                 file.write(block.to_csv_line() + "\n")
 
-        log_message(
-            f"Text file {self.text_file_path} created, {lines_wroten} lines wroten"
-        )
+        log_message(f"Text file {self.text_file_path} created, {lines_wroten} lines wroten")
         return lines_wroten == 0
 
     def update_from_textfile(self) -> bool:
@@ -237,14 +273,10 @@ class TextFile:
             # update the block, cannot copy because there is no parsing information in "block"
             self.blocks[j].text_translated = block.text_translated
             self.blocks[j].speaker_translated = (
-                block.speaker_translated
-                if block.speaker_translated != ""
-                else self.blocks[j].speaker_original
+                block.speaker_translated if block.speaker_translated != "" else self.blocks[j].speaker_original
             )
             # update tanslation information
-            self.blocks[j].is_translated = (
-                True if block.text_translated != "" else False
-            )
+            self.blocks[j].is_translated = True if block.text_translated != "" else False
             if self.blocks[j].is_translated:
                 self.blocks[j].translation_date = block.translation_date
                 self.blocks[j].translation_engine = block.translation_engine
@@ -253,9 +285,7 @@ class TextFile:
 
     def check_coherence_with_textfile(self, text_file_path=None):
         """check if the script file is coherent with the text file"""
-        text_file_path = (
-            self.text_file_path if text_file_path is None else text_file_path
-        )
+        text_file_path = self.text_file_path if text_file_path is None else text_file_path
         return True
 
     def is_Hcontent(self):
