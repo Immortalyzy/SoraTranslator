@@ -203,15 +203,15 @@ def translate_text():
     translator = createTranslatorInstance(config.translator, config=config)
 
     try:
-        script_file = TextFile.from_textfile(data["file_path"])
-        log_message("Translating file" + script_file.text_file_path, LogLevel.INFO)
-        translator.translate_file_whole(script_file)
-        script_file.generate_textfile(script_file.text_file_path, replace=True)
-        result = {"status": True, "filePath": script_file.text_file_path}
+        text_file = TextFile.from_textfile(data["file_path"])
+        log_message("Translating file" + text_file.text_file_path, LogLevel.INFO)
+        translator.translate_file_whole(text_file)
+        text_file.generate_textfile(text_file.text_file_path, replace=True)
+        result = {"status": True, "filePath": text_file.text_file_path}
         return result
     except Exception as e:
         print(e)
-        result = {"status": False, "filePath": script_file.text_file_path}
+        result = {"status": False, "filePath": text_file.text_file_path}
         # get text json
         return result
 
