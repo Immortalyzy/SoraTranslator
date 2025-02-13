@@ -5,7 +5,8 @@ import shutil
 import os
 from scriptfile import ScriptFile
 from block import Block
-from config import default_config
+from config import Config, default_config
+from constants import DEFAULT_CONFIG_FILE, LogLevel
 from project import Project
 
 from ..Integrators.utils import utilities as util
@@ -16,13 +17,16 @@ from ..Integrators.Magical_Girl.parser import (
     create_nscripter_command_list,
 )
 
+from ..Translators.GalTransl_API import GalTranslAPI
+
 ns_file = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/RawText/result.txt"
 project_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator"
+project_file_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/magicalgirl1.soraproject"
 game_object_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/game_object.pkl"
-temp_json_file_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/temp.json"
+temp_json_file_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/gt_input/temp.json"
 
 
-def test_parsing():
+def test_galtransl_onefile():
     """test parsing"""
     # read the file
     with open(ns_file, "r", encoding="gbk") as file:
@@ -41,5 +45,16 @@ def test_parsing():
 
     # generate the json file
     textfile.generate_galtransl_json(dest=temp_json_file_path, replace=True)
+
+    # call galtransl
+    project = Project.from_pickle(project_file_path)
+    # create the API
+    config = Config.from_json_file(DEFAULT_CONFIG_FILE)
+    galtranslapi = GalTranslAPI(config=config, project=project)
+
+    # translate the textfile
+    galtranslapi.translate_project()
+
+    print("done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
     return

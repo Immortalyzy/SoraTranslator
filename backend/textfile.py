@@ -137,7 +137,7 @@ class TextFile:
             self.text_file_path = self.text_file_path.append(".json")
 
         # start creating the json file
-        data = [{"name": block.speaker_original, "text": block.text_original} for block in self.blocks]
+        data = [{"name": block.speaker_original, "message": block.text_original} for block in self.blocks]
 
         # write the json file, replace if needed
         # check if the file exists
@@ -150,7 +150,7 @@ class TextFile:
                     log_level=LogLevel.WARNING,
                 )
                 return 1
-        with open(self.text_file_path, "w", encoding="utf_16") as file:
+        with open(self.text_file_path, "w", encoding="utf_8") as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
 
         return 0
