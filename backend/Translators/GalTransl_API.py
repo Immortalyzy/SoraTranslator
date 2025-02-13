@@ -1,12 +1,13 @@
 """ This file defines the API used to interact with GalTransl """
 
+import importlib.util
 import sys
 import os
 import shutil
 import subprocess
+from pathlib import Path
 import yaml
 from datetime import datetime
-from openai import OpenAI
 from project import Project
 from textfile import TextFile
 from block import Block
@@ -14,8 +15,6 @@ from config import Config, default_config
 from constants import SuccessStatus as success
 from constants import LogLevel
 from logger import log_message
-from . import utils
-from . import utils_post
 from .translator import Translator
 
 
@@ -50,71 +49,134 @@ def sync_config_to_yaml(config: Config, yaml_file: str):
         yaml.dump(yaml_object, file, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
 
-class GalTranslAPI(Translator):
+class GalTransl_Translator(Translator):
     """API to interact with GalTransl"""
 
-    def __init__(self, config: Config = default_config, project: Project = None):
+    def __init__(self, config: Config = default_config):
         super().__init__(config)
 
         # generate the roor path of GalTransl
-        this_path = os.path.dirname(os.path.abspath(__file__))
-        self.galtransl_path = os.path.join(this_path, "GalTransl")
-        # add the GalTransl path to the system path
+        self.this_path = os.path.dirname(os.path.abspath(__file__))
+        self.galtransl_path = os.path.join(self.this_path, "GalTransl")
+        self.galtransl_code_path = os.path.join(self.galtransl_path, "GalTransl")
+        # add the GalTransl path to the system path for importing GalTransl's variables
         sys.path.insert(0, self.galtransl_path)
+
+        # Dynamically import modules from GalTransl
+        self.GalTransl = self._import_galtransl_module("__init__")
+        self.CONFIG_FILENAME = self._import_galtransl_module("__init__", "CONFIG_FILENAME")
+        self.AUTHOR = self._import_galtransl_module("__init__", "AUTHOR")
+        self.CONTRIBUTORS = self._import_galtransl_module("__init__", "CONTRIBUTORS")
+        self.GALTRANSL_VERSION = self._import_galtransl_module("__init__", "GALTRANSL_VERSION")
+        self.PROGRAM_SPLASH = self._import_galtransl_module("__init__", "PROGRAM_SPLASH")
+
+        from GalTransl.__main__ import worker
+
+        self.worker = worker
+
+        if not self.worker:
+            log_message("Error: Worker function not found!", LogLevel.ERROR)
+
+    def _import_galtransl_module(self, module_name, attribute_name=None):
+        """Dynamically import a module or an attribute from GalTransl"""
+        try:
+            module_path = os.path.join(self.galtransl_code_path, module_name + ".py")
+            spec = importlib.util.spec_from_file_location(module_name, module_path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
+            if attribute_name:
+                return getattr(module, attribute_name)
+            return module
+        except Exception as e:
+            log_message(f"Failed to import {module_name}.{attribute_name}: {e}", LogLevel.ERROR)
+            return None
+
+    def translate_file_whole(self, text_file: TextFile) -> success:
+        """This function will create an environment for GalTransl to translate the text file"""
+
+        # create a project (for this file) config .yaml file
+        ## copy the default config to the project directory
+        ### generate tempate config path
+        template_yaml_config_path = os.path.join(self.this_path, "GalTransl/sampleProject/config.inc.yaml")
+        text_file_path = Path(text_file.text_file_path)
+        text_file_name = text_file_path.name
+
+        ## store each translate single file in a separate folder, the folder name is the same as the file name
+        target_folder_path = text_file_path.parent.parent / "GalTransl" / text_file_name
+        ## mkdir the folder
+        os.makedirs(target_folder_path, exist_ok=True)
+        ## the yaml config is stored in the this folder
+        target_yaml_config_path = os.path.join(target_folder_path, self.CONFIG_FILENAME)
+        ## copy the template config to the folder, if the file exists, overwrite it
+        shutil.copyfile(template_yaml_config_path, target_yaml_config_path)
+
+        ## sync the config file from config to the yaml file, the API key, etc.
+        sync_config_to_yaml(self.config, target_yaml_config_path)
+
+        # create the GalTransl folders
+        gt_input_folder = os.path.join(target_folder_path, "gt_input")
+        gi_output_folder = os.path.join(target_folder_path, "gt_output")
+        # mkdir the folders
+        os.makedirs(gt_input_folder, exist_ok=True)
+        os.makedirs(gi_output_folder, exist_ok=True)
+
+        # create the json file in the gt_input folder under the project directory
+        target_json_file_path = os.path.join(gt_input_folder, text_file_name + ".json")
+        text_file.generate_galtransl_json(dest=target_json_file_path, replace=True)
+
+        # call GalTransl
+        self.run_worker(target_folder_path)
+
+        # rewrite the translated file (sync to textfile instance)
+
+        # return the success status
+        return 0
+
+    def translate_block(self, block: Block, context: str = None):
+        """Not implemented as GalTransl is intended for translating the whole project"""
+        raise RuntimeError("Not implemented")
+
+    def translate_project(self, project: Project):
+        """translate the project using GalTransl"""
         from GalTransl import CONFIG_FILENAME
 
         # create a project config .yaml file
         ## copy the default config to the project directory
-        self.project = project
-
         # generate tempate config path
-        script_dir = os.path.dirname(os.path.abspath(__file__))
+
         template_yaml_config_path = os.path.join(script_dir, "GalTransl/sampleProject/config.inc.yaml")
         target_yaml_config_path = os.path.join(project.project_path, CONFIG_FILENAME)
         # copy the template config to the project directory
         shutil.copyfile(template_yaml_config_path, target_yaml_config_path)
 
         # sync the config file from config to the yaml file, the API key, etc.
-        sync_config_to_yaml(config, target_yaml_config_path)
-        self.yaml_config_path = target_yaml_config_path
+        sync_config_to_yaml(self.config, target_yaml_config_path)
+        yaml_config_path = target_yaml_config_path
 
         # create the GalTransl folders
-        self.gt_input_folder = os.path.join(project.project_path, "gt_input")
-        self.gi_output_folder = os.path.join(project.project_path, "gt_output")
+        gt_input_folder = os.path.join(project.project_path, "gt_input")
+        gi_output_folder = os.path.join(project.project_path, "gt_output")
         # mkdir the folders
-        os.makedirs(self.gt_input_folder, exist_ok=True)
-        os.makedirs(self.gi_output_folder, exist_ok=True)
-
-    def translate_file_whole(self, text_file: TextFile) -> success:
-        """Not implemented as GalTransl is intended for translating the whole project"""
-        raise RuntimeError("Not implemented")
-
-    def translate_block(self, block: Block, context: str = None):
-        """Not implemented as GalTransl is intended for translating the whole project"""
-        raise RuntimeError("Not implemented")
-
-    def translate_project(self):
-        """translate the project using GalTransl"""
+        os.makedirs(gt_input_folder, exist_ok=True)
+        os.makedirs(gi_output_folder, exist_ok=True)
 
         # generate the galtransl json files for translation
 
         # generate the galtransl dictionary for better translation
 
-        # dynamically import GalTransl
-        from GalTransl.__main__ import worker
-        from GalTransl import (
-            AUTHOR,
-            CONFIG_FILENAME,
-            CONTRIBUTORS,
-            GALTRANSL_VERSION,
-            PROGRAM_SPLASH,
-        )
+        # rewrite the translated files (sync to textfile instances)
 
+        # return the success status
+
+    def run_worker(self, project_path: str):
+        """from the path, run the translation worker, this takes time"""
         # print tribute_message
-        tribute_message = f"""echo {PROGRAM_SPLASH}
-        echo Ver: {GALTRANSL_VERSION}
-        echo Author: {AUTHOR}
-        echo Contributors: {CONTRIBUTORS}
+
+        tribute_message = f"""echo {self.PROGRAM_SPLASH}
+        echo Ver: {self.GALTRANSL_VERSION}
+        echo Author: {self.AUTHOR}
+        echo Contributors: {self.CONTRIBUTORS}
         echo This message will self-destruct in 5 seconds...
         timeout /t 5 >nul
         exit
@@ -125,13 +187,9 @@ class GalTranslAPI(Translator):
         original_path = os.getcwd()
         os.chdir(self.galtransl_path)
         try:
-            worker(self.project.project_path, CONFIG_FILENAME, self.config.galtransl_translator, show_banner=False)
+            self.worker(project_path, self.CONFIG_FILENAME, self.config.galtransl_translation_model, show_banner=False)
         except Exception as e:
             log_message(f"Error: {e}", LogLevel.ERROR)
             print(f"Error: {e}")
         finally:
             os.chdir(original_path)
-
-        # rewrite the translated files (sync to textfile instances)
-
-        # return the success status

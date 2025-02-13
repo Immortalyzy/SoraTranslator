@@ -16,11 +16,14 @@ class Config:
     """configuraion class for the backend, saving default configurations"""
 
     def __init__(self):
+        self.proxy = None  # if you need to use a proxy, set it here, format: "socks5://127.0.0.1:10818"
+        self.translator = "galtransl"  # use galtransl as the default translator
+
+        # SoraTranslator settings
         self.gpt_prompt = DEFAULT_INITIATION_PROMPT
         self.fixing_prompt = DEFAULT_FIXING_PROMPT
         # see above LogLevel class
         self.log_level_int = DEFAULT_LOG_LEVEL.value
-        self.proxy = None  # if you need to use a proxy, set it here, format: "socks5://127.0.0.1:10818"
 
         # gpt translation settings
         self.openai_api_key = "sk-xxx"
@@ -38,7 +41,7 @@ class Config:
         self.gpt_enclosing_joiner = "|"
 
         # galtransl settings
-        self.galtransl_translator = "gpt35-1106"
+        self.galtransl_translation_model = "gpt35-1106"
 
         # success status
         self.translate_line_by_line_in_failure = True
