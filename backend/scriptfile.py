@@ -18,6 +18,10 @@ class ScriptFile:
         # these two are used to record the non-block content in the file
         self.non_block_string_between_blocks = []
         self.block_number_for_non_block_string = []
+        # list of string for the name of characters appearing in the file
+        self.name_list_original = []
+        self.name_list_translated = []
+        self.name_list_count = []
 
         # this avoids error when forgot to use from_originalfile
         self.original_file_path = file_path
@@ -102,13 +106,29 @@ class ScriptFile:
         # parse the file and save the parsed blocks
         parse_file_function(self, **kwargs)
 
+        # count the names appeared in the textfile
+        names = []
+        counts = []
+        for block in self.blocks:
+            if block.speaker_original == "":
+                continue
+            if block.speaker_original not in names:
+                names.append(block.speaker_original)
+                counts.append(1)
+            else:
+                counts[names.index(block.speaker_original)] += 1
+
+        self.name_list_original = names
+        self.name_list_count = counts
+        # generate a list of empty strings with the same length as names
+        self.name_list_translated = [""] * len(names)
+
         # if the parser function didn't separate the file into textfiles
         # then separate the file into textfiles automatically
         if len(self.textfiles) == 0 and (not force_single):
             # separate the blocks
             subblocks = [
-                self.blocks[i : i + maximum_block_count]
-                for i in range(0, len(self.blocks), maximum_block_count)
+                self.blocks[i : i + maximum_block_count] for i in range(0, len(self.blocks), maximum_block_count)
             ]
             for i, subblock in enumerate(subblocks):
                 textfile = TextFile.from_blocks(subblock)
@@ -150,18 +170,14 @@ class ScriptFile:
                 raise ValueError("In latest version you have to give a text file path")
             # if the text file has a subname, add it to the text file path
             if textfile.subname != "":
-                textfile.text_file_path = (
-                    dest[:-4] + f"_{numerical_subname}_{textfile.subname}" + dest[-4:]
-                )
+                textfile.text_file_path = dest[:-4] + f"_{numerical_subname}_{textfile.subname}" + dest[-4:]
             # if the text file doesn't have a subname, add a subname if there are multiple text files
             else:
                 # generate the paths for the text file
                 if i == 0:
                     textfile.text_file_path = dest
                 else:
-                    textfile.text_file_path = (
-                        dest[:-4] + f"_sorasub{numerical_subname}" + dest[-4:]
-                    )
+                    textfile.text_file_path = dest[:-4] + f"_sorasub{numerical_subname}" + dest[-4:]
             # generate the text file
             textfile.generate_textfile(replace=replace)
 
@@ -192,9 +208,7 @@ class ScriptFile:
         """generate a translated file from memory"""
         # if no translated file path is provided, generate one
         if self.translated_script_file_path == "" and dest == "":
-            raise ValueError(
-                "In latest version you have to give a translated file path"
-            )
+            raise ValueError("In latest version you have to give a translated file path")
         if dest != "":
             self.translated_script_file_path = dest
 
@@ -231,9 +245,7 @@ class ScriptFile:
                 lines_wroten += 1
                 file.write("".join(block.block_content_translated))
 
-        log_message(
-            f"Text file {self.translated_script_file_path} created, {lines_wroten} lines wroten"
-        )
+        log_message(f"Text file {self.translated_script_file_path} created, {lines_wroten} lines wroten")
         return lines_wroten == 0
 
     def is_system_file(self):
@@ -331,8 +343,6 @@ def from_script_filelist(listfilepath: str) -> list:
         script_file.need_manual_fix = bool(int(line[4]))
         script_file.translation_percentage = float(line[5])
         script_file.original_package = line[6]
-        script_file.read_date = datetime.datetime.strptime(
-            line[7], "%Y-%m-%d %H:%M:%S.%f"
-        )
+        script_file.read_date = datetime.datetime.strptime(line[7], "%Y-%m-%d %H:%M:%S.%f")
         script_file_list.append(script_file)
     return script_file_list

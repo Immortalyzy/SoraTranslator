@@ -117,6 +117,7 @@ class GalTransl_Translator(Translator):
         # create the GalTransl folders
         gt_input_folder = os.path.join(target_folder_path, "gt_input")
         gi_output_folder = os.path.join(target_folder_path, "gt_output")
+        output_file_name = os.path.join(gi_output_folder, text_file_name + ".json")
         # mkdir the folders
         os.makedirs(gt_input_folder, exist_ok=True)
         os.makedirs(gi_output_folder, exist_ok=True)
@@ -125,10 +126,21 @@ class GalTransl_Translator(Translator):
         target_json_file_path = os.path.join(gt_input_folder, text_file_name + ".json")
         text_file.generate_galtransl_json(dest=target_json_file_path, replace=True)
 
+        # prepare the dictionary of characters' names
+        starting_line = "JP_Name,CN_Name,Count\n"
+        # if the name list is empty, this will just write the header, prompt the user to fill the file
+        for i, name in enumerate(text_file.name_list_original):
+            starting_line += f"{name},{text_file.name_list_translated[i]},{text_file.name_list_count[i]}\n"
+
+        namelist_file_path = os.path.join(target_folder_path, "人名替换表.csv")
+        with open(namelist_file_path, "w", encoding="utf-8") as file:
+            file.write(starting_line)
+
         # call GalTransl
         self.run_worker(target_folder_path)
 
-        # rewrite the translated file (sync to textfile instance)
+        # read the translation results (sync to textfile instance)
+        text_file.update_from_galtransl_json(output_file_name)
 
         # return the success status
         return 0

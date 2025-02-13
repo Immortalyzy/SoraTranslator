@@ -1,4 +1,5 @@
 """ this file is for api for the frontend calls"""
+
 import re
 from datetime import datetime
 from flask import Flask, jsonify, request
@@ -142,10 +143,7 @@ def require_tranlsation_status():
 
         except Exception as e:
             log_message(
-                "ERROR when trying to load translation status of file "
-                + file_path
-                + " "
-                + str(e),
+                "ERROR when trying to load translation status of file " + file_path + " " + str(e),
                 LogLevel.ERROR,
             )
             status_list.append("invalid_file")
@@ -172,14 +170,8 @@ def save_text_from_json():
             result = {"status": False}
             return result
         for i, block in enumerate(script_file.blocks):
-            block.text_translated = (
-                blocks[i]["text_translated"] if blocks[i]["text_translated"] else ""
-            )
-            block.speaker_translated = (
-                blocks[i]["speaker_translated"]
-                if blocks[i]["speaker_translated"]
-                else ""
-            )
+            block.text_translated = blocks[i]["text_translated"] if blocks[i]["text_translated"] else ""
+            block.speaker_translated = blocks[i]["speaker_translated"] if blocks[i]["speaker_translated"] else ""
             if blocks[i]["is_edited"]:
                 block.is_translated = True
                 block.translation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -208,7 +200,7 @@ def translate_text():
     config.gpt_max_lines = int(data["max_lines"])
 
     # create translator instance
-    translator = createTranslatorInstance("gpt", config=config)
+    translator = createTranslatorInstance(config.translator, config=config)
 
     try:
         script_file = TextFile.from_textfile(data["file_path"])

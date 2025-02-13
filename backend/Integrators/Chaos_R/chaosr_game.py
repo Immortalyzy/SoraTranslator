@@ -32,9 +32,7 @@ class ChaosRGame(Game):
         # encoding fix for Chaos_R
         self.original_encoding = "cp932"
         self.target_encoding = "utf_16"
-        self.is_encoding_fixed = (
-            False  # if the encoding of the files are fixed set to True
-        )
+        self.is_encoding_fixed = False  # if the encoding of the files are fixed set to True
 
         # xp3 file list, stores string of FULL file path
         self.xp3_file_list = []
@@ -141,12 +139,8 @@ class ChaosRGame(Game):
         # create temp unpack directory
         self.create_temp_unpack_directory(clear=False)
         # initiate script file list file path
-        self.scriptfile_list_file = os.path.join(
-            self.temp_unpack_directory, "script_file_list.csv"
-        )
-        self.to_translate_file_list_file = os.path.join(
-            self.temp_unpack_directory, "to_translate_file_list.csv"
-        )
+        self.scriptfile_list_file = os.path.join(self.temp_unpack_directory, "script_file_list.csv")
+        self.to_translate_file_list_file = os.path.join(self.temp_unpack_directory, "to_translate_file_list.csv")
 
     # ==== high level methods ===============================
     def prepare_raw_text(self, replace=False):
@@ -173,9 +167,7 @@ class ChaosRGame(Game):
         self.prepare_raw_text(replace=replace)
         # chaos-R game permits the auto detection of file types
         for scriptfile in self.script_file_list:
-            scriptfile.file_type = guess_file_type(
-                scriptfile, possible_content_re=self.content_indicators
-            )
+            scriptfile.file_type = guess_file_type(scriptfile, possible_content_re=self.content_indicators)
         self.update_script_filelist()
 
         # update to_translate_file_list
@@ -203,13 +195,22 @@ class ChaosRGame(Game):
             file_name = os.path.basename(script_file.script_file_path)
             file_name = os.path.splitext(file_name)[0]
             # remove file extension from original package
-            relative_path = os.path.relpath(
-                script_file.script_file_path, self.rawtext_directory
-            )
+            relative_path = os.path.relpath(script_file.script_file_path, self.rawtext_directory)
             text_path = os.path.join(self.text_directory, relative_path)
             text_path = os.path.splitext(text_path)[0] + ".csv"
 
             script_file.generate_textfiles(dest=text_path, replace=replace)
+
+            # update the names list
+            for i, name in enumerate(script_file.name_list_original):
+                if name not in self.name_list_original:
+                    self.name_list_original.append(name)
+                    self.name_list_translated.append(script_file.name_list_translated[i])
+                    self.name_list_count.append(script_file.name_list_count[i])
+                else:
+                    index = self.name_list_original.index(name)
+                    self.name_list_count[index] += script_file.name_list_count[i]
+
         self.update_script_filelist()
         return True
 
@@ -222,9 +223,7 @@ class ChaosRGame(Game):
         for scriptfile in self.script_file_list:
             # duplicate directory structure of temp_unpack_directory in the RawText directory
             # get the relative path of the script file
-            relative_path = os.path.relpath(
-                scriptfile.script_file_path, self.temp_unpack_directory
-            )
+            relative_path = os.path.relpath(scriptfile.script_file_path, self.temp_unpack_directory)
 
             full_desitnation_path = os.path.join(self.rawtext_directory, relative_path)
             destination_directory = os.path.dirname(full_desitnation_path)
@@ -237,9 +236,7 @@ class ChaosRGame(Game):
                 if replace:
                     os.remove(full_desitnation_path)
                 else:
-                    print(
-                        f"Skipping {scriptfile.script_file_path} since it already exists."
-                    )
+                    print(f"Skipping {scriptfile.script_file_path} since it already exists.")
                     scriptfile.script_file_path = full_desitnation_path
                     continue
             shutil.copy2(scriptfile.script_file_path, full_desitnation_path)
@@ -256,19 +253,13 @@ class ChaosRGame(Game):
             script_file.update_from_textfiles()
 
             # generate file destination path
-            relative_path = os.path.relpath(
-                script_file.script_file_path, self.rawtext_directory
-            )
-            translated_path = os.path.join(
-                self.translated_files_directory, relative_path
-            )
+            relative_path = os.path.relpath(script_file.script_file_path, self.rawtext_directory)
+            translated_path = os.path.join(self.translated_files_directory, relative_path)
 
             script_file.generate_translated_rawfile(dest=translated_path, replace=True)
 
             # get the relative path
-            relative_path = os.path.relpath(
-                script_file.translated_script_file_path, self.translated_files_directory
-            )
+            relative_path = os.path.relpath(script_file.translated_script_file_path, self.translated_files_directory)
             desitnation_path = os.path.join(self.temp_unpack_directory, relative_path)
 
             # copy the file to the temp folder, overwrite if exists
@@ -357,12 +348,8 @@ class ChaosRGame(Game):
         readme_file = os.path.join(self.temp_unpack_directory, "readme.txt")
         if not os.path.exists(readme_file):
             with open(readme_file, "w", encoding="utf_8") as f:
-                f.write(
-                    "This directory is used to store unpacked files by SoraTranslator. "
-                )
-                f.write(
-                    "Do not delete this directory unless you are fully certain the translation has finished."
-                )
+                f.write("This directory is used to store unpacked files by SoraTranslator. ")
+                f.write("Do not delete this directory unless you are fully certain the translation has finished.")
         return
 
     def read_script_files(self):
@@ -370,12 +357,8 @@ class ChaosRGame(Game):
         # get all files with the given extensions
         for xp3_file in self.xp3_file_list:
             base_xp3_file_name = os.path.splitext(os.path.basename(xp3_file))[0]
-            path_of_unpacked_xp3 = os.path.join(
-                self.temp_unpack_directory, base_xp3_file_name
-            )
-            script_filepath_list_xp3 = self.select_files(
-                path_of_unpacked_xp3, self.script_extensions
-            )
+            path_of_unpacked_xp3 = os.path.join(self.temp_unpack_directory, base_xp3_file_name)
+            script_filepath_list_xp3 = self.select_files(path_of_unpacked_xp3, self.script_extensions)
             # create instances of ScriptFile for each file, note the original package
             for filepath in script_filepath_list_xp3:
                 scriptfile = ScriptFile.from_originalfile(filepath)
@@ -398,9 +381,7 @@ class ChaosRGame(Game):
 
     def update_to_translate_filelist(self):
         """update the to_translate_file_list to the local from memory"""
-        update_script_filelist(
-            self.to_translate_file_list_file, self.to_translate_file_list
-        )
+        update_script_filelist(self.to_translate_file_list_file, self.to_translate_file_list)
 
     # ==== utility methods =========================================================================
     @staticmethod

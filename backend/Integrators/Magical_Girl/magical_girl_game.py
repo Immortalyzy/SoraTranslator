@@ -71,9 +71,7 @@ class MagicalGirlGame(Game):
         instance.directory = module.DIRECTORY
 
         # script file is required
-        instance.original_script_file = os.path.join(
-            instance.directory, module.SCRIPT_FILE
-        )
+        instance.original_script_file = os.path.join(instance.directory, module.SCRIPT_FILE)
 
         # get original encoding
         if hasattr(module, "ORIGINAL_ENCODING"):
@@ -107,12 +105,8 @@ class MagicalGirlGame(Game):
         # create temp unpack directory
         self.create_temp_unpack_directory(clear=False)
         # initiate script file list file path
-        self.scriptfile_list_file = os.path.join(
-            self.temp_unpack_directory, "script_file_list.csv"
-        )
-        self.to_translate_file_list_file = os.path.join(
-            self.temp_unpack_directory, "to_translate_file_list.csv"
-        )
+        self.scriptfile_list_file = os.path.join(self.temp_unpack_directory, "script_file_list.csv")
+        self.to_translate_file_list_file = os.path.join(self.temp_unpack_directory, "to_translate_file_list.csv")
 
     # ==== high level methods ===============================
     def prepare_raw_text(self, replace=False):
@@ -163,13 +157,22 @@ class MagicalGirlGame(Game):
             file_name = os.path.basename(script_file.script_file_path)
             file_name = os.path.splitext(file_name)[0]
             # remove file extension from original package
-            relative_path = os.path.relpath(
-                script_file.script_file_path, self.rawtext_directory
-            )
+            relative_path = os.path.relpath(script_file.script_file_path, self.rawtext_directory)
             text_path = os.path.join(self.text_directory, relative_path)
             text_path = os.path.splitext(text_path)[0] + ".csv"
 
             script_file.generate_textfiles(dest=text_path, replace=replace)
+
+            # update the names list
+            for i, name in enumerate(script_file.name_list_original):
+                if name not in self.name_list_original:
+                    self.name_list_original.append(name)
+                    self.name_list_translated.append(script_file.name_list_translated[i])
+                    self.name_list_count.append(script_file.name_list_count[i])
+                else:
+                    index = self.name_list_original.index(name)
+                    self.name_list_count[index] += script_file.name_list_count[i]
+
         self.update_script_filelist()
         return True
 
@@ -207,21 +210,13 @@ class MagicalGirlGame(Game):
             script_file.update_from_textfiles()
 
             # generate file destination path
-            relative_path = os.path.relpath(
-                script_file.script_file_path, self.rawtext_directory
-            )
-            translated_path = os.path.join(
-                self.translated_files_directory, relative_path
-            )
+            relative_path = os.path.relpath(script_file.script_file_path, self.rawtext_directory)
+            translated_path = os.path.join(self.translated_files_directory, relative_path)
 
-            script_file.generate_translated_rawfile(
-                dest=translated_path, replace=True, encoding=self.target_encoding
-            )
+            script_file.generate_translated_rawfile(dest=translated_path, replace=True, encoding=self.target_encoding)
 
             # get the relative path
-            relative_path = os.path.relpath(
-                script_file.translated_script_file_path, self.translated_files_directory
-            )
+            relative_path = os.path.relpath(script_file.translated_script_file_path, self.translated_files_directory)
             desitnation_path = os.path.join(self.temp_unpack_directory, relative_path)
 
             # copy the file to the temp folder, overwrite if exists
@@ -240,9 +235,7 @@ class MagicalGirlGame(Game):
         if self.unpacker_fy is not None:
             success = self.unpacker_fy(self.original_script_file, result_file_fullpath)
         elif self.unpacker is not None:
-            success = self.unpack(
-                self.unpacker, self.original_script_file, result_file_fullpath
-            )
+            success = self.unpack(self.unpacker, self.original_script_file, result_file_fullpath)
         if not success:
             raise ValueError("Failed to unpack the nscript file.")
 
@@ -267,9 +260,7 @@ class MagicalGirlGame(Game):
         temp_nscript_dir = os.path.join(self.temp_unpack_directory, "nscript")
 
         # copy translated result file to the input directory
-        translated_result_file = os.path.join(
-            self.translated_files_directory, "result.txt"
-        )
+        translated_result_file = os.path.join(self.translated_files_directory, "result.txt")
         os.mkdir(temp_nscript_dir)
         shutil.copyfile(translated_result_file, os.path.join(temp_nscript_dir, "0.txt"))
 
@@ -325,12 +316,8 @@ class MagicalGirlGame(Game):
         readme_file = os.path.join(self.temp_unpack_directory, "readme.txt")
         if not os.path.exists(readme_file):
             with open(readme_file, "w", encoding="utf_8") as f:
-                f.write(
-                    "This directory is used to store unpacked files by SoraTranslator. "
-                )
-                f.write(
-                    "Do not delete this directory unless you are fully certain the translation has finished."
-                )
+                f.write("This directory is used to store unpacked files by SoraTranslator. ")
+                f.write("Do not delete this directory unless you are fully certain the translation has finished.")
         return
 
     def update_script_filelist(self):
@@ -341,9 +328,7 @@ class MagicalGirlGame(Game):
 
     def update_to_translate_filelist(self):
         """update the to_translate_file_list to the local from memory"""
-        update_script_filelist(
-            self.to_translate_file_list_file, self.to_translate_file_list
-        )
+        update_script_filelist(self.to_translate_file_list_file, self.to_translate_file_list)
 
     # ==== utility methods =========================================================================
     @staticmethod

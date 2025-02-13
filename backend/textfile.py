@@ -21,6 +21,11 @@ class TextFile:
         self.blocks: List[Block] = []
         self.is_empty = False
 
+        # list of string for the name of characters appearing in the file
+        self.name_list_original = []
+        self.name_list_translated = []
+        self.name_list_count = []  # count of each name
+
         # sub name usually is the name of the part when parsing a big file
         # if empty, the sub text file generated will be assigned a name automatically
         self.subname = ""
@@ -52,6 +57,24 @@ class TextFile:
             if not block.is_empty():
                 textfile.is_empty = False
                 break
+
+        # count the names appeared in the textfile
+        names = []
+        counts = []
+        for block in blocks:
+            if block.speaker_original == "":
+                continue
+            if block.speaker_original not in names:
+                names.append(block.speaker_original)
+                counts.append(1)
+            else:
+                counts[names.index(block.speaker_original)] += 1
+
+        textfile.name_list_original = names
+        textfile.name_list_count = counts
+        # generate a list of empty strings with the same length as names
+        textfile.name_list_translated = [""] * len(names)
+
         return textfile
 
     @classmethod
@@ -129,10 +152,7 @@ class TextFile:
         # Create the text filepath if not provided
         if self.text_file_path == "" and dest == "":
             raise ValueError("In latest version you have to give a text file path")
-        if dest != "":
-            # if dest is a file path, then use it
-            self.text_file_path = dest
-        else:
+        if dest == "":
             # use the same path as the text file, but with a json extension
             self.text_file_path = self.text_file_path.append(".json")
 
@@ -154,6 +174,50 @@ class TextFile:
             json.dump(data, file, ensure_ascii=False, indent=4)
 
         return 0
+
+    def update_from_galtransl_json(self, json_file="") -> bool:
+        """update the content (translation) of the textfile from a galtransl output json"""
+        # check if the file is empty
+        if self.is_empty:
+            log_message(
+                f"Skipping {self.text_file_path} as it is empty",
+                log_level=LogLevel.INFO,
+            )
+            return True
+
+        if json_file == "":
+            json_file = self.text_file_path + ".json"
+
+        # check if the file exists
+        if not os.path.exists(json_file):
+            log_message(
+                f"Text file {json_file} does not exist, cannot update",
+                log_level=LogLevel.ERROR,
+            )
+            return False
+        with open(json_file, "r", encoding="utf_8") as file:
+            data = json.load(file)
+        # implement verification (total lines, etc.)
+        if len(data) != len(self.blocks):
+            log_message(
+                f"Json output file {json_file} is not coherent with the script file, cannot update",
+                log_level=LogLevel.ERROR,
+            )
+            return False
+
+        # record the translation information in the text file and write them to blocks
+        for i, entry in enumerate(data):
+            # verify line information
+            if self.blocks[i].speaker_original == "" and entry["name"] != "":
+                log_message(
+                    f"Entry {i+1} in json file {json_file} does not match the script file, result might be incorrect",
+                    log_level=LogLevel.WARNING,
+                )
+            self.blocks[i].speaker_translated = entry["name"]
+            self.blocks[i].text_translated = entry["message"]
+
+        self.is_translated = True
+        return True
 
     def generate_textfile(
         self,

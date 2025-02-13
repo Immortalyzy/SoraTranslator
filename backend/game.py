@@ -41,6 +41,11 @@ class Game(ABC):
         self.dangerous_file_list: List[ScriptFile] = []
         self.dangerous_file_list_file: str = ""
 
+        # list of string for the name of characters appearing in the game
+        self.name_list_original = []
+        self.name_list_translated = []
+        self.name_list_count = []
+
     @classmethod
     @abstractmethod
     def from_pythonfile(cls, paths, python_file, config=default_config):

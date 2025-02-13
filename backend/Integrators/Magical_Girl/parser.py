@@ -83,9 +83,7 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
         with open(file_path, "r", encoding="gbk") as file:
             lines = file.readlines()
     except FileNotFoundError:
-        log_message(
-            f"File {file_path} not found for parsing", log_level=LogLevel.WARNING
-        )
+        log_message(f"File {file_path} not found for parsing", log_level=LogLevel.WARNING)
 
     # create command list
     command_strings = create_nscripter_command_list(lines)
@@ -218,9 +216,7 @@ def parse_block(block: Block, command_strings) -> (str, str, (int, int), (int, i
     # indicator for "other" speakers, this MUST be kept in this order
     # Keep replacing innermost brackets until there are none left
 
-    texts, text_lines, text_positions = parse_text(
-        "".join(block.block_content), command_strings=command_strings
-    )
+    texts, text_lines, text_positions = parse_text("".join(block.block_content), command_strings=command_strings)
     text = "".join(texts)
 
     # find the speaker if any
@@ -275,22 +271,14 @@ def parse_text(text, command_strings):
     # the look behind is to make sure the command is at the beginning of the line
     # this is specific for nscripter or other scripting language where the command must be at the beginning of the line
     # !but this might double the parsing time
-    safe_command_pattern = (
-        r"(?<=^) *\t*(" + "|".join(escaped_command_strings) + r").*?\n"
-    )
-    safe_command_pattern2 = (
-        r"(?<=\n) *\t*(" + "|".join(escaped_command_strings) + r").*?\n"
-    )
+    safe_command_pattern = r"(?<=^) *\t*(" + "|".join(escaped_command_strings) + r").*?\n"
+    safe_command_pattern2 = r"(?<=\n) *\t*(" + "|".join(escaped_command_strings) + r").*?\n"
 
     # Find all positions of macros using regular expressions
-    macros_general = [
-        (m.start(), m.end()) for m in re.finditer(speaker_indicator, text)
-    ]
+    macros_general = [(m.start(), m.end()) for m in re.finditer(speaker_indicator, text)]
 
     macros_ns = [(m.start(), m.end()) for m in re.finditer(safe_command_pattern, text)]
-    macros_ns2 = [
-        (m.start(), m.end()) for m in re.finditer(safe_command_pattern2, text)
-    ]
+    macros_ns2 = [(m.start(), m.end()) for m in re.finditer(safe_command_pattern2, text)]
 
     # Combine and sort the positions of both types of macros
     all_macros = sorted(macros_general + macros_ns + macros_ns2, key=lambda x: x[0])
@@ -302,10 +290,7 @@ def parse_text(text, command_strings):
         for other_macro in all_macros:
             if (
                 current_macro != other_macro
-                and other_macro[0]
-                <= current_macro[0]
-                < current_macro[1]
-                <= other_macro[1]
+                and other_macro[0] <= current_macro[0] < current_macro[1] <= other_macro[1]
             ):
                 is_nested = True
                 break
@@ -346,9 +331,7 @@ def parse_text(text, command_strings):
             current_pos = i + 1
 
     # Add the last segment of text if any
-    if current_pos < len(text) and not any(
-        text[current_pos:].lstrip().startswith(cmd) for cmd in command_strings
-    ):
+    if current_pos < len(text) and not any(text[current_pos:].lstrip().startswith(cmd) for cmd in command_strings):
         text_array.append(text[current_pos:])
         line_numbers.append(line_number)
         positions.append((current_pos, len(text)))
