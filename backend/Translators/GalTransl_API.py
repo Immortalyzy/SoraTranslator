@@ -7,6 +7,8 @@ import shutil
 import subprocess
 from pathlib import Path
 import yaml
+import tkinter as tk
+from tkinter import messagebox
 from datetime import datetime
 from project import Project
 from textfile import TextFile
@@ -129,21 +131,51 @@ class GalTransl_Translator(Translator):
         # prepare the dictionary of characters' names
         starting_line = "JP_Name,CN_Name,Count\n"
         # if the name list is empty, this will just write the header, prompt the user to fill the file
+        exsiting_empty = False
         for i, name in enumerate(text_file.name_list_original):
+            if text_file.name_list_translated[i] == "":
+                exsiting_empty = True
             starting_line += f"{name},{text_file.name_list_translated[i]},{text_file.name_list_count[i]}\n"
 
         namelist_file_path = os.path.join(target_folder_path, "人名替换表.csv")
         with open(namelist_file_path, "w", encoding="utf-8") as file:
             file.write(starting_line)
 
+        # prompt the user to fill the name list
+        if exsiting_empty:
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes("-topmost", True)
+            root.after(100, lambda: root.lift())
+            messagebox.showinfo(
+                "人名替换表为空",
+                f"请按照GalTransl要求填写 人名替换表.csv 以达到更好的翻译效果，文件在 {target_folder_path}",
+            )
+            root.destroy()
+
+        # read the 人名替换表.csv file
+        with open(namelist_file_path, "r", encoding="utf-8") as file:
+            namelist = file.readlines()
+        # remove the header
+        namelist = namelist[1:]
+        # sync the name list to the textfile instance
+        for line in namelist:
+            jp_name, cn_name, count = line.strip().split(",")
+            if jp_name in text_file.name_list_original:
+                index = text_file.name_list_original.index(jp_name)
+                text_file.name_list_translated[index] = cn_name
+            else:
+                log_message(f"Warning: {jp_name} not found in the original name list", LogLevel.WARNING)
+
         # call GalTransl
         self.run_worker(target_folder_path)
 
         # read the translation results (sync to textfile instance)
-        text_file.update_from_galtransl_json(output_file_name)
-
-        # return the success status
-        return 0
+        if os.path.exists(output_file_name):
+            text_file.update_from_galtransl_json(output_file_name)
+            return success.SUCCESS
+        else:
+            return success.ERROR
 
     def translate_block(self, block: Block, context: str = None):
         """Not implemented as GalTransl is intended for translating the whole project"""

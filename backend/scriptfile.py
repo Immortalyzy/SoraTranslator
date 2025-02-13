@@ -204,7 +204,7 @@ class ScriptFile:
 
         return True
 
-    def generate_translated_rawfile(self, dest="", replace=False, encoding="utf_16"):
+    def generate_translated_rawfile(self, dest="", replace=False, encoding="utf_8"):
         """generate a translated file from memory"""
         # if no translated file path is provided, generate one
         if self.translated_script_file_path == "" and dest == "":
@@ -305,7 +305,7 @@ def initiate_script_filelist(listfilepath, replace=False):
             print("script file list already exists, skip initiation")
             return
 
-    with open(listfilepath, "w", encoding="utf_16") as file:
+    with open(listfilepath, "w", encoding="utf_8") as file:
         file.write(
             "script_file_path\ttext_file_path\tfile_type\tis_translated\tneed_manual_fix\ttranslation_percentage\toriginal_package\tread_date\n"
         )
@@ -321,14 +321,14 @@ def update_script_filelist(listfilepath, filelist, replace=True):
         if os.path.exists(listfilepath):
             os.remove(listfilepath)
     for gamefile in filelist:
-        with open(listfilepath, "a", encoding="utf_16") as file:
+        with open(listfilepath, "a", encoding="utf_8") as file:
             file.write(gamefile.create_entry_in_scriptlistcsv())
 
 
 def from_script_filelist(listfilepath: str) -> list:
     """create a list of script files from a script file list"""
     script_file_list = []
-    with open(listfilepath, "r", encoding="utf_16") as file:
+    with open(listfilepath, "r", encoding="utf_8") as file:
         lines = file.readlines()
     for line in lines:
         if line.startswith("script_file_path"):

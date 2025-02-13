@@ -3,6 +3,7 @@ This script provides the encoding fix functions for the games of Chaos-R.
 The encoding of the text content of the games of Chaos-R is Shift-JIS.
 In order to run it directly without using Locale Emulator, we need to convert the encoding of the text content from Shift-JIS to UTF-8 (or UTF-16LF).
 """
+
 import os
 import shutil
 
@@ -35,7 +36,7 @@ def fix_encoding(
     input_file_path,
     output_file_path,
     original_encoding="cp932",
-    target_encoding="utf_16",
+    target_encoding="utf_8",
 ):
     """
     Fix the encoding of the text content of the games of Chaos-R.
@@ -44,7 +45,7 @@ def fix_encoding(
         # Chaos-R games have a file called PageBreak.asd that is encoded in UTF-8
         if os.path.basename(input_file_path) == "PageBreak.asd":
             original_encoding = "utf_8"
-            target_encoding = "utf_16"
+            target_encoding = "utf_8"
 
         with open(input_file_path, "r", encoding=original_encoding) as f:
             content = f.read()
@@ -82,9 +83,7 @@ def fix_encoding(
     return True
 
 
-def fix_allfiles(
-    scriptfile_list, replace=False, original_encoding="cp932", target_encoding="utf_8"
-):
+def fix_allfiles(scriptfile_list, replace=False, original_encoding="cp932", target_encoding="utf_8"):
     """fix all files of a game instance"""
     # get all files with the given extensions
 

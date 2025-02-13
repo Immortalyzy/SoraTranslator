@@ -58,10 +58,17 @@ class TextFile:
                 textfile.is_empty = False
                 break
 
+        # generate the name list
+        textfile.generate_name_list()
+
+        return textfile
+
+    def generate_name_list(self):
+        """count the speaker names in the text file"""
         # count the names appeared in the textfile
         names = []
         counts = []
-        for block in blocks:
+        for block in self.blocks:
             if block.speaker_original == "":
                 continue
             if block.speaker_original not in names:
@@ -70,43 +77,43 @@ class TextFile:
             else:
                 counts[names.index(block.speaker_original)] += 1
 
-        textfile.name_list_original = names
-        textfile.name_list_count = counts
+        self.name_list_original = names
+        self.name_list_count = counts
         # generate a list of empty strings with the same length as names
-        textfile.name_list_translated = [""] * len(names)
-
-        return textfile
+        self.name_list_translated = [""] * len(names)
 
     @classmethod
     def from_textfile(cls, file_path):
         """create a game file instance from a file path"""
-        scriptfile = cls()
-        scriptfile.text_file_path = file_path
+        textfile = cls()
+        textfile.text_file_path = file_path
         # the original package is the directory name of the file (only the last part)
-        # scriptfile.original_package = os.path.basename(os.path.dirname(file_path))
+        # textfile.original_package = os.path.basename(os.path.dirname(file_path))
         # check file existence
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Text file {file_path} does not exist")
-        with open(file_path, "r", encoding="utf_16") as file:
+        with open(file_path, "r", encoding="utf_8") as file:
             lines = file.readlines()
             for i, line in enumerate(lines):
                 if i < PROPERTY_LINE_LENGTH:
                     # record the property information from file
-                    scriptfile.to_property(line)
+                    textfile.to_property(line)
                     # skip the first few lines
                     continue
                 # cannot call stirp() here because the line may be empty
-                scriptfile.blocks.append(Block.from_csv_line(line))
-        # print(f"Text file {file_path} loaded, {len(scriptfile.blocks)} blocks found")
+                textfile.blocks.append(Block.from_csv_line(line))
+        # print(f"Text file {file_path} loaded, {len(textfile.blocks)} blocks found")
 
         # verifications
         # if all the blocks are translated, then the file is translated
-        # scriptfile.is_translated = all(
-        #     block.is_translated for block in scriptfile.blocks
+        # textfile.is_translated = all(
+        #     block.is_translated for block in textfile.blocks
         # )
         # ! setting a file to translated should be done by the translator
 
-        return scriptfile
+        textfile.generate_name_list()
+
+        return textfile
 
     def to_json(self):
         """create a json object for usage in frontend"""
@@ -150,18 +157,16 @@ class TextFile:
             )
             return 1
         # Create the text filepath if not provided
-        if self.text_file_path == "" and dest == "":
-            raise ValueError("In latest version you have to give a text file path")
         if dest == "":
             # use the same path as the text file, but with a json extension
-            self.text_file_path = self.text_file_path.append(".json")
+            dest = self.text_file_path.append(".json")
 
         # start creating the json file
         data = [{"name": block.speaker_original, "message": block.text_original} for block in self.blocks]
 
         # write the json file, replace if needed
         # check if the file exists
-        if os.path.exists(self.text_file_path):
+        if os.path.exists(dest):
             if replace:
                 os.remove(self.text_file_path)
             else:
@@ -170,7 +175,7 @@ class TextFile:
                     log_level=LogLevel.WARNING,
                 )
                 return 1
-        with open(self.text_file_path, "w", encoding="utf_8") as file:
+        with open(dest, "w", encoding="utf_8") as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
 
         return 0
@@ -270,7 +275,7 @@ class TextFile:
 
         # create the text file
         ## save file information
-        with open(self.text_file_path, "w", encoding="utf_16") as file:
+        with open(self.text_file_path, "w", encoding="utf_8") as file:
             file.write(self.from_property("script_file_path") + "\n")
             file.write(self.from_property("text_file_path") + "\n")
 
@@ -307,7 +312,7 @@ class TextFile:
                 log_level=LogLevel.ERROR,
             )
             return False
-        with open(self.text_file_path, "r", encoding="utf_16") as file:
+        with open(self.text_file_path, "r", encoding="utf_8") as file:
             lines = file.readlines()
         # implement verification (total lines, etc.)
         if len(lines) != len(self.blocks) + PROPERTY_LINE_LENGTH:
@@ -401,7 +406,7 @@ def initiate_script_filelist(listfilepath, replace=False):
             print("script file list already exists, skip initiation")
             return
 
-    with open(listfilepath, "w", encoding="utf_16") as file:
+    with open(listfilepath, "w", encoding="utf_8") as file:
         file.write(
             "script_file_path\ttext_file_path\tfile_type\tis_translated\tneed_manual_fix\ttranslation_percentage\toriginal_package\tread_date\n"
         )

@@ -31,7 +31,7 @@ class ChaosRGame(Game):
 
         # encoding fix for Chaos_R
         self.original_encoding = "cp932"
-        self.target_encoding = "utf_16"
+        self.target_encoding = "utf_8"
         self.is_encoding_fixed = False  # if the encoding of the files are fixed set to True
 
         # xp3 file list, stores string of FULL file path
@@ -105,7 +105,7 @@ class ChaosRGame(Game):
         if hasattr(module, "TARGET_ENCODING"):
             instance.target_encoding = module.TARGET_ENCODING
         else:
-            instance.target_encoding = "utf_16"
+            instance.target_encoding = "utf_8"
 
         # verify the existence of the directory
         if not os.path.exists(instance.directory):

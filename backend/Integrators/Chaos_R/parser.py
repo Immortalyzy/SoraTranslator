@@ -1,5 +1,6 @@
 """ parser provides functions that help parse the script files and create text files"""
-#!! IMPORTANT: the file passed to parser should be in utf_16 encoding
+
+#!! IMPORTANT: the file passed to parser should be in utf_8 encoding
 
 from typing import List
 import re
@@ -14,12 +15,10 @@ def parse_file(script_file: ScriptFile) -> List[Block]:
     """this function will parse a script file to parsed blocks, this parser will omit the text at the beging of file outside of any blocks"""
     file_path = script_file.script_file_path
     try:
-        with open(file_path, "r", encoding="utf_16") as file:
+        with open(file_path, "r", encoding="utf_8") as file:
             lines = file.readlines()
     except FileNotFoundError:
-        log_message(
-            f"File {file_path} not found for parsing", log_level=LogLevel.WARNING
-        )
+        log_message(f"File {file_path} not found for parsing", log_level=LogLevel.WARNING)
 
     # list of all blocks in this file
     block_list = []
@@ -169,10 +168,7 @@ def parse_text(text):
         for other_macro in all_macros:
             if (
                 current_macro != other_macro
-                and other_macro[0]
-                <= current_macro[0]
-                < current_macro[1]
-                <= other_macro[1]
+                and other_macro[0] <= current_macro[0] < current_macro[1] <= other_macro[1]
             ):
                 is_nested = True
                 break
@@ -242,9 +238,7 @@ def parse_text(text):
 possible_content_re_default = [r"^(?!_).*dakr.*\.ks", r"^(?!_)luna.*\.ks", r"est.*\.ks"]
 
 
-def guess_file_type(
-    script_file: ScriptFile, possible_content_re=possible_content_re_default
-) -> str:
+def guess_file_type(script_file: ScriptFile, possible_content_re=possible_content_re_default) -> str:
     """guess the file type based on the file name"""
     # get the file extension
     file_extension = os.path.splitext(script_file.script_file_path)[1]

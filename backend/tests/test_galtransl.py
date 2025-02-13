@@ -36,9 +36,12 @@ def test_galtransl_onefile():
     # call galtransl
     project = Project.from_pickle(project_file_path)
     # find the first non-empty textfile
+    choose = 0
     for textfile in project.game.script_file_list[0].textfiles:
-        if not textfile.is_empty:
+        if not textfile.is_empty and choose >= 1:
             break
+        if not textfile.is_empty:
+            choose += 1
 
     # create the API
     config = Config.from_json_file(DEFAULT_CONFIG_FILE)
