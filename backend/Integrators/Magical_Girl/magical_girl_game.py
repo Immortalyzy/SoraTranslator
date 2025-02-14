@@ -204,10 +204,19 @@ class MagicalGirlGame(Game):
             log_level=LogLevel.INFO,
         )
 
+    @staticmethod
+    def fix_number_encoding(s: str) -> str:
+        """find all numbers in the text and convert them to full-width numbers"""
+        return "".join(chr(ord(c) + 0xFEE0) if "0" <= c <= "9" else c for c in s)
+
     def integrate(self):
         """Integrate the text into the game."""
         for script_file in self.to_translate_file_list:
             script_file.update_from_textfiles()
+
+            # convert all numbers to full-width numbers
+            for i, block in enumerate(script_file.blocks):
+                script_file.blocks[i].text_translated = self.fix_number_encoding(block.text_translated)
 
             # generate file destination path
             relative_path = os.path.relpath(script_file.script_file_path, self.rawtext_directory)
