@@ -234,43 +234,60 @@ class GalTransl_Translator(Translator):
                 text_file.generate_galtransl_json(dest=textfile_2_json_name(text_file), replace=True)
 
         # prepare the dictionary of characters' names
-        starting_line = "JP_Name,CN_Name,Count\n"
-        # if the name list is empty, this will just write the header, prompt the user to fill the file
-        exsiting_empty = False
-        for i, name in enumerate(project.game.name_list_original):
-            if project.game.name_list_translated[i] == "":
-                exsiting_empty = True
-            starting_line += f"{name},{project.game.name_list_translated[i]},{project.game.name_list_count[i]}\n"
-
         namelist_file_path = os.path.join(target_folder_path, "人名替换表.csv")
-        with open(namelist_file_path, "w", encoding="utf-8") as file:
-            file.write(starting_line)
-
-        # prompt the user to fill the name list
-        if exsiting_empty:
-            root = tk.Tk()
-            root.withdraw()
-            root.attributes("-topmost", True)
-            root.after(100, lambda: root.lift())
-            messagebox.showinfo(
-                "人名替换表为空",
-                f"请按照GalTransl要求填写 人名替换表.csv 以达到更好的翻译效果，文件在 {target_folder_path}",
-            )
-            root.destroy()
-
+        # if the file exists, read the result first
         # read the 人名替换表.csv file
-        with open(namelist_file_path, "r", encoding="utf-8") as file:
-            namelist = file.readlines()
-        # remove the header
-        namelist = namelist[1:]
-        # sync the name list to the textfile instance
-        for line in namelist:
-            jp_name, cn_name, _ = line.strip().split(",")
-            if jp_name in project.game.name_list_original:
-                index = project.game.name_list_original.index(jp_name)
-                project.game.name_list_translated[index] = cn_name
-            else:
-                log_message(f"Warning: {jp_name} not found in the original name list", LogLevel.WARNING)
+        if os.path.exists(namelist_file_path):
+            with open(namelist_file_path, "r", encoding="utf-8") as file:
+                namelist = file.readlines()
+            # remove the header
+            namelist = namelist[1:]
+            # sync the name list to the textfile instance
+            for line in namelist:
+                jp_name, cn_name, _ = line.strip().split(",")
+                if jp_name in project.game.name_list_original:
+                    index = project.game.name_list_original.index(jp_name)
+                    project.game.name_list_translated[index] = cn_name
+                else:
+                    log_message(f"Warning: {jp_name} not found in the original name list", LogLevel.WARNING)
+        else:
+            # create the name file and write current name list
+            starting_line = "JP_Name,CN_Name,Count\n"
+            # if the name list is empty, this will just write the header, prompt the user to fill the file
+            exsiting_empty = False
+            for i, name in enumerate(project.game.name_list_original):
+                if project.game.name_list_translated[i] == "":
+                    exsiting_empty = True
+                starting_line += f"{name},{project.game.name_list_translated[i]},{project.game.name_list_count[i]}\n"
+
+            with open(namelist_file_path, "w", encoding="utf-8") as file:
+                file.write(starting_line)
+
+            # prompt the user to fill the name list if any name is empty
+            if exsiting_empty:
+                root = tk.Tk()
+                root.withdraw()
+                root.attributes("-topmost", True)
+                root.after(100, lambda: root.lift())
+                messagebox.showinfo(
+                    "人名替换表为空",
+                    f"请按照GalTransl要求填写 人名替换表.csv 以达到更好的翻译效果，文件在 {target_folder_path}",
+                )
+                root.destroy()
+
+            # read the 人名替换表.csv file
+            with open(namelist_file_path, "r", encoding="utf-8") as file:
+                namelist = file.readlines()
+            # remove the header
+            namelist = namelist[1:]
+            # sync the name list to the textfile instance
+            for line in namelist:
+                jp_name, cn_name, _ = line.strip().split(",")
+                if jp_name in project.game.name_list_original:
+                    index = project.game.name_list_original.index(jp_name)
+                    project.game.name_list_translated[index] = cn_name
+                else:
+                    log_message(f"Warning: {jp_name} not found in the original name list", LogLevel.WARNING)
 
         # call GalTransl
         self.run_worker(target_folder_path)
@@ -278,6 +295,8 @@ class GalTransl_Translator(Translator):
         # read the translation results (sync to textfiles instance)
         ## list the files inside the gt_output folder
         output_files = os.listdir(gt_output_folder)
+        log_message("Reading the translation results of GalTransl", LogLevel.INFO)
+        log_message(f"{len(output_files)} files found", LogLevel.INFO)
         for output_file in output_files:
             output_file_path = os.path.join(gt_output_folder, output_file)
             text_file = json_name_2_textfile(output_file_path)
