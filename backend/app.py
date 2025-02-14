@@ -206,12 +206,36 @@ def translate_text():
         text_file = TextFile.from_textfile(data["file_path"])
         log_message("Translating file" + text_file.text_file_path, LogLevel.INFO)
         translator.translate_file_whole(text_file)
-        text_file.generate_textfile(text_file.text_file_path, replace=True)
         result = {"status": True, "filePath": text_file.text_file_path}
         return result
     except Exception as e:
         print(e)
         result = {"status": False, "filePath": text_file.text_file_path}
+        # get text json
+        return result
+
+
+@app.route("/translate_project", methods=["POST"])
+def translate_project():
+    """translate the project, for better integration with GalTransl"""
+    # read project
+    # data is project path
+    data = request.json
+    project = Project().from_pickle(data["project_file_path"])
+    # some translation settings are sent from the frontend
+    config = Config.from_json_file(DEFAULT_CONFIG_FILE)
+
+    # create translator instance
+    translator = createTranslatorInstance(config.translator, config=config)
+
+    try:
+        log_message("Translating project " + project.project_path, LogLevel.INFO)
+        translator.translate_project(project)
+        result = {"status": True}
+        return result
+    except Exception as e:
+        print(e)
+        result = {"status": False}
         # get text json
         return result
 

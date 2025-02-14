@@ -8,6 +8,7 @@ from block import Block
 from config import Config, default_config
 from constants import DEFAULT_CONFIG_FILE, LogLevel
 from project import Project
+from pathlib import Path
 
 from ..Integrators.utils import utilities as util
 from ..Integrators.Magical_Girl.magical_girl_game import MagicalGirlGame
@@ -48,7 +49,30 @@ def test_galtransl_onefile():
     galtranslapi = GalTransl_Translator(config=config)
 
     # translate the textfile
-    galtranslapi.translate_file_whole(textfile)
+    project_path = Path(project.project_path)
+
+    ## store each translate single file in a separate folder, the folder name is the same as the file name
+    target_folder_path = project_path / "GalTransl"
+    gt_output_folder = os.path.join(target_folder_path, "gt_output")
+
+    def json_name_2_textfile(json_name):
+        """return the textfile for the json file name"""
+        for i, script_file in enumerate(project.game.script_file_list):
+            for j, text_file in enumerate(script_file.textfiles):
+                if os.path.join(gt_output_folder, Path(text_file.text_file_path).name + ".json") == json_name:
+                    return text_file
+        return None
+
+    output_files = os.listdir(gt_output_folder)
+    for output_file in output_files:
+        output_file_path = os.path.join(gt_output_folder, output_file)
+        text_file = json_name_2_textfile(output_file_path)
+        if text_file is None:
+            continue
+        text_file.update_from_galtransl_json(output_file_path)
+        # mark the file as translated, this will make the file appear as green in the GUI
+        text_file.is_translated = True
+        text_file.generate_textfile(text_file.text_file_path, replace=True)
 
     print("done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 

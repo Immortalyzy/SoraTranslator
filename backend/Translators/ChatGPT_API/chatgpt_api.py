@@ -181,6 +181,8 @@ class GPT_Translator(Translator):
                 f"Manual fix required for file {text_file.text_file_path}.",
                 log_level=LogLevel.WARNING,
             )
+        # write the text file
+        text_file.generate_textfile(text_file.text_file_path, replace=True)
         return success_status
 
     def translate_once(self, target: TextFile or list(Block), target_description: str = "") -> success:

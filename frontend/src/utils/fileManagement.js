@@ -145,22 +145,63 @@ export async function translateAllFiles(temp_temperature, temp_max_lines) {
             translatedCount += 1;
         }
     }
-    console.log("total files to translate: ", totalCount);
-    alert("Start to translate " + totalCount + " files. Skipping" + translatedCount + " translated files.")
+    if (store.state.currentTranslator === "gpt") {
+        console.log("total files to translate: ", totalCount);
+        alert("Start to translate " + totalCount + " files. Skipping" + translatedCount + " translated files.")
 
-    store.dispatch("updateTranslationProgress", { thisCount: thisCount, totalCount: totalCount });
-    for (let file of toTranslate) {
-        if (store.state.stopSignal) {
-            console.log("stop signal received");
-            store.dispatch("updateTranslationProgress", { thisCount: 0, totalCount: 0 });
-            store.dispatch("updateTranslationStatus", false);
-            store.dispatch("updateTranslationFile", "");
-            store.state.stopSignal = false;
+        store.dispatch("updateTranslationProgress", { thisCount: thisCount, totalCount: totalCount });
+        for (let file of toTranslate) {
+            if (store.state.stopSignal) {
+                console.log("stop signal received");
+                store.dispatch("updateTranslationProgress", { thisCount: 0, totalCount: 0 });
+                store.dispatch("updateTranslationStatus", false);
+                store.dispatch("updateTranslationFile", "");
+                store.state.stopSignal = false;
+                return;
+            }
+            await translateFile(file["path"], temp_temperature, temp_max_lines);
+            thisCount += 1;
+            store.dispatch("updateTranslationProgress", { thisCount: thisCount, totalCount: totalCount });
+        }
+    }
+    if (store.state.currentTranslator === "galtransl") {
+        // call translateProject instead
+        console.log("Calling translateProject");
+        alert("Start to translate the whole project using GalTransl.")
+        let requestT = {};
+        let is_translating = store.state.currentTranslation["translating"];
+        if (is_translating) {
+            alert("Please wait for the current translation to finish");
             return;
         }
-        await translateFile(file["path"], temp_temperature, temp_max_lines);
-        thisCount += 1;
-        store.dispatch("updateTranslationProgress", { thisCount: thisCount, totalCount: totalCount });
+        requestT["project_file_path"] = store.state.project["project_file_path"];
+
+        const http = axios.create({
+            baseURL: "http://localhost:5000",
+            method: "POST",
+            headers: {
+                "Content-type": "application/json",
+            },
+        });
+
+        // send the request
+        alert("sending request to translate project");
+        await http.post("http://localhost:5000/translate_project", requestT)
+            .then(response => {
+                // update directory tree to display tranlsation status
+                EventBus.emit("updateTranslationStatus")
+                store.dispatch("updateTranslationFile", "");
+                store.dispatch("updateTranslationStatus", false);
+                if (response.data["status"] == true) {
+                    EventBus.emit("updateFileContent");
+                    return;
+
+                } else {
+                    alert("Translation process unknown, please check the directory tree.");
+                    return;
+                }
+            });
+
     }
 
 }

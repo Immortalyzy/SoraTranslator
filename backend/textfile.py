@@ -168,10 +168,10 @@ class TextFile:
         # check if the file exists
         if os.path.exists(dest):
             if replace:
-                os.remove(self.text_file_path)
+                os.remove(dest)
             else:
                 log_message(
-                    f"Skipping {self.text_file_path} as it already exists",
+                    f"Skipping {dest}as it already exists",
                     log_level=LogLevel.WARNING,
                 )
                 return 1

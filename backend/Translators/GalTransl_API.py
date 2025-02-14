@@ -5,10 +5,13 @@ import sys
 import os
 import shutil
 import subprocess
+import signal
+import threading
+import time
 from pathlib import Path
-import yaml
 import tkinter as tk
 from tkinter import messagebox
+import yaml
 from datetime import datetime
 from project import Project
 from textfile import TextFile
@@ -118,11 +121,11 @@ class GalTransl_Translator(Translator):
 
         # create the GalTransl folders
         gt_input_folder = os.path.join(target_folder_path, "gt_input")
-        gi_output_folder = os.path.join(target_folder_path, "gt_output")
-        output_file_name = os.path.join(gi_output_folder, text_file_name + ".json")
+        gt_output_folder = os.path.join(target_folder_path, "gt_output")
+        output_file_name = os.path.join(gt_output_folder, text_file_name + ".json")
         # mkdir the folders
         os.makedirs(gt_input_folder, exist_ok=True)
-        os.makedirs(gi_output_folder, exist_ok=True)
+        os.makedirs(gt_output_folder, exist_ok=True)
 
         # create the json file in the gt_input folder under the project directory
         target_json_file_path = os.path.join(gt_input_folder, text_file_name + ".json")
@@ -173,6 +176,8 @@ class GalTransl_Translator(Translator):
         # read the translation results (sync to textfile instance)
         if os.path.exists(output_file_name):
             text_file.update_from_galtransl_json(output_file_name)
+            # write the translated text to the text file
+            text_file.generate_textfile(text_file.text_file_path, replace=True)
             return success.SUCCESS
         else:
             return success.ERROR
@@ -183,57 +188,115 @@ class GalTransl_Translator(Translator):
 
     def translate_project(self, project: Project):
         """translate the project using GalTransl"""
-        from GalTransl import CONFIG_FILENAME
-
-        # create a project config .yaml file
+        # create a project (for this file) config .yaml file
         ## copy the default config to the project directory
-        # generate tempate config path
+        ### generate tempate config path
+        template_yaml_config_path = os.path.join(self.this_path, "GalTransl/sampleProject/config.inc.yaml")
+        project_path = Path(project.project_path)
 
-        template_yaml_config_path = os.path.join(script_dir, "GalTransl/sampleProject/config.inc.yaml")
-        target_yaml_config_path = os.path.join(project.project_path, CONFIG_FILENAME)
-        # copy the template config to the project directory
+        ## store each translate single file in a separate folder, the folder name is the same as the file name
+        target_folder_path = project_path / "GalTransl"
+        ## mkdir the folder
+        os.makedirs(target_folder_path, exist_ok=True)
+        ## the yaml config is stored in the this folder
+        target_yaml_config_path = os.path.join(target_folder_path, self.CONFIG_FILENAME)
+        ## copy the template config to the folder, if the file exists, overwrite it
         shutil.copyfile(template_yaml_config_path, target_yaml_config_path)
 
-        # sync the config file from config to the yaml file, the API key, etc.
+        ## sync the config file from config to the yaml file, the API key, etc.
         sync_config_to_yaml(self.config, target_yaml_config_path)
-        yaml_config_path = target_yaml_config_path
 
         # create the GalTransl folders
-        gt_input_folder = os.path.join(project.project_path, "gt_input")
-        gi_output_folder = os.path.join(project.project_path, "gt_output")
+        gt_input_folder = os.path.join(target_folder_path, "gt_input")
+        gt_output_folder = os.path.join(target_folder_path, "gt_output")
         # mkdir the folders
         os.makedirs(gt_input_folder, exist_ok=True)
-        os.makedirs(gi_output_folder, exist_ok=True)
+        os.makedirs(gt_output_folder, exist_ok=True)
 
-        # generate the galtransl json files for translation
+        # create the json files in the gt_input folder under the project directory
+        def textfile_2_json_name(tf):
+            """return the json file name for the textfile"""
+            return os.path.join(gt_input_folder, Path(tf.text_file_path).name + ".json")
 
-        # generate the galtransl dictionary for better translation
+        def json_name_2_textfile(json_name):
+            """return the textfile for the json file name"""
+            for i, script_file in enumerate(project.game.script_file_list):
+                for j, text_file in enumerate(script_file.textfiles):
+                    if os.path.join(gt_output_folder, Path(text_file.text_file_path).name + ".json") == json_name:
+                        return text_file
+            log_message(f"Error: {json_name} not found in the project", LogLevel.ERROR)
+            return None
 
-        # rewrite the translated files (sync to textfile instances)
+        for i, script_file in enumerate(project.game.script_file_list):
+            for j, text_file in enumerate(script_file.textfiles):
+                if text_file.is_empty:
+                    continue
+                text_file.generate_galtransl_json(dest=textfile_2_json_name(text_file), replace=True)
 
-        # return the success status
+        # prepare the dictionary of characters' names
+        starting_line = "JP_Name,CN_Name,Count\n"
+        # if the name list is empty, this will just write the header, prompt the user to fill the file
+        exsiting_empty = False
+        for i, name in enumerate(project.game.name_list_original):
+            if project.game.name_list_translated[i] == "":
+                exsiting_empty = True
+            starting_line += f"{name},{project.game.name_list_translated[i]},{project.game.name_list_count[i]}\n"
 
-    def run_worker(self, project_path: str):
-        """from the path, run the translation worker, this takes time"""
-        # print tribute_message
+        namelist_file_path = os.path.join(target_folder_path, "人名替换表.csv")
+        with open(namelist_file_path, "w", encoding="utf-8") as file:
+            file.write(starting_line)
 
-        tribute_message = f"""echo {self.PROGRAM_SPLASH}
-        echo Ver: {self.GALTRANSL_VERSION}
-        echo Author: {self.AUTHOR}
-        echo Contributors: {self.CONTRIBUTORS}
-        echo This message will self-destruct in 5 seconds...
-        timeout /t 5 >nul
-        exit
-        """
-        subprocess.Popen(["cmd", "/K", tribute_message], shell=True)
+        # prompt the user to fill the name list
+        if exsiting_empty:
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes("-topmost", True)
+            root.after(100, lambda: root.lift())
+            messagebox.showinfo(
+                "人名替换表为空",
+                f"请按照GalTransl要求填写 人名替换表.csv 以达到更好的翻译效果，文件在 {target_folder_path}",
+            )
+            root.destroy()
+
+        # read the 人名替换表.csv file
+        with open(namelist_file_path, "r", encoding="utf-8") as file:
+            namelist = file.readlines()
+        # remove the header
+        namelist = namelist[1:]
+        # sync the name list to the textfile instance
+        for line in namelist:
+            jp_name, cn_name, _ = line.strip().split(",")
+            if jp_name in project.game.name_list_original:
+                index = project.game.name_list_original.index(jp_name)
+                project.game.name_list_translated[index] = cn_name
+            else:
+                log_message(f"Warning: {jp_name} not found in the original name list", LogLevel.WARNING)
 
         # call GalTransl
-        original_path = os.getcwd()
-        os.chdir(self.galtransl_path)
-        try:
-            self.worker(project_path, self.CONFIG_FILENAME, self.config.galtransl_translation_model, show_banner=False)
-        except Exception as e:
-            log_message(f"Error: {e}", LogLevel.ERROR)
-            print(f"Error: {e}")
-        finally:
-            os.chdir(original_path)
+        self.run_worker(target_folder_path)
+
+        # read the translation results (sync to textfiles instance)
+        ## list the files inside the gt_output folder
+        output_files = os.listdir(gt_output_folder)
+        for output_file in output_files:
+            output_file_path = os.path.join(gt_output_folder, output_file)
+            text_file = json_name_2_textfile(output_file_path)
+            if text_file is None:
+                continue
+            text_file.update_from_galtransl_json(output_file_path)
+            # mark the file as translated, this will make the file appear as green in the GUI
+            text_file.is_translated = True
+            text_file.generate_textfile(text_file.text_file_path, replace=True)
+
+    def run_worker(self, project_path: str):
+        """run the worker function in a separate thread, wait for the worker to finish"""
+
+        batch_file = os.path.join(self.galtransl_path, "run.bat")
+        arg1 = project_path
+        arg2 = self.config.galtransl_translation_model
+
+        log_message(f"Running GalTransl worker in a separate thread", LogLevel.INFO)
+        process = subprocess.Popen(["start", "cmd", "/c", batch_file, arg1, arg2], shell=True)
+
+        process.wait()
+        return

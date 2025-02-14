@@ -15,6 +15,8 @@ const store = createStore({
                 translated_files_directory: '',
             },
             currentFileList: [],
+            // stores the translator, based on this change the display of the top-right corner
+            currentTranslator: "galtransl",
             // stores the main display
             currentDisplay: {
                 type: "text",
@@ -43,6 +45,10 @@ const store = createStore({
         updateProject(state, newJson) {
             state.project = newJson;
         },
+        updateTranslator(state, newTranslator) {
+            state.currentTranslator = newTranslator;
+        }
+        ,
         updateFileList(state, newFileList) {
             state.currentFileList = newFileList;
         },
@@ -68,6 +74,9 @@ const store = createStore({
         // action to commit the mutation
         updateProject(context, newJson) {
             context.commit('updateProject', newJson);
+        },
+        updateTranslator(context, newTranslator) {
+            context.commit('updateTranslator', newTranslator);
         },
         updateFileList(context, newFileList) {
             context.commit('updateFileList', newFileList);
