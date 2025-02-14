@@ -83,6 +83,8 @@ The translator will translate the text file in '.csv' and replace the text in th
 
 There can be multiple translators for the program. However, the program is designed to work with GPT API or manual translation.
 
+Usage of the GalTransl translator is suggested, it is included now in the program, thanks to [GalTransl](https://github.com/xd2333/GalTransl)!
+
 
 #### Workflow
 
