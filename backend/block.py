@@ -1,36 +1,61 @@
 """ define the Block class """
+
 #!! csv sperator used is tab "\t"
 
 from logger import log_message
 from constants import LogLevel
 
 
-def default_text_separater(text_translated_whole, texts_original):
-    """default text separater, by chatgpt"""
-    # Calculate the total length of the original text
+def default_text_separater(text_translated_whole: str, texts_original: list[str]) -> list[str]:
+    """
+    A new version, this version will try to align the split so the translated segment also ends on '。' refer to #50.
+    Splits `text_translated_whole` into segments proportional to the lengths
+    of `texts_original`. If a corresponding original text segment ends with
+    '。', this function attempts to align the split so the translated segment
+    also ends on '。'.
+
+    :param text_translated_whole: The entire translated text.
+    :param texts_original: A list of original text segments.
+    :return: A list of translated text segments, approximating the same
+             proportions and optionally ending on '。' if so indicated by
+             the original segments.
+    """
+    # Edge case: if there's nothing to split or no reference segments
+    if not text_translated_whole or not texts_original:
+        return [text_translated_whole] if text_translated_whole else []
+
     total_length = sum(len(text) for text in texts_original)
+    if total_length == 0:
+        # All original texts are empty; just return the entire text as one segment
+        return [text_translated_whole]
 
     # Calculate the proportion of each part of the original text
     text_proportion = [len(text) / total_length for text in texts_original]
 
-    # Split the translated text based on the ratio
     translated_texts = []
     start = 0
+
     for i, proportion in enumerate(text_proportion):
-        if i == len(text_proportion) - 1:  # For the last segment
+        # The last segment always takes the remainder
+        if i == len(text_proportion) - 1:
             end = len(text_translated_whole)
         else:
-            end = start + int(proportion * len(text_translated_whole))
-            # Ensure not to split in the middle of a word
-            # while (
-            #     end < len(text_translated_whole)
-            #     and text_translated_whole[end].isalpha()
-            # ):
-            #     end += 1
+            # Base boundary from proportion
+            proposed_length = int(proportion * len(text_translated_whole))
+            end = start + proposed_length
+
+            # If the corresponding original ends with '。', try to align the boundary
+            if texts_original[i].endswith("。"):
+                # Look for the next '。' in translated text, starting from 'end'
+                next_period_index = text_translated_whole.find("。", end)
+                if next_period_index != -1:
+                    # Adjust end to include that '。'
+                    end = next_period_index + 1
+
+        # Slice out the segment
         translated_texts.append(text_translated_whole[start:end])
         start = end
 
-    # Return the list of separated translated text
     return translated_texts
 
 
