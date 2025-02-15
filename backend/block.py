@@ -8,55 +8,98 @@ from constants import LogLevel
 
 def default_text_separater(text_translated_whole: str, texts_original: list[str]) -> list[str]:
     """
-    A new version, this version will try to align the split so the translated segment also ends on '。' refer to #50.
-    Splits `text_translated_whole` into segments proportional to the lengths
-    of `texts_original`. If a corresponding original text segment ends with
-    '。', this function attempts to align the split so the translated segment
-    also ends on '。'.
+    Splits `text_translated_whole` into len(texts_original) parts.
 
-    :param text_translated_whole: The entire translated text.
-    :param texts_original: A list of original text segments.
-    :return: A list of translated text segments, approximating the same
-             proportions and optionally ending on '。' if so indicated by
-             the original segments.
+    Special rule:
+      - If every element of texts_original ends with '。' and the
+        number of '。' in text_translated_whole matches len(texts_original),
+        then split by those '。' exactly.
+
+    Otherwise:
+      - Use a proportional split approach.
+      - If the corresponding original part ends in '。', attempt to
+        align the translated split so that segment also ends with '。'.
     """
-    # Edge case: if there's nothing to split or no reference segments
-    if not text_translated_whole or not texts_original:
-        return [text_translated_whole] if text_translated_whole else []
+    # --- 1) Check for the special case --- # for NScripter games
+    all_original_end_circle = all(part.endswith("。") for part in texts_original)
+    num_segments = len(texts_original)
 
-    total_length = sum(len(text) for text in texts_original)
-    if total_length == 0:
-        # All original texts are empty; just return the entire text as one segment
-        return [text_translated_whole]
+    # Count the '。' in the translated text
+    translated_circles_positions = []
+    for idx, ch in enumerate(text_translated_whole):
+        if ch == "。":
+            translated_circles_positions.append(idx)
 
-    # Calculate the proportion of each part of the original text
-    text_proportion = [len(text) / total_length for text in texts_original]
+    # Special case trigger
+    if all_original_end_circle and len(translated_circles_positions) == num_segments:
+        # We can split by these positions exactly.
+        # Each segment i will go from the previous position (start_of_segment)
+        # to translated_circles_positions[i] (inclusive of '。').
 
-    translated_texts = []
-    start = 0
+        segments = []
+        start_index = 0
+        for circle_pos in translated_circles_positions:
+            # slice up to and including this '。'
+            segments.append(text_translated_whole[start_index : circle_pos + 1])
+            start_index = circle_pos + 1
 
-    for i, proportion in enumerate(text_proportion):
-        # The last segment always takes the remainder
-        if i == len(text_proportion) - 1:
-            end = len(text_translated_whole)
+        # If there is any leftover text after the last '。', we can either:
+        # - append it to the final segment, or
+        # - ignore it (depending on the requirement).
+        # To ensure we don't lose content, we usually append it to the last segment.
+        if start_index < len(text_translated_whole):
+            segments[-1] += text_translated_whole[start_index:]
+
+        return segments
+
+    # --- 2) Proportional splitting approach ---
+    # Compute total length of all original segments
+    # (You might optionally ignore trailing '。' if you don't want them to count in proportion.)
+    total_original_length = sum(len(part) for part in texts_original)
+    if total_original_length == 0:
+        # Edge case: if there's nothing in texts_original or they are all empty
+        # just return the entire text as one segment or empty segments
+        if num_segments <= 1:
+            return [text_translated_whole]
         else:
-            # Base boundary from proportion
-            proposed_length = int(proportion * len(text_translated_whole))
-            end = start + proposed_length
+            # Return repeated empty or something to match lengths.
+            # Or distribute text if there's at least one non-empty segment requested.
+            # Here we distribute text proportionally anyway.
+            return [text_translated_whole] + [""] * (num_segments - 1)
 
-            # If the corresponding original ends with '。', try to align the boundary
-            if texts_original[i].endswith("。"):
-                # Look for the next '。' in translated text, starting from 'end'
-                next_period_index = text_translated_whole.find("。", end)
-                if next_period_index != -1:
-                    # Adjust end to include that '。'
-                    end = next_period_index + 1
+    # We will build segments one by one
+    segments = []
+    translated_len = len(text_translated_whole)
+    prev_cut = 0
+    accumulated_length = 0
 
-        # Slice out the segment
-        translated_texts.append(text_translated_whole[start:end])
-        start = end
+    for i, original_part in enumerate(texts_original, start=1):
+        # For the i-th segment (1-based), figure out how far we should cut
+        # in the translated text proportionally.
+        accumulated_length += len(original_part)
 
-    return translated_texts
+        if i < num_segments:
+            # Proportional boundary (naive)
+            proportional_boundary = round((accumulated_length / total_original_length) * translated_len)
+
+            # Adjust if the original ends with '。', try to make this segment end with '。' too
+            if original_part.endswith("。"):
+                # Search for the next '。' in text_translated_whole at or after proportional_boundary
+                # so that we ensure the segment ends with '。'.
+                next_circle_pos = text_translated_whole.find("。", proportional_boundary)
+                if next_circle_pos != -1:
+                    # shift boundary to include that '。'
+                    proportional_boundary = next_circle_pos + 1
+
+            current_segment = text_translated_whole[prev_cut:proportional_boundary]
+            segments.append(current_segment)
+            prev_cut = proportional_boundary
+        else:
+            # Last segment: just take all the remaining text
+            current_segment = text_translated_whole[prev_cut:]
+            segments.append(current_segment)
+
+    return segments
 
 
 def replace_substrings(original, positions, new_texts):
