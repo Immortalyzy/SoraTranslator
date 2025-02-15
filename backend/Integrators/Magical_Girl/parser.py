@@ -177,8 +177,8 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
     # empty the textfile list
     script_file.textfiles = []
     for i, block_list in enumerate(block_list_list):
-        # do not parse the define part
-        if part_names[i] == "define":
+        # do not parse the define part and the staff part
+        if part_names[i] == "define" or part_names[i] == "staffroll":
             all_blocks += block_list
         else:
             for block in block_list:
