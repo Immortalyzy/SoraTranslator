@@ -314,8 +314,12 @@ class GalTransl_Translator(Translator):
         arg1 = project_path
         arg2 = self.config.galtransl_translation_model
 
-        log_message(f"Running GalTransl worker in a separate thread", LogLevel.INFO)
-        process = subprocess.Popen(["start", "cmd", "/c", batch_file, arg1, arg2], shell=True)
+        log_message("Running GalTransl worker in a separate thread", LogLevel.INFO)
+        try:
+            process = subprocess.Popen(f'start /wait cmd /c "{batch_file}" {arg1} {arg2}', shell=True)
+            process.wait()  # Wait for the process to complete
 
-        process.wait()
-        return
+            log_message("GalTransl worker finished", LogLevel.INFO)
+
+        except Exception as e:
+            log_message(f"Error running worker: {str(e)}", LogLevel.ERROR)
