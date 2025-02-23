@@ -111,20 +111,14 @@ class Project:
             game_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(game_module)
             if not hasattr(game_module, "Game"):
-                print(
-                    "Game class not defined in the game file. Check if using supported game engine."
-                )
+                print("Game class not defined in the game file. Check if using supported game engine.")
                 if not hasattr(game_module, "GAME_ENGINE"):
-                    print(
-                        "GAME_ENGINE not defined in the game file. Check if using supported game engine."
-                    )
+                    print("GAME_ENGINE not defined in the game file. Check if using supported game engine.")
                     return False
                 else:
                     self.game_engine = game_module.GAME_ENGINE
                     if self.game_engine not in supported_game_engines:
-                        print(
-                            f"Game engine {self.game_engine} not supported. Check if using supported game engine."
-                        )
+                        print(f"Game engine {self.game_engine} not supported. Check if using supported game engine.")
                         return False
                     else:
                         # create game instance using python file
@@ -164,6 +158,7 @@ class Project:
         print(f"Saving project to {full_path}...")
         try:
             self.save_project_to(full_path)
+            return True
         except:
             return False
 
@@ -181,9 +176,7 @@ class Project:
         paths["original_files_directory"] = os.path.join(project_path, "OriginalFiles")
         paths["rawtext_directory"] = os.path.join(project_path, "RawText")
         paths["text_directory"] = os.path.join(project_path, "Text")
-        paths["translated_files_directory"] = os.path.join(
-            project_path, "TranslatedFiles"
-        )
+        paths["translated_files_directory"] = os.path.join(project_path, "TranslatedFiles")
         # create directories
         for path in paths.values():
             if not os.path.exists(path):

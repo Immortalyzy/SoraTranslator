@@ -1,6 +1,7 @@
 """ this file is for api for the frontend calls"""
 
 import re
+import os
 from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -15,6 +16,17 @@ from logger import log_message
 
 app = Flask(__name__)
 CORS(app)
+
+
+@app.route("/get_project", methods=["GET"])
+def get_project():
+    """API used to store the initial project"""
+    project_name = os.environ.get("PROJECT_NAME", "default_project")
+    if not project_name or project_name == "default_project" or project_name.strip() == "":
+        project_name = "default_project"
+    # check if a valid project name (should be a file path, should not be empty)
+    log_message("Setting initial project " + project_name, LogLevel.INFO)
+    return {"project": project_name}
 
 
 @app.route("/open_project", methods=["POST"])
@@ -39,6 +51,19 @@ def create_project():
     data = request.json
     project = Project().from_json(data)
     success = project.save()
+    # create a .bat file at the project file path to run the run.bat with the project file path as argument
+    if success:
+        try:
+            this_dir = os.path.dirname(os.path.realpath(__file__))
+            # run .bat is in this_dir/../run.bat
+            run_bat_dir = os.path.abspath(os.path.join(this_dir, ".."))
+            run_bat_path = os.path.abspath(os.path.join(this_dir, "..", "run.bat"))
+            with open(os.path.join(project.project_path, "openSoraTranslator.bat"), "w") as f:
+                f.write(f"cd /d {run_bat_dir}\n")
+                f.write(run_bat_path + " " + project.project_file_path)
+        except Exception as e:
+            log_message("ERROR when trying to create project file " + str(e), LogLevel.ERROR)
+            success = False
     return {"status": success, "project_file_path": project.project_file_path}
 
 

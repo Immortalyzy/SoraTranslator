@@ -8,19 +8,23 @@
             <h2 class="new-project-title">CREATE A PROJECT</h2>
             <div class="new-project-instructions">
                 <h3>Instructions:</h3>
-                <p>You should at first analyse your game manually, then create a python file defining your game. It should
+                <p>You should at first analyse your game manually, then create a python file defining your game. It
+                    should
                     contains a Game class with the following functions:
                 <ol>
                     <li>prepare_translation(): the function takes a folder path as parameter. It should create a
                         GameResrouces folder
                         as
                         described in the project's README.</li>
-                    <li>integrate() (optional): the function takes a folder path as parameter. It should be able to put all
+                    <li>integrate() (optional): the function takes a folder path as parameter. It should be able to put
+                        all
                         files from GameResroucesTree back to the Game. It will also update the TranslatedFiles folder so
                         that you can view the raw file with translated text. </li>
                 </ol>
-                This translator provides several built-in integrators (for Chaos-R games), in that case you can simple give
-                a path to the game folder. Note that the integrator will modify the original game, so always KEEP A BACKUP.
+                This translator provides several built-in integrators (for Chaos-R games), in that case you can simple
+                give
+                a path to the game folder. Note that the integrator will modify the original game, so always KEEP A
+                BACKUP.
                 <br>
                 <br>
                 Save the path to this python file and click "Next".
@@ -127,10 +131,7 @@ export default {
 
     },
     methods: {
-        async openProject() {
-            // open a window of selecting local files
-            const project_file_path = await window.electron.ipcRenderer.invoke("select-file-dialog");
-            // create post request to open the project
+        async openProjectFile(project_file_path) {
             const post_data = {
                 project_file_path: project_file_path,
             };
@@ -150,6 +151,30 @@ export default {
             }).catch((error) => {
                 console.log(error);
             })
+        },
+        async openProject() {
+            // open a window of selecting local files
+            const project_file_path = await window.electron.ipcRenderer.invoke("select-file-dialog");
+            // create post request to open the project
+            this.openProjectFile(project_file_path);
+        },
+        async openInitialProject() {
+            try {
+                console.log("Fetching initial project...");
+                const response = await fetch("http://127.0.0.1:5000/get_project");
+                const data = await response.json();
+                const project_file_path = data.project;
+                if (project_file_path === "default_project") {
+                    // no initial project
+                    console.log("No initial project.");
+                    return;
+                }
+                console.log("Initial project file path:", project_file_path);
+                this.openProjectFile(project_file_path);
+                console.log("Opening project:", data.project);
+            } catch (error) {
+                console.error("Error fetching project:", error);
+            }
         },
         clickNext() {
             this.displayIntro = false;
@@ -196,6 +221,10 @@ export default {
             window.electron.ipcRenderer.send("open-file-dialog");
             this.selectingWhich = "game_path";
         },
+    },
+    mounted() {
+        console.log("Mounted NewProject");
+        this.openInitialProject();
     },
     beforeUnmount() {
         window.electron.ipcRenderer.removeAllListeners("selected-path");
