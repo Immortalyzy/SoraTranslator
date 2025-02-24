@@ -207,7 +207,9 @@ class MagicalGirlGame(Game):
     @staticmethod
     def fix_number_encoding(s: str) -> str:
         """find all numbers in the text and convert them to full-width numbers"""
-        return "".join(chr(ord(c) + 0xFEE0) if "0" <= c <= "9" else c for c in s)
+        return "".join(
+            chr(ord(c) + 0xFEE0) if ("0" <= c <= "9" or "A" <= c <= "Z" or "a" <= c <= "z") else c for c in s
+        )
 
     def integrate(self):
         """Integrate the text into the game."""
