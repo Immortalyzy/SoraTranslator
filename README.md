@@ -1,13 +1,15 @@
 # SoraTranslator
 ## Automated Translation for Galgames
 
-SoraTranslator is a tool designed to extract, translate, and reinsert text in Galgames (Japanese visual novels). This tool primarily automates the translation process for these games, leveraging the capabilities of ChatGPT's API for efficient language conversion.
+SoraTranslator is a tool designed to extract, translate, and reinsert text in Galgames (Japanese visual novels). This tool primarily automates the translation process for these games. The GUI provides a easy-to-use interface for correcting manual or compare the translation results.
 
 ### Project Overview
 
 SoraTranslator operates by integrating with specific Galgames, focusing on the extraction, translation, and reintegration of game text. It's structured to handle various aspects of this process, from accessing original game resources to generating translated files ready for gameplay.
 
-It focuses on the improvement of the translation quality by human intervention. The translation is done by the GPT API, but the translator can choose to modify the translation if it is not satisfactory. It also focuses on **saving tokens**, by providing context by a specific separation method (now only works with the 16k model). Any misalignment of the text will be recorded and the translator can easily fix it by modifying the text in an Excel-like table powered by [Handsontable](https://handsontable.com/).
+It focuses on the improvement of the translation quality by human intervention. The translation is done by the AI translator selected, but the user can choose to modify the translation if it is not satisfactory by modifying the text in an Excel-like table powered by [Handsontable](https://handsontable.com/).
+
+The build-in translator focuses on **saving tokens**, by providing context by a specific separation method (now only works with the 16k model). Any misalignment of the text will be recorded and the translator can easily fix it. Other translators are also supported, like the GalTransl translator, which is included in the program.
 
 The translator module can also be used for other purposes, but some functions (like keeping the same amount of blocks in the translation) might not be needed in other cases.
 
@@ -30,8 +32,10 @@ SoraTranslator/
 │           ├── Parser/
 |    |── Translators/
 |─── frontend/
-|    |... (to be added)
-|─── GameResources/
+|    |...
+
+GameFolder
+|─── SoraTranslator/
 │    ├── OriginalFiles/
 │    ├── RawText/
 │    ├── Text/
@@ -42,11 +46,11 @@ Each directory is designed to handle a different stage of the translation proces
 
 - **Integrators**: Contains tools for extracting and parsing game text.
 - **Translators**: Dedicated to the translation process.
-- **GameResources**: Stores the original game files, extracted text, translated text, and the final translated game files. This folder is chosen by the user.
+- **GameFolder/SoraTranslator**: Stores the original game files, extracted text, translated text, and the final translated game files. This folder is chosen by the user.
 
 ---
 
-#### How to Use
+#### How to Install
 
 ##### Requirements
 - Python >= 3.8
@@ -55,9 +59,14 @@ Each directory is designed to handle a different stage of the translation proces
 
 ##### Installation
 1. Clone the repository
-2. Install the required packages and run the program by running `run.bat`
 
-A usage tutorial video will be added soon.
+#### How to Use
+Simply install the required packages and run the program by running `run.bat`
+
+A usage tutorial video can be found at [here](https://www.bilibili.com/video/BV1eM4m1z7bw/).
+
+
+#### Advanced Usage
 
 ##### Integration
 To utilize SoraTranslator for different games, particularly from various companies, custom integrators must be written to handle the specific file formats and structures of each game.
@@ -93,18 +102,14 @@ Usage of the GalTransl translator is suggested, it is included now in the progra
 3. **Reintegration**: Finally, the integrator takes the translated text in `Texts` and repackages it into the game's raw text format, saving these files in the `TranslatedFiles` directory for use in the game.
 
 #### To-Do
-- [x] Write backend
-- [x] Fix #9
 - [ ] Translate the speakers and options
-- [ ] Translate the *Onomatopoeia*
-- [x] Write frontend
-- [ ] Add support for translating a to_translate_file_list method for translating things other than games (frontend minor changes)
-- [ ] ~~Add support for local LLM models for the translation of unallowed content (GPT API actually doesn't filter out any sensitive content)~~
-- [ ] Too many to-dos are listed in the issues -_-
+- [ ] Add support for more games
+- [ ] Add support for MTools
+- [ ] Add support for translating doujinshi
 
 #### Thanks
 - OpenAI for the possibility, which helps me to translate what I've been wanting to play for centuries
-- ChatGPT for the help with programming both the frontend (I know nothing about this before) and the backend
 - [Handsontable](https://handsontable.com/) for the table
 - [ONScripter-EN-Steam](https://github.com/GoldbarGames/ONScripter-EN-Steam) for the tools around NScripter
 - [XP3Unpacker](Unknown) for the tools around Kirikiri
+- [GalTransl](https://github.com/xd2333/GalTransl)
