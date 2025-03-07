@@ -1,4 +1,4 @@
-""" define the Block class """
+"""define the Block class"""
 
 #!! csv sperator used is tab "\t"
 
@@ -153,6 +153,8 @@ class Block:
         self.texts_original = []  # not used
         self.text_original = ""
         self.text_translated = ""
+        self.selection_original = []
+        self.selection_translated = []
         self.block_name_line = ""
 
         ## for integration
@@ -164,6 +166,10 @@ class Block:
         self.text_lines = [0]
         # list of tuples for the positions of every part of the text
         self.text_positions = [(0, 0)]
+        # list of selections
+        self.selection_lines = []
+        # list of tuples for the positions of every part of the selection
+        self.selection_positions = []
 
         # for translation record
         self.translation_date = ""
@@ -187,16 +193,28 @@ class Block:
             raise ValueError("CSV line length not correct")
 
         block_name = csv_line[0].strip()
+
         # when reading from csv file, the block content will not be read
         block_content = ""
         block = cls(block_name, block_content)
         # a block read from csv file is always parsed
         block.is_parsed = True
-
+        if block_name.startswith("sel"):
+            block.block_type = "selection"
+        # if there is only 1 selection, this will be problematic
+        # verify there is same number of selections
         block.speaker_original = csv_line[1].strip()
         block.text_original = csv_line[2].strip()
         block.speaker_translated = csv_line[3].strip()
         block.text_translated = csv_line[4].strip()
+        if block.is_selection():
+            block.selection_original = csv_line[2].split("/")
+            block.selection_translated = csv_line[4].split("/")
+            if (
+                len(block.selection_original) != len(block.selection_translated)
+                and block.selection_translated[0].strip() != ""
+            ):
+                raise ValueError("Selections not matched for block:" + block_name)
 
         if len(csv_line) >= 8:
             if csv_line[5].strip() != "Yes" and csv_line[5].strip() != "No":
@@ -269,22 +287,32 @@ class Block:
             total_replacement_positions.append(total_speaker_start_end)
             total_replacement_texts.append(self.speaker_translated)
 
-        # replace the text
-        if self.text_original != "" and self.text_translated.strip() != "":
-            # separate the translated text
-            translated_texts = text_separater(self.text_translated, self.texts_original)
-            total_replacement_positions.extend(self.text_positions)
-            total_replacement_texts.extend(translated_texts)
-            # positions must be absolute positions in all content (not just the position in the line)
-            temp_block_content = replace_substrings(
-                original=temp_block_content,
-                positions=total_replacement_positions,
-                new_texts=total_replacement_texts,
-            )
-        # remove empty lines
-        # temp_block_content = [line for line in temp_block_content if line.strip() != ""]
-        # add an empty line at the end
-        # temp_block_content.append("")
+        # replace the selections, do as the same as for the text
+        if self.is_selection():
+            if not self.selection_translated and self.text_translated.strip() != "":
+                self.selection_translated = self.text_translated.split("/")
+            if len(self.selection_original) != len(self.selection_translated):
+                #! if a problem appears, the original text will be used
+                log_message("Error: selections not matched for block" + self.block_name, log_level=LogLevel.ERROR)
+            else:
+                temp_block_content = replace_substrings(
+                    original=temp_block_content,
+                    positions=self.selection_positions,
+                    new_texts=self.selection_translated,
+                )
+        else:
+            # replace the text
+            if self.text_original != "" and self.text_translated.strip() != "":
+                # separate the translated text
+                translated_texts = text_separater(self.text_translated, self.texts_original)
+                total_replacement_positions.extend(self.text_positions)
+                total_replacement_texts.extend(translated_texts)
+                # positions must be absolute positions in all content (not just the position in the line)
+                temp_block_content = replace_substrings(
+                    original=temp_block_content,
+                    positions=total_replacement_positions,
+                    new_texts=total_replacement_texts,
+                )
 
         # replace starting "  " with "\t"
         for i, line in enumerate(temp_block_content):
@@ -302,11 +330,15 @@ class Block:
 
     def is_empty(self):
         """return if the block is empty"""
-        return self.is_parsed and self.text_original.strip() == ""
+        return self.is_parsed and self.text_original.strip() == "" and (not self.selection_original)
 
     def is_text_separated(self):
         """return if the text is separated"""
         return len(self.texts_original) > 1
+
+    def is_selection(self):
+        """return if the block is a choice"""
+        return self.block_type == "selection"
 
     def text_to_translate(self, add_speaker: bool = False):
         """return the text to translate"""

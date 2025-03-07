@@ -1,14 +1,14 @@
-""" parser provides functions that help parse the script files and create text files
-    For magical Girl games, based on the tutorials of Dir-A, GBK encoding must be used
-    format of Nscripter:
-    for identifying non-text:
-        the commands are defined at the begining of the file using defsub
-    for text:
-        *block indicator: at the end of each block a "@" or "\\" is added ("\\" means clear the screen)
-        *speaker indicator: [speaker], it seems the [] symbol will not be displayed and the content inside is rendered before the main text
+"""parser provides functions that help parse the script files and create text files
+For magical Girl games, based on the tutorials of Dir-A, GBK encoding must be used
+format of Nscripter:
+for identifying non-text:
+    the commands are defined at the begining of the file using defsub
+for text:
+    *block indicator: at the end of each block a "@" or "\\" is added ("\\" means clear the screen)
+    *speaker indicator: [speaker], it seems the [] symbol will not be displayed and the content inside is rendered before the main text
 
-    for separating text:
-        "*" starts a new part, so the subfiles could be divided into parts that is easier to manually improve
+for separating text:
+    "*" starts a new part, so the subfiles could be divided into parts that is easier to manually improve
 
 """
 
@@ -54,14 +54,21 @@ def parse_part(lines: List[str]) -> List[Block]:
     for line in lines:
         # check if is a comment line
         # Check if the line is the end of a block
-        if line.strip().endswith("\\"):
+        if line.strip().endswith("\\") or line.strip().startswith("csel"):
             # if there is a block being recorded, save it to the block list
             block_content.append(line)
 
-            # Save the new block name, the block name is set to be the number of the block
-            block_name = str(len(block_list) + 1)
-            block = Block(block_name, block_content)
-            block_list.append(block)
+            if line.strip().startswith("csel"):  # a selection block
+                # block name for selection
+                block_name = "sel" + str(len(block_list) + 1)
+                block = Block(block_name, block_content)
+                block.block_type = "selection"
+                block_list.append(block)
+            else:  # a normal block
+                # Save the new block name, the block name is set to be the number of the block
+                block_name = str(len(block_list) + 1)
+                block = Block(block_name, block_content)
+                block_list.append(block)
 
             # reset the block content
             block_content = []
@@ -208,6 +215,15 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
 
 def parse_block(block: Block, command_strings) -> (str, str, (int, int), (int, int)):
     """parse the block"""
+    # if the block is a selection block, it will be parsed differently
+    if block.block_type == "selection":
+        selections, selection_positions = parse_selection("".join(block.block_content))
+        block.selection_original = selections
+        block.selection_positions = selection_positions
+        block.text_original = "/".join(selections)  # join the selections with / for easier translation and display
+        block.is_parsed = True
+        return True
+
     speaker = ""
     speaker_line = 0
     speaker_start_end = (0, 0)
@@ -342,3 +358,43 @@ def parse_text(text, command_strings):
         positions[-1] = (positions[-1][0], positions[-1][1] - 1)
 
     return text_array, line_numbers, positions
+
+
+def parse_selection(line):
+    """
+    Parses a string that may include content before a line starting with `csel`, which has repeated patterns of:
+        "some text",*some_label
+
+    Omits all text before the `csel` start and returns a list of found texts and their positions (start, end)
+    relative to the entire original string.
+
+    :param line: The input string which may have content before a new line starting with csel.
+    :return: (texts, text_positions)
+        texts: A list of the extracted text segments (without quotes).
+        text_positions: A list of tuples (start_position, end_position) for each text,
+                        in terms of the original string indexing.
+    """
+    # Find the beginning of the line containing 'csel' (assuming it's at the start of that line).
+    # If csel is not found, return empty lists.
+    match_csel = re.search(r"^.*?(?=csel)", line, flags=re.DOTALL)
+    csel_index = line.find("csel")
+    if csel_index == -1:
+        return [], []
+
+    # Substring from where 'csel' starts.
+    line_sub = line[csel_index:]
+
+    # Pattern to match quoted text.
+    pattern = r'"(.*?)"'
+    texts = []
+    text_positions = []
+
+    # Use finditer on the substring.
+    for match in re.finditer(pattern, line_sub):
+        texts.append(match.group(1))
+        # Adjust positions with offset to account for csel_index.
+        start_pos = match.start(1) + csel_index
+        end_pos = match.end(1) + csel_index
+        text_positions.append((start_pos, end_pos))
+
+    return texts, text_positions
