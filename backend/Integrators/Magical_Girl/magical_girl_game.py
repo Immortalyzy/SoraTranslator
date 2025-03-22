@@ -1,13 +1,13 @@
-""" This file defines the functions for dealing with the games from Magical-girl
-    Last active game: 漆黒のルナリア ～淫らな館にとらわれる犬耳ロリータ～ on 2012
-    Game engine: NScripter
-    Text is stored in nscript.dat which defines a lot of things, including the text.
-    The prepare_translation function should do the following things:
-        1, extract the nscript.dat file,
-        2, parse the nscript.dat file, separate the text into parts and save the text to text files
-        3, update the script_file_list and to_translate_file_list
-    Parameters to prepare:
-        1, start line of the main script
+"""This file defines the functions for dealing with the games from Magical-girl
+Last active game: 漆黒のルナリア ～淫らな館にとらわれる犬耳ロリータ～ on 2012
+Game engine: NScripter
+Text is stored in nscript.dat which defines a lot of things, including the text.
+The prepare_translation function should do the following things:
+    1, extract the nscript.dat file,
+    2, parse the nscript.dat file, separate the text into parts and save the text to text files
+    3, update the script_file_list and to_translate_file_list
+Parameters to prepare:
+    1, start line of the main script
 """
 
 import importlib.util
@@ -207,9 +207,18 @@ class MagicalGirlGame(Game):
     @staticmethod
     def fix_number_encoding(s: str) -> str:
         """find all numbers in the text and convert them to full-width numbers"""
-        return "".join(
-            chr(ord(c) + 0xFEE0) if ("0" <= c <= "9" or "A" <= c <= "Z" or "a" <= c <= "z") else c for c in s
-        )
+
+        def convert_char(c):
+            code = ord(c)
+            # 可转换范围：0x21 (!) 到 0x7E (~)，不包含空格（0x20）
+            if 0x21 <= code <= 0x7E:
+                return chr(code + 0xFEE0)
+            elif c == " ":
+                return "　"  # 空格特殊处理为全角空格
+            else:
+                return c
+
+        return "".join(convert_char(c) for c in s)
 
     def integrate(self):
         """Integrate the text into the game."""
