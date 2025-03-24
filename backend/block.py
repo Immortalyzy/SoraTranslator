@@ -2,6 +2,7 @@
 
 #!! csv sperator used is tab "\t"
 
+import re
 from logger import log_message
 from constants import LogLevel
 
@@ -208,8 +209,8 @@ class Block:
         block.speaker_translated = csv_line[3].strip()
         block.text_translated = csv_line[4].strip()
         if block.is_selection():
-            block.selection_original = csv_line[2].split("/")
-            block.selection_translated = csv_line[4].split("/")
+            block.selection_original = re.split(r"[/／／]", csv_line[2])
+            block.selection_translated = re.split(r"[/／／]", csv_line[4])
             if (
                 len(block.selection_original) != len(block.selection_translated)
                 and block.selection_translated[0].strip() != ""
@@ -290,10 +291,11 @@ class Block:
         # replace the selections, do as the same as for the text
         if self.is_selection():
             if not self.selection_translated and self.text_translated.strip() != "":
-                self.selection_translated = self.text_translated.split("/")
+                # ! this might not be needed as the split has been done in csv -> block function
+                self.selection_translated = re.split(r"[／/]", self.text_translated)
             if len(self.selection_original) != len(self.selection_translated):
                 #! if a problem appears, the original text will be used
-                log_message("Error: selections not matched for block" + self.block_name, log_level=LogLevel.ERROR)
+                log_message("Error: selections not matched for block " + self.block_name, log_level=LogLevel.ERROR)
             else:
                 temp_block_content = replace_substrings(
                     original=temp_block_content,
