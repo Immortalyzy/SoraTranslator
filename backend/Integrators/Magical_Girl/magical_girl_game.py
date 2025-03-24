@@ -218,7 +218,21 @@ class MagicalGirlGame(Game):
             else:
                 return c
 
-        return "".join(convert_char(c) for c in s)
+        result = []
+        skip = False
+        i = 0
+        while i < len(s):
+            if s[i] == "$":
+                result.append("$")
+                i += 1
+                # 将后面字符原样添加，直到遇到空格或结束
+                while i < len(s) and s[i] != " ":
+                    result.append(s[i])
+                    i += 1
+                continue
+            result.append(convert_char(s[i]))
+            i += 1
+        return "".join(result)
 
     def integrate(self):
         """Integrate the text into the game."""
