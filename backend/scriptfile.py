@@ -1,4 +1,4 @@
-""" game file class, every instance is a script file of the game """
+"""game file class, every instance is a script file of the game"""
 
 import datetime
 import os
@@ -240,7 +240,7 @@ class ScriptFile:
                 return 1
 
         # create the raw file
-        with open(self.translated_script_file_path, "w", encoding=encoding) as file:
+        with open(self.translated_script_file_path, "w", encoding=encoding, errors="ignore") as file:
             for block in self.blocks:
                 lines_wroten += 1
                 file.write("".join(block.block_content_translated))
