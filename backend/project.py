@@ -1,4 +1,4 @@
-""" this is the project class for SoraTranslator """
+"""this is the project class for SoraTranslator"""
 
 import datetime as dt
 import os
@@ -111,7 +111,7 @@ class Project:
             game_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(game_module)
             if not hasattr(game_module, "Game"):
-                print("Game class not defined in the game file. Check if using supported game engine.")
+                # print("Game class not defined in the game file. Check if using supported game engine.")
                 if not hasattr(game_module, "GAME_ENGINE"):
                     print("GAME_ENGINE not defined in the game file. Check if using supported game engine.")
                     return False
@@ -138,6 +138,7 @@ class Project:
 
         # prepare translation
         try:
+            print("Preparing translation...")
             success = self.game.prepare_translation(replace=True)
             if success:
                 self.is_initialized = True

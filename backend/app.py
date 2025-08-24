@@ -1,4 +1,4 @@
-""" this file is for api for the frontend calls"""
+"""this file is for api for the frontend calls"""
 
 import re
 import os
@@ -83,7 +83,7 @@ def initialize_game():
         project.save()
         json_data["status"] = success
         return json_data
-    except:
+    except Exception as e:
         json_data = project.to_json()
         json_data["status"] = False
         project.save()

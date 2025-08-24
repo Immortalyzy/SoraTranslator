@@ -109,6 +109,7 @@ csel
 cselbtn
 cselgoto
 csp
+CSP
 csp2
 csvclose
 csveof
