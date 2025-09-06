@@ -1,4 +1,4 @@
-""" Game class for Chaos_R games. """
+"""Game class for Chaos_R games."""
 
 import importlib.util
 import os
@@ -188,7 +188,12 @@ class ChaosRGame(Game):
         # generate text files for all to_translate files
         for script_file in self.to_translate_file_list:
             # parsing
-            script_file.parse(parse_file_function=parse_file, force_single=True)
+            try:
+                log_message(f"Parsing {script_file.script_file_path}", log_level=LogLevel.INFO)
+                script_file.parse(parse_file_function=parse_file, force_single=True)
+            except Exception as e:
+                log_message(f"Failed to parse {script_file.script_file_path}. Error: {e}", log_level=LogLevel.ERROR)
+                continue
             # generate text file
             # generate the destination path for the text file
             # get the base name of the file without the extension

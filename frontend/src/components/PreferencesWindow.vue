@@ -42,7 +42,17 @@ export default {
         },
         async updateSettings() {
             try {
-                await axios.post('http://localhost:5000/preferences', this.preferences);
+                // JSONEditor can sometimes hold a string; normalize to a plain object
+                const payload = typeof this.preferences === 'string'
+                    ? JSON.parse(this.preferences)
+                    : this.preferences;
+
+                await axios.post(
+                    'http://localhost:5000/preferences',
+                    payload,
+                    { headers: { 'Content-Type': 'application/json' } }
+                );
+
                 this.isEdited = false;
             } catch (error) {
                 console.error(error);
