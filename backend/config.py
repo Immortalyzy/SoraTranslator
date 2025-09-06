@@ -1,4 +1,4 @@
-""" configurations """
+"""configurations"""
 
 import json
 import os
@@ -16,7 +16,10 @@ class Config:
     """configuraion class for the backend, saving default configurations"""
 
     def __init__(self):
-        self.proxy = None  # if you need to use a proxy, set it here, format: "socks5://127.0.0.1:10818"
+        # self.proxy = (
+        #    "http://127.0.0.1:10809"  # if you need to use a proxy, set it here, format: "socks5://127.0.0.1:10818"
+        # )
+        self.proxy = None
         self.translator = "galtransl"  # use galtransl as the default translator
 
         # SoraTranslator settings
@@ -40,8 +43,11 @@ class Config:
         self.gpt_speration_method = "[]"
         self.gpt_enclosing_joiner = "|"
 
-        # galtransl settings
-        self.galtransl_translation_model = "gpt35-1106"
+        # model settings
+        self.galtransl_translation_method = "ForGal-json"
+        self.modelName = "grok-3"
+        self.endpoint = "https://api.x.ai/v1/chat/completions"
+        self.token = "sk-xxx"
 
         # success status
         self.translate_line_by_line_in_failure = True

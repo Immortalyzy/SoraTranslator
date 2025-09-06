@@ -1,4 +1,4 @@
-""" This file defines the API used to interact with GalTransl """
+"""This file defines the API used to interact with GalTransl"""
 
 import importlib.util
 import sys
@@ -31,19 +31,20 @@ def sync_config_to_yaml(config: Config, yaml_file: str):
 
     try:
         # proxy settings
-        if config.proxy is not None:
+        if config.proxy is not "":
             yaml_object["proxy"]["enableProxy"] = True
             yaml_object["proxy"]["proxies"][0]["address"] = config.proxy
         else:
             yaml_object["proxy"]["enableProxy"] = False
 
-        # openai settings
-        yaml_object["backendSpecific"]["GPT35"]["tokens"][0]["token"] = config.openai_api_key
-        # delete the second token
-        del yaml_object["backendSpecific"]["GPT35"]["tokens"][1]
+        # token settings
+        yaml_object["backendSpecific"]["OpenAI-Compatible"]["tokens"][0]["token"] = config.token
+        yaml_object["backendSpecific"]["OpenAI-Compatible"]["tokens"][0]["endpoint"] = config.endpoint
+        yaml_object["backendSpecific"]["OpenAI-Compatible"]["tokens"][0]["modelName"] = config.modelName
 
-        # same for GPT4 settings
-        yaml_object["backendSpecific"]["GPT4"]["tokens"][0]["token"] = config.openai_api_key
+        # common settings
+        yaml_object["common"]["gpt.enhance_jailbreak"] = True
+        yaml_object["common"]["gpt.prompt_content"] = ""
 
     except Exception as e:
         log_message(f"Error: {e}", LogLevel.ERROR)
@@ -310,9 +311,9 @@ class GalTransl_Translator(Translator):
     def run_worker(self, project_path: str):
         """run the worker function in a separate thread, wait for the worker to finish"""
 
-        batch_file = os.path.join(self.galtransl_path, "run.bat")
+        batch_file = os.path.join(self.galtransl_path, "run_GalTransl_zh.bat")
         arg1 = project_path
-        arg2 = self.config.galtransl_translation_model
+        arg2 = self.config.galtransl_translation_method
 
         log_message("Running GalTransl worker in a separate thread", LogLevel.INFO)
         try:

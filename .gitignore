@@ -164,7 +164,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# for vue 
+# for vue
 .DS_Store
 node_modules
 /dist
@@ -188,3 +188,4 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+keys.txt

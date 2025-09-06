@@ -1,4 +1,4 @@
-""" test the integration with GalTransl and MagicalGirlGame """
+"""test the integration with GalTransl and MagicalGirlGame"""
 
 from pickle import dump, load
 import shutil
@@ -37,7 +37,7 @@ def test_galtransl_onefile():
     # call galtransl
     project = Project.from_pickle(project_file_path)
     # find the first non-empty textfile
-    choose = 0
+    choose = 3
     for textfile in project.game.script_file_list[0].textfiles:
         if not textfile.is_empty and choose >= 1:
             break
@@ -50,6 +50,7 @@ def test_galtransl_onefile():
 
     # translate the textfile
     project_path = Path(project.project_path)
+    galtranslapi.translate_file_whole(textfile)
 
     ## store each translate single file in a separate folder, the folder name is the same as the file name
     target_folder_path = project_path / "GalTransl"
