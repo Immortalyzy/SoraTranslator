@@ -4,6 +4,15 @@
         <button @click="initialize_project">Initialize </button>
         <button @click="integrate_project"> Integrate </button>
         <button @click="preferences"> Preferences </button>
+        <!-- Right side dropdown -->
+        <span class="menu-right">
+            <!-- If your store list is an array of strings -->
+            <select v-if="isStringList" class="menu-select" v-model="selectedValue" @change="onSelectChange">
+                <option v-for="opt in options" :key="opt" :value="opt">
+                    {{ opt }}
+                </option>
+            </select>
+        </span>
     </span>
 </template>
 
@@ -12,6 +21,22 @@ import { initializeGame } from '@/utils/projectManagement'
 import axios from 'axios'
 export default {
     name: 'MenuBar',
+    data() {
+        return {
+            selectedValue: null, // holds the currently selected dropdown value
+        }
+    },
+    computed: {
+        options() {
+            return this.$store.state.translators;
+        },
+    },
+    mounted() {
+        // Set an initial selection (first item) if nothing selected yet
+        if (this.options && this.options.length && this.selectedValue == null) {
+            this.selectedValue = this.isStringList ? this.options[0] : this.options[0].id
+        }
+    },
     methods: {
         create_new_project() {
             // open a window of selecting local files
@@ -76,5 +101,15 @@ button {
     transition: background-color 0.3s, border-color 0.3s, color 0.3s;
     text-shadow: 0 0 5px rgba(255, 0, 0, 0.7), 0 0 20px rgba(255, 0, 0, 0.6);
     /* Red glow */
+}
+
+.menu-select {
+    margin: 0 8px;
+    padding: 6px 10px;
+    font-size: 14px;
+    border: 1px solid #ffd0d0;
+    background: #fff;
+    color: #333;
+    border-radius: 4px;
 }
 </style>

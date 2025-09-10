@@ -38,6 +38,7 @@ const store = createStore({
                 totalCount: 1,
             },
             stopSignal: false,
+            translators: ["gpt", "galtransl", "sakura"]
         }
     },
     mutations: {
