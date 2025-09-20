@@ -57,8 +57,13 @@ Each directory is designed to handle a different stage of the translation proces
 - Node.js >= 20.0.0
 - A ChatGPT API key
 
+If you use the released version, the requirements may not be necessary.
+
 ##### Installation
 1. Clone the repository
+or
+1. Download the latest version from release.
+2, unzip.
 
 #### How to Use
 Simply install the required packages and run the program by running `run.bat`
