@@ -26,6 +26,7 @@ class ChaosRGame(Game):
             ".ini",
             ".csv",
             ".tjs",
+            ".asd",
         ]
         self.content_indicators = []
 
@@ -261,7 +262,7 @@ class ChaosRGame(Game):
             relative_path = os.path.relpath(script_file.script_file_path, self.rawtext_directory)
             translated_path = os.path.join(self.translated_files_directory, relative_path)
 
-            script_file.generate_translated_rawfile(dest=translated_path, replace=True)
+            script_file.generate_translated_rawfile(dest=translated_path, replace=True, encoding=self.target_encoding)
 
             # get the relative path
             relative_path = os.path.relpath(script_file.translated_script_file_path, self.translated_files_directory)

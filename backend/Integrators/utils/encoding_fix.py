@@ -43,9 +43,9 @@ def fix_encoding(
     """
     try:
         # Chaos-R games have a file called PageBreak.asd that is encoded in UTF-8
-        if os.path.basename(input_file_path) == "PageBreak.asd":
-            original_encoding = "utf_8"
-            target_encoding = "utf_8"
+        #        if os.path.basename(input_file_path) == "PageBreak.asd":
+        #            original_encoding = "utf_8"
+        #            target_encoding = "utf_8"
 
         with open(input_file_path, "r", encoding=original_encoding) as f:
             content = f.read()

@@ -1,4 +1,4 @@
-""" parser provides functions that help parse the script files and create text files"""
+"""parser provides functions that help parse the script files and create text files"""
 
 #!! IMPORTANT: the file passed to parser should be in utf_8 encoding
 
@@ -11,11 +11,11 @@ from scriptfile import ScriptFile
 from block import Block
 
 
-def parse_file(script_file: ScriptFile) -> List[Block]:
+def parse_file(script_file: ScriptFile, encoding="utf_16") -> List[Block]:
     """this function will parse a script file to parsed blocks, this parser will omit the text at the beging of file outside of any blocks"""
     file_path = script_file.script_file_path
     try:
-        with open(file_path, "r", encoding="utf_8") as file:
+        with open(file_path, "r", encoding=encoding) as file:
             lines = file.readlines()
     except FileNotFoundError:
         log_message(f"File {file_path} not found for parsing", log_level=LogLevel.WARNING)
