@@ -1,32 +1,48 @@
-[
-    {
-        "translator": "OpenAI:gpt-4o-mini",
-        "endpoint": "https://api.openai.com/v1/",
-        "token": "ENV:OPENAI_API_KEY",
-        "model_name": "gpt-4o-mini"
-    },
-    {
-        "translator": "gemini-2.5-flash",
-        "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/",
-        "token": "ENV:GEMINI_API_KEY",
-        "model_name": "gemini-2.5-flash"
-    },
-    {
-        "translator": "Grok",
-        "endpoint": "https://api.x.ai/v1/",
-        "token": "ENV:GROK_API_KEY",
-        "model_name": "qwen2.5:7b"
-    },
-    {
-        "translator": "Claude:claude-4",
-        "endpoint": "https://api.anthropic.com/v1/",
-        "token": "ENV:CLAUDE_API_KEY",
-        "model_name": "claude-4"
-    },
-    {
-        "translator": "DeepSeek",
-        "endpoint": "https://api.deepseek.com/v1/",
-        "token": "ENV:DEEPSEEK_API_KEY",
-        "model_name": "qwen2.5:7b"
-    }
-]
+{
+    "endpoints": [
+        {
+            "name": "OpenAI",
+            "endpoint": "https://api.openai.com/v1/",
+            "token": "ENV:OPENAI_API_KEY",
+            "models": [
+                "gpt-4o-mini",
+                "gpt-4o",
+                "gpt-5o"
+            ]
+        },
+        {
+            "name": "Gemini",
+            "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/",
+            "token": "ENV:GEMINI_API_KEY",
+            "models": [
+                "gemini-2.5-flash",
+                "gemini-2.5-pro"
+            ]
+        },
+        {
+            "name": "Grok",
+            "endpoint": "https://api.x.ai/v1/",
+            "token": "ENV:GROK_API_KEY",
+            "models": [
+                "grok-1.5-turbo"
+            ]
+        },
+        {
+            "name": "Anthropic",
+            "endpoint": "https://api.anthropic.com/v1/",
+            "token": "ENV:CLAUDE_API_KEY",
+            "models": [
+                "claude-4",
+                "claude-3"
+            ]
+        },
+        {
+            "name": "DeepSeek",
+            "endpoint": "https://api.deepseek.com/v1/",
+            "token": "ENV:DEEPSEEK_API_KEY",
+            "models": [
+                "deepseek-1.0"
+            ]
+        }
+    ]
+}

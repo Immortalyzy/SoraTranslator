@@ -6,10 +6,14 @@
         <button @click="preferences"> Preferences </button>
         <!-- Right side dropdown -->
         <span class="menu-right">
-            <select class="menu-select" v-model="selectedValue" @change="onSelectChange">
-                <option v-for="opt in translators" :key="opt" :value="opt">
-                    {{ opt }}
-                </option>
+            <!-- Endpoints dropdown -->
+            <select class="menu-select" v-model="selectedEndpoint" @change="onEndpointChange">
+                <option v-for="ep in endpoints" :key="ep" :value="ep">{{ ep }}</option>
+            </select>
+
+            <!-- Models dropdown (depends on endpoint) -->
+            <select class="menu-select" v-model="selectedModel" @change="onModelChange" :disabled="!models.length">
+                <option v-for="m in models" :key="m" :value="m">{{ m }}</option>
             </select>
         </span>
     </span>
@@ -23,20 +27,29 @@ export default {
     name: 'MenuBar',
     data() {
         return {
-            selectedValue: null, // holds the currently selected dropdown value
+            selectedEndpoint: null,
+            selectedModel: null,
         }
     },
     computed: {
-        ...mapState(['translators', 'currentTranslator']),
+        ...mapState(['endpoints', 'models', 'currentEndpoint', 'currentModel']),
         options() {
             return this.$store.state.translators;
         },
     },
     async mounted() {
-        // Load list + current selection from backend
-        await this.$store.dispatch('loadTranslators')
-        // sync local v-model
-        this.selectedValue = this.currentTranslator || (this.translators[0] || null)
+        await this.$store.dispatch('loadEndpoints')
+        this.selectedEndpoint = this.currentEndpoint
+        this.selectedModel = this.currentModel
+    },
+    watch: {
+        // Keep local selects in sync if store changes elsewhere
+        currentEndpoint(newVal) {
+            if (newVal !== this.selectedEndpoint) this.selectedEndpoint = newVal
+        },
+        currentModel(newVal) {
+            if (newVal !== this.selectedModel) this.selectedModel = newVal
+        }
     },
     methods: {
         create_new_project() {
@@ -72,13 +85,15 @@ export default {
             // change the display type to preferences
             this.$emit('change-display-type', 'preferences', "none");
         },
-        // Handle dropdown change of translators
-        async onSelectChange() {
-            if (!this.selectedValue) return
-            // update both backend and store
-            await this.$store.dispatch('selectTranslator', this.selectedValue)
-            // (Optional) show a toast/alert
-            // alert(`Selected translator: ${this.selectedValue}`)
+        async onEndpointChange() {
+            if (!this.selectedEndpoint) return
+            await this.$store.dispatch('selectEndpoint', this.selectedEndpoint)
+            // After endpoint changes, the store will set a default model; mirror it
+            this.selectedModel = this.$store.state.currentModel
+        },
+        async onModelChange() {
+            if (!this.selectedModel) return
+            await this.$store.dispatch('selectModel', this.selectedModel)
         },
 
     }

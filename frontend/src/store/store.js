@@ -40,7 +40,8 @@ const store = createStore({
                 totalCount: 1,
             },
             stopSignal: false,
-            translators: [],
+            endpoints: [],
+            models: [],
         }
     },
     mutations: {
@@ -72,7 +73,11 @@ const store = createStore({
         updateTranslationProgress(state, newProgress) {
             state.currentTranslation.thisCount = newProgress["thisCount"];
             state.currentTranslation.totalCount = newProgress["totalCount"];
-        }
+        },
+        setEndpoints(state, names) { state.endpoints = names || [] },
+        setModels(state, names) { state.models = names || [] },
+        updateEndpoint(state, name) { state.currentEndpoint = name },
+        updateModel(state, name) { state.currentModel = name },
 
     },
     actions: {
@@ -101,14 +106,31 @@ const store = createStore({
         updateTranslationProgress(context, newProgress) {
             context.commit('updateTranslationProgress', newProgress);
         },
-        async loadTranslators({ commit }) {
-            const { data } = await axios.get(`${API}/translators`)
-            commit('setTranslators', data.translators || [])
-            if (data.current) commit('updateTranslator', data.current)
+        async loadEndpoints({ commit, dispatch }) {
+            const { data } = await axios.get(`${API}/endpoints`)
+            commit('setEndpoints', data.endpoints || [])
+            if (data.current) {
+                commit('updateEndpoint', data.current)
+                // also load models for the current endpoint
+                await dispatch('loadModels', data.current)
+            }
         },
-        async selectTranslator({ commit }, name) {
-            await axios.post(`${API}/translators/select`, { translator: name })
-            commit('updateTranslator', name)
+        async loadModels({ commit }, endpointName) {
+            const { data } = await axios.get(`${API}/endpoints/${encodeURIComponent(endpointName)}/models`)
+            commit('setModels', data.models || [])
+            if (data.current) commit('updateModel', data.current)
+            else if (data.models?.length) commit('updateModel', data.models[0])
+            else commit('updateModel', null)
+        },
+        async selectEndpoint({ commit, dispatch }, endpointName) {
+            await axios.post(`${API}/endpoints/select`, { endpoint: endpointName })
+            commit('updateEndpoint', endpointName)
+            // refresh models for this endpoint (and set default currentModel)
+            await dispatch('loadModels', endpointName)
+        },
+        async selectModel({ commit }, modelName) {
+            await axios.post(`${API}/models/select`, { model: modelName })
+            commit('updateModel', modelName)
         },
     },
     getters: {
