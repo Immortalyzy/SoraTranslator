@@ -2,6 +2,7 @@
 
 import re
 import os
+import json
 from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -316,6 +317,71 @@ def preferences():
     else:  # GET request
         setting_from_file = Config.from_json_file(DEFAULT_CONFIG_FILE)
         return jsonify(setting_from_file.to_json_obj())
+
+
+TRANSLATORS_PATH = os.path.join(os.path.dirname(__file__), "..", "translators.json")
+
+
+def load_translators():
+    """load translators from translators.json"""
+    with open(TRANSLATORS_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    # resolve ENV: tokens
+    for t in data:
+        tok = t.get("token", "")
+        if isinstance(tok, str) and tok.startswith("ENV:"):
+            env_name = tok.split(":", 1)[1]
+            t["token"] = os.getenv(env_name, "")
+    return data
+
+
+def save_selected(name: str):
+    """update config file with the selected translator name"""
+    config = Config.from_json_file(DEFAULT_CONFIG_FILE)
+    config.translator = name
+    # get the endpoint and token from translators.json
+    items = load_translators()
+    for t in items:
+        if t["translator"] == name:
+            config.endpoint = t.get("endpoint", "")
+            config.token = t.get("token", "")
+            config.model_name = t.get("model_name", "")
+            break
+    config.to_json_file(DEFAULT_CONFIG_FILE, replace=True)
+
+
+@app.get("/translators")
+def get_translators_names():
+    """Return only names + current selection for the dropdown."""
+    items = load_translators()
+    names = [t["translator"] for t in items]
+    current = Config.from_json_file(DEFAULT_CONFIG_FILE).translator
+    return jsonify({"translators": names, "current": current})
+
+
+@app.get("/translators/full")
+def get_translators_full():
+    """(Optional) Return full entries (backend use only)."""
+    return jsonify(load_translators())
+
+
+@app.post("/translators/select")
+def select_translator():
+    """Set the active translator by name."""
+    data = request.get_json(force=True) or {}
+    name = data.get("translator")
+    items = load_translators()
+    names = [t["translator"] for t in items]
+    if name not in names:
+        return jsonify({"ok": False, "error": "Unknown translator"}), 400
+    save_selected(name)
+    return jsonify({"ok": True, "selected": name})
+
+
+@app.get("/translators/selected")
+def get_selected_translator():
+    """return the current selected translator"""
+    return jsonify({"selected": Config.from_json_file(DEFAULT_CONFIG_FILE).translator})
 
 
 if __name__ == "__main__":

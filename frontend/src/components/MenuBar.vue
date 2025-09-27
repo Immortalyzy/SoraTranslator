@@ -6,9 +6,8 @@
         <button @click="preferences"> Preferences </button>
         <!-- Right side dropdown -->
         <span class="menu-right">
-            <!-- If your store list is an array of strings -->
-            <select v-if="isStringList" class="menu-select" v-model="selectedValue" @change="onSelectChange">
-                <option v-for="opt in options" :key="opt" :value="opt">
+            <select class="menu-select" v-model="selectedValue" @change="onSelectChange">
+                <option v-for="opt in translators" :key="opt" :value="opt">
                     {{ opt }}
                 </option>
             </select>
@@ -18,6 +17,7 @@
 
 <script>
 import { initializeGame } from '@/utils/projectManagement'
+import { mapState } from 'vuex'
 import axios from 'axios'
 export default {
     name: 'MenuBar',
@@ -27,15 +27,16 @@ export default {
         }
     },
     computed: {
+        ...mapState(['translators', 'currentTranslator']),
         options() {
             return this.$store.state.translators;
         },
     },
-    mounted() {
-        // Set an initial selection (first item) if nothing selected yet
-        if (this.options && this.options.length && this.selectedValue == null) {
-            this.selectedValue = this.isStringList ? this.options[0] : this.options[0].id
-        }
+    async mounted() {
+        // Load list + current selection from backend
+        await this.$store.dispatch('loadTranslators')
+        // sync local v-model
+        this.selectedValue = this.currentTranslator || (this.translators[0] || null)
     },
     methods: {
         create_new_project() {
@@ -70,7 +71,15 @@ export default {
         preferences() {
             // change the display type to preferences
             this.$emit('change-display-type', 'preferences', "none");
-        }
+        },
+        // Handle dropdown change of translators
+        async onSelectChange() {
+            if (!this.selectedValue) return
+            // update both backend and store
+            await this.$store.dispatch('selectTranslator', this.selectedValue)
+            // (Optional) show a toast/alert
+            // alert(`Selected translator: ${this.selectedValue}`)
+        },
 
     }
 };

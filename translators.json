@@ -1,0 +1,32 @@
+[
+    {
+        "translator": "OpenAI:gpt-4o-mini",
+        "endpoint": "https://api.openai.com/v1/",
+        "token": "ENV:OPENAI_API_KEY",
+        "model_name": "gpt-4o-mini"
+    },
+    {
+        "translator": "gemini-2.5-flash",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/",
+        "token": "ENV:GEMINI_API_KEY",
+        "model_name": "gemini-2.5-flash"
+    },
+    {
+        "translator": "Grok",
+        "endpoint": "https://api.x.ai/v1/",
+        "token": "ENV:GROK_API_KEY",
+        "model_name": "qwen2.5:7b"
+    },
+    {
+        "translator": "Claude:claude-4",
+        "endpoint": "https://api.anthropic.com/v1/",
+        "token": "ENV:CLAUDE_API_KEY",
+        "model_name": "claude-4"
+    },
+    {
+        "translator": "DeepSeek",
+        "endpoint": "https://api.deepseek.com/v1/",
+        "token": "ENV:DEEPSEEK_API_KEY",
+        "model_name": "qwen2.5:7b"
+    }
+]

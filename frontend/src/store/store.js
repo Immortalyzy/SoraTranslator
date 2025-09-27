@@ -1,4 +1,6 @@
 import { createStore } from 'vuex'
+import axios from 'axios'
+const API = 'http://localhost:5000'
 
 const store = createStore({
     state() {
@@ -38,7 +40,7 @@ const store = createStore({
                 totalCount: 1,
             },
             stopSignal: false,
-            translators: ["gpt", "galtransl", "sakura"]
+            translators: [],
         }
     },
     mutations: {
@@ -46,10 +48,12 @@ const store = createStore({
         updateProject(state, newJson) {
             state.project = newJson;
         },
-        updateTranslator(state, newTranslator) {
-            state.currentTranslator = newTranslator;
-        }
-        ,
+        setTranslators(state, names) {
+            state.translators = names || []
+        },
+        updateTranslator(state, name) {
+            state.currentTranslator = name
+        },
         updateFileList(state, newFileList) {
             state.currentFileList = newFileList;
         },
@@ -96,7 +100,16 @@ const store = createStore({
         },
         updateTranslationProgress(context, newProgress) {
             context.commit('updateTranslationProgress', newProgress);
-        }
+        },
+        async loadTranslators({ commit }) {
+            const { data } = await axios.get(`${API}/translators`)
+            commit('setTranslators', data.translators || [])
+            if (data.current) commit('updateTranslator', data.current)
+        },
+        async selectTranslator({ commit }, name) {
+            await axios.post(`${API}/translators/select`, { translator: name })
+            commit('updateTranslator', name)
+        },
     },
     getters: {
         // getter to access your JSON variable
