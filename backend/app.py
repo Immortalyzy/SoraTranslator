@@ -2,6 +2,7 @@
 
 import re
 import os
+import json
 from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -316,6 +317,109 @@ def preferences():
     else:  # GET request
         setting_from_file = Config.from_json_file(DEFAULT_CONFIG_FILE)
         return jsonify(setting_from_file.to_json_obj())
+
+
+TRANSLATORS_PATH = os.path.join(os.path.dirname(__file__), "..", "translators.json")
+
+
+def load_translators():
+    """load translators from translators.json"""
+    with open(TRANSLATORS_PATH, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+    for ep in cfg.get("endpoints", []):
+        tok = ep.get("token", "")
+        if isinstance(tok, str) and tok.startswith("ENV:"):
+            env_name = tok.split(":", 1)[1]
+            ep["token"] = os.getenv(env_name, "")
+    return cfg
+
+
+def save_selected(name: str, model_name: str):
+    """update config file with the selected translator name"""
+    config = Config.from_json_file(DEFAULT_CONFIG_FILE)
+    # get the endpoint and token from translators.json
+    items = load_translators()
+    for t in items["endpoints"]:
+        if t["name"] == name:
+            config.endpoint_name = name
+            config.endpoint = t.get("endpoint", "")
+            config.token = t.get("token", "")
+            config.model_name = model_name if model_name else t.get("model_names", ["gpt-4o-mini"])[0]
+            break
+    config.to_json_file(DEFAULT_CONFIG_FILE, replace=True)
+
+
+@app.get("/endpoints")
+def list_endpoints():
+    """return available endpoints and the current one"""
+    cfg = load_translators()
+    sel = {"endpoint": Config.from_json_file(DEFAULT_CONFIG_FILE).endpoint_name}
+    return jsonify({"endpoints": [e["name"] for e in cfg.get("endpoints", [])], "current": sel["endpoint"]})
+
+
+@app.get("/endpoints/<endpoint_name>/models")
+def list_models(endpoint_name):
+    """return available models for an endpoint and the current one"""
+    cfg = load_translators()
+    ep = next((e for e in cfg.get("endpoints", []) if e["name"] == endpoint_name), None)
+    if not ep:
+        return jsonify({"error": "Unknown endpoint"}), 404
+    sel = {
+        "endpoint": Config.from_json_file(DEFAULT_CONFIG_FILE).endpoint_name,
+        "model": Config.from_json_file(DEFAULT_CONFIG_FILE).model_name,
+    }
+    current_model = sel["model"] if sel["endpoint"] == endpoint_name else (ep["models"][0] if ep["models"] else None)
+    return jsonify({"models": ep.get("models", []), "current": current_model})
+
+
+@app.get("/translators/full")
+def get_translators_full():
+    """(Optional) Return full entries (backend use only)."""
+    return jsonify(load_translators())
+
+
+@app.post("/endpoints/select")
+def select_endpoint():
+    """select an endpoint"""
+    data = request.get_json(force=True) or {}
+    name = data.get("endpoint")
+    cfg = load_translators()
+    ep = next((e for e in cfg.get("endpoints", []) if e["name"] == name), None)
+    if not ep:
+        return jsonify({"ok": False, "error": "Unknown endpoint"}), 400
+    # when endpoint changes, default model becomes the endpoint's first model
+    default_model = ep["models"][0] if ep.get("models") else None
+    save_selected(name, default_model)
+    return jsonify({"ok": True, "endpoint": name, "model": default_model})
+
+
+@app.post("/models/select")
+def select_model():
+    """select a model for the current endpoint"""
+    data = request.get_json(force=True) or {}
+    model = data.get("model")
+    cfg = load_translators()
+    sel = {
+        "endpoint": Config.from_json_file(DEFAULT_CONFIG_FILE).endpoint_name,
+        "model": Config.from_json_file(DEFAULT_CONFIG_FILE).model_name,
+    }
+    ep = next((e for e in cfg.get("endpoints", []) if e["name"] == sel["endpoint"]), None)
+    if not ep:
+        return jsonify({"ok": False, "error": "No endpoint selected"}), 400
+    if model not in (ep.get("models") or []):
+        return jsonify({"ok": False, "error": "Model not available for current endpoint"}), 400
+    save_selected(sel["endpoint"], model)
+    return jsonify({"ok": True, "endpoint": sel["endpoint"], "model": model})
+
+
+@app.get("/translators/selected")
+def get_selected_translator():
+    """return the current selected translator"""
+    sel = {
+        "endpoint": Config.from_json_file(DEFAULT_CONFIG_FILE).endpoint_name,
+        "model": Config.from_json_file(DEFAULT_CONFIG_FILE).model_name,
+    }
+    return jsonify(sel)
 
 
 if __name__ == "__main__":

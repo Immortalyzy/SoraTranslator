@@ -44,10 +44,13 @@ class Config:
         self.gpt_enclosing_joiner = "|"
 
         # model settings
-        self.galtransl_translation_method = "ForGal-json"
-        self.modelName = "grok-3"
+        self.endpoint_name = "Grok"
+        self.model_name = "grok-3"
         self.endpoint = "https://api.x.ai/v1/chat/completions"
         self.token = "sk-xxx"
+
+        # galtransl settings
+        self.galtransl_translation_method = "ForGal-json"
 
         # success status
         self.translate_line_by_line_in_failure = True
