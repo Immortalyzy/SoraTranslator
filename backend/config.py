@@ -45,7 +45,7 @@ class Config:
 
         # model settings
         self.galtransl_translation_method = "ForGal-json"
-        self.modelName = "grok-3"
+        self.model_name = "grok-3"
         self.endpoint = "https://api.x.ai/v1/chat/completions"
         self.token = "sk-xxx"
 

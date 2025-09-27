@@ -1,4 +1,4 @@
-""" stores all translatros' info """
+"""stores all translatros' info"""
 
 from config import default_config
 from .ChatGPT_API.chatgpt_api import GPT_Translator
