@@ -3,12 +3,10 @@
 import json
 import os
 from constants import (
-    DEFAULT_LOG_LEVEL,
     DEFAULT_INITIATION_PROMPT,
     DEFAULT_FIXING_PROMPT,
     DEFAULT_XP3_UNPACKER,
 )
-from constants import LogLevel
 
 
 ### Configurations ============================================================
@@ -25,8 +23,6 @@ class Config:
         # SoraTranslator settings
         self.gpt_prompt = DEFAULT_INITIATION_PROMPT
         self.fixing_prompt = DEFAULT_FIXING_PROMPT
-        # see above LogLevel class
-        self.log_level_int = DEFAULT_LOG_LEVEL.value
 
         # gpt translation settings
         self.openai_api_key = "sk-xxx"
@@ -120,10 +116,6 @@ class Config:
             self.original_language, self.target_language
         )
         pass
-
-    def log_level(self):
-        """return the log level"""
-        return LogLevel(self.log_level_int)
 
 
 default_config = Config()

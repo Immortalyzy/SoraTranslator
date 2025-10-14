@@ -14,13 +14,14 @@ for separating text:
 
 from typing import List
 import re
-import os
-from logger import log_message
-from constants import LogLevel
+from logging import getLogger
+
 from scriptfile import ScriptFile
 from textfile import TextFile
 from block import Block
 from ..utils import utilities as util
+
+logger = getLogger(__name__)
 
 # lines starting with this will be ignored
 COMMENT = ";"
@@ -90,7 +91,7 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
         with open(file_path, "r", encoding="gbk") as file:
             lines = file.readlines()
     except FileNotFoundError:
-        log_message(f"File {file_path} not found for parsing", log_level=LogLevel.WARNING)
+        logger.warning(f"File {file_path} not found for parsing")
 
     # create command list
     command_strings = create_nscripter_command_list(lines)
@@ -205,10 +206,7 @@ def parse_file(script_file: ScriptFile, **kwargs) -> List[Block]:
         script_file.textfiles.append(textfile)
         script_file.blocks_count_in_textfile.append(len(block_list))
 
-    log_message(
-        f"File {file_path} parsed, {len(block_list_list)} parts, {len(all_blocks)} blocks in total found",
-        log_level=LogLevel.INFO,
-    )
+    logger.info(f"File {file_path} parsed, {len(block_list_list)} parts, {len(all_blocks)} blocks in total found")
     script_file.blocks = all_blocks
     return 0
 
@@ -248,20 +246,15 @@ def parse_block(block: Block, command_strings) -> (str, str, (int, int), (int, i
             break
 
     if len(found_speakers) > 1:
-        log_message(
-            f"Multiple speakers found in block {block.block_name}, using the first one",
-            log_level=LogLevel.WARNING,
-        )
+        logger.warning(f"Multiple speakers found in block {block.block_name}, using the first one")
     if len(found_speakers) > 0:
         speaker = found_speakers[0]
     if text == "":
         # empty block
         speaker = ""
 
-    log_message(
-        f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}",
-        log_level=LogLevel.DEBUG,
-    )
+    logger.debug(f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}")
+
     block.speaker_original = speaker
     block.text_original = text
     block.texts_original = texts
@@ -278,7 +271,7 @@ def parse_block(block: Block, command_strings) -> (str, str, (int, int), (int, i
 
 
 # speaker indicator
-speaker_indicator = r"\[([^\[\]]*)\]"
+SPEAKER_INDICATOR = r"\[([^\[\]]*)\]"
 
 
 def parse_text(text, command_strings):
@@ -291,7 +284,7 @@ def parse_text(text, command_strings):
     safe_command_pattern2 = r"(?<=\n) *\t*(" + "|".join(escaped_command_strings) + r").*?\n"
 
     # Find all positions of macros using regular expressions
-    macros_general = [(m.start(), m.end()) for m in re.finditer(speaker_indicator, text)]
+    macros_general = [(m.start(), m.end()) for m in re.finditer(SPEAKER_INDICATOR, text)]
 
     macros_ns = [(m.start(), m.end()) for m in re.finditer(safe_command_pattern, text)]
     macros_ns2 = [(m.start(), m.end()) for m in re.finditer(safe_command_pattern2, text)]
@@ -304,10 +297,7 @@ def parse_text(text, command_strings):
     for current_macro in all_macros:
         is_nested = False
         for other_macro in all_macros:
-            if (
-                current_macro != other_macro
-                and other_macro[0] <= current_macro[0] < current_macro[1] <= other_macro[1]
-            ):
+            if current_macro != other_macro and other_macro[0] <= current_macro[0] < current_macro[1] <= other_macro[1]:
                 is_nested = True
                 break
         if not is_nested:

@@ -1,18 +1,22 @@
 """this file is for api for the frontend calls"""
 
-import re
 import os
 import json
+import logging
+
 from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from project import Project
 from scriptfile import ScriptFile
 from textfile import TextFile
-from constants import DEFAULT_CONFIG_FILE, LogLevel
+from constants import DEFAULT_CONFIG_FILE
 from config import Config
 from Translators.all_translators import createTranslatorInstance
-from logger import log_message
+from logger import setup_logger
+
+setup_logger()
+logger = logging.getLogger(__name__)
 
 
 app = Flask(__name__)
@@ -26,7 +30,7 @@ def get_project():
     if not project_name or project_name == "default_project" or project_name.strip() == "":
         project_name = "default_project"
     # check if a valid project name (should be a file path, should not be empty)
-    log_message("Setting initial project " + project_name, LogLevel.INFO)
+    logger.info("Setting initial project " + project_name)
     return {"project": project_name}
 
 
@@ -63,7 +67,7 @@ def create_project():
                 f.write(f"cd /d {run_bat_dir}\n")
                 f.write(run_bat_path + " " + project.project_file_path)
         except Exception as e:
-            log_message("ERROR when trying to create project file " + str(e), LogLevel.ERROR)
+            logger.error("ERROR when trying to create project file " + str(e))
             success = False
     return {"status": success, "project_file_path": project.project_file_path}
 
@@ -85,6 +89,7 @@ def initialize_game():
         json_data["status"] = success
         return json_data
     except Exception as e:
+        logger.error("ERROR when trying to initialize game " + str(e))
         json_data = project.to_json()
         json_data["status"] = False
         project.save()
@@ -106,7 +111,7 @@ def integrate_game():
         return json_data
     except Exception as e:
         json_data = {"status": False}
-        log_message("ERROR when trying to integrate game " + str(e), LogLevel.ERROR)
+        logger.error("ERROR when trying to integrate game " + str(e))
         return json_data
 
 
@@ -115,7 +120,7 @@ def change_file_property():
     """manually change a file's property, used for "Mark file as ..." """
     data = request.json
     try:
-        log_message("Changing file property:" + data["file_path"], LogLevel.DEBUG)
+        logger.debug("Changing file property:" + data["file_path"])
         text_file = TextFile.from_textfile(data["file_path"])
         property_name = data["property_name"]
         property_value = data["property_value"]
@@ -155,7 +160,7 @@ def require_tranlsation_status():
     file_list = request.json["file_paths"]
     result = {"file_paths": file_list}
     status_list = []
-    log_message("Loading translation status", LogLevel.DEBUG)
+    logger.debug("Loading translation status")
     for file_path in file_list:
         try:
             script_file = TextFile.from_textfile(file_path)
@@ -168,10 +173,7 @@ def require_tranlsation_status():
                     status_list.append("translated")
 
         except Exception as e:
-            log_message(
-                "ERROR when trying to load translation status of file " + file_path + " " + str(e),
-                LogLevel.ERROR,
-            )
+            logger.error("ERROR when trying to load translation status of file " + file_path + " " + str(e))
             status_list.append("invalid_file")
     result["status_list"] = status_list
     result["status"] = True
@@ -189,9 +191,8 @@ def save_text_from_json():
         file_path = data["filePath"]
         script_file = TextFile.from_textfile(file_path=file_path)
         if len(blocks) != len(script_file.blocks):
-            log_message(
-                "The number of blocks in the text file is not the same as the number of blocks in the json file",
-                LogLevel.ERROR,
+            logger.error(
+                "The number of blocks in the text file is not the same as the number of blocks in the json file"
             )
             result = {"status": False}
             return result
@@ -203,12 +204,12 @@ def save_text_from_json():
                 block.translation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 block.translation_engine = "manual"
 
-        log_message("Saving text file" + script_file.text_file_path, LogLevel.INFO)
+        logger.info("Saving text file" + script_file.text_file_path)
         script_file.generate_textfile(script_file.text_file_path, replace=True)
         result = {"status": True}
         return result
     except Exception as e:
-        log_message("ERROR trying to save file " + str(e), LogLevel.ERROR)
+        logger.error("ERROR trying to save file " + str(e))
         result = {"status": False}
         # get text json
         return result
@@ -230,12 +231,12 @@ def translate_text():
 
     try:
         text_file = TextFile.from_textfile(data["file_path"])
-        log_message("Translating file" + text_file.text_file_path, LogLevel.INFO)
+        logger.info("Translating file" + text_file.text_file_path)
         translator.translate_file_whole(text_file)
         result = {"status": True, "filePath": text_file.text_file_path}
         return result
     except Exception as e:
-        print(e)
+        logger.error("ERROR when trying to translate file " + text_file.text_file_path + " " + str(e))
         result = {"status": False, "filePath": text_file.text_file_path}
         # get text json
         return result
@@ -255,12 +256,12 @@ def translate_project():
     translator = createTranslatorInstance(config.translator, config=config)
 
     try:
-        log_message("Translating project " + project.project_path, LogLevel.INFO)
+        logger.info("Translating project " + project.project_path)
         translator.translate_project(project)
         result = {"status": True}
         return result
     except Exception as e:
-        print(e)
+        logger.error("ERROR when trying to translate project " + project.project_path + " " + str(e))
         result = {"status": False}
         # get text json
         return result
@@ -299,7 +300,7 @@ def request_file_info():
         }
         return response
     except Exception as e:
-        log_message("ERROR trying to get file info " + str(e), LogLevel.ERROR)
+        logger.error("ERROR trying to get file info " + str(e))
         response = {"status": False}
         return response
 
@@ -423,4 +424,4 @@ def get_selected_translator():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, threaded=True)
+    app.run(debug=False, threaded=True)

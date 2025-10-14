@@ -1,16 +1,13 @@
-""" contants that are used in the backend """
+"""contants that are used in the backend"""
+
 from enum import Enum
 
 # Path specific
 DEFAULT_GAME_RESOURCES_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/"
 DEFAULT_ENCODING_OUTPUT = "D:/Work/SoraTranslator/SoraTranslator/RawText/"
-DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = (
-    "D:/Work/SoraTranslator/SoraTranslator/RawText/"
-)
+DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/RawText/"
 DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/Text/"
-DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY = (
-    "D:/Work/SoraTranslator/SoraTranslator/TranslatedFiles/"
-)
+DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/TranslatedFiles/"
 
 DEFAULT_XP3_UNPACKER = "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
 
@@ -39,16 +36,6 @@ DEFAULT_FIXING_PROMPT = [
 ]
 
 
-class LogLevel(Enum):
-    """log level"""
-
-    ERROR = 0
-    WARNING = 1
-    INFO = 2
-    DEBUG = 3
-    VERBOSE = 4
-
-
 class SuccessStatus(Enum):
     """success status"""
 
@@ -72,9 +59,6 @@ class SuccessStatus(Enum):
             return SuccessStatus.PARTIAL_SUCCESS
         else:
             return SuccessStatus.ERROR
-
-
-DEFAULT_LOG_LEVEL = LogLevel.DEBUG
 
 
 # log config, after project.py is implemented, this should be moved to project.py

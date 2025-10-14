@@ -6,7 +6,7 @@ import os
 from scriptfile import ScriptFile
 from block import Block
 from config import Config, default_config
-from constants import DEFAULT_CONFIG_FILE, LogLevel
+from constants import DEFAULT_CONFIG_FILE
 from project import Project
 from pathlib import Path
 
@@ -18,7 +18,7 @@ from ..Integrators.Magical_Girl.parser import (
     create_nscripter_command_list,
 )
 
-from ..Translators.GalTransl_API import GalTransl_Translator
+from ..Translators.GalTransl_API import GalTranslTranslator
 
 ns_file = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator/RawText/result.txt"
 project_path = "U:/Toys/Games/Gal/MagicalGirl/1/SoraTranslator"
@@ -46,7 +46,7 @@ def test_galtransl_onefile():
 
     # create the API
     config = Config.from_json_file(DEFAULT_CONFIG_FILE)
-    galtranslapi = GalTransl_Translator(config=config)
+    galtranslapi = GalTranslTranslator(config=config)
 
     # translate the textfile
     project_path = Path(project.project_path)

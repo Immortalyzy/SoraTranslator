@@ -13,14 +13,16 @@ Parameters to prepare:
 import importlib.util
 import os
 import shutil
-from constants import LogLevel
+from logging import getLogger
+
 from config import default_config
 from game import Game
 from scriptfile import ScriptFile, update_script_filelist
-from logger import log_message
 from ..utils.encoding_fix import fix_allfiles
 from .parser import parse_file, parse_block
 from ..utils.utilities import NSDEC, NSCMAKE, NSDEC_PYFUN
+
+logger = getLogger(__name__)
 
 
 class MagicalGirlGame(Game):
@@ -138,10 +140,7 @@ class MagicalGirlGame(Game):
         self.dangerous_file_list.append(self.script_file)
         self.update_to_translate_filelist()
 
-        log_message(
-            f"Indentified {len(self.to_translate_file_list)} files to translate. ",
-            log_level=LogLevel.INFO,
-        )
+        logger.info(f"Identified {len(self.to_translate_file_list)} files to translate.")
 
         # generate text files for all to_translate files
         for script_file in self.to_translate_file_list:
@@ -199,10 +198,7 @@ class MagicalGirlGame(Game):
         self.script_file = ScriptFile.from_originalfile(full_desitnation_path)
         self.script_file.script_file_path = full_desitnation_path
         self.script_file.original_package = "nscript.dat"
-        log_message(
-            f"{self.script_file.script_file_path} raw text is copied to {self.rawtext_directory}.",
-            log_level=LogLevel.INFO,
-        )
+        logger.info(f"{self.script_file.script_file_path} raw text is copied to {self.rawtext_directory}.")
 
     @staticmethod
     def fix_number_encoding(s: str) -> str:
@@ -278,10 +274,10 @@ class MagicalGirlGame(Game):
         if os.path.exists(after_file_name):
             if replace:
                 # delete the file
-                log_message(f"Deleting {after_file_name} since it already exists.")
+                logger.info(f"Deleting {after_file_name} since it already exists.")
                 os.remove(after_file_name)
             else:
-                print(f"Skipping {after_file_name} since it already exists.")
+                logger.info(f"Skipping {after_file_name} since it already exists.")
         # move the file to the temp_unpack_directory
         shutil.move(result_file_fullpath, self.temp_unpack_directory)
 

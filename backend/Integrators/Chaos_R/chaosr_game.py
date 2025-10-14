@@ -3,13 +3,14 @@
 import importlib.util
 import os
 import shutil
-from constants import LogLevel
+from logging import getLogger
 from config import default_config
 from game import Game
 from scriptfile import ScriptFile, update_script_filelist
-from logger import log_message
 from ..utils.encoding_fix import fix_allfiles
 from .parser import guess_file_type, parse_file, possible_content_re_default
+
+logger = getLogger(__name__)
 
 
 class ChaosRGame(Game):
@@ -181,19 +182,16 @@ class ChaosRGame(Game):
             if script_file.is_Hcontent():
                 self.dangerous_file_list.append(script_file)
 
-        log_message(
-            f"Indentified {len(self.to_translate_file_list)} files to translate. ",
-            log_level=LogLevel.INFO,
-        )
+        logger.info(f"Identified {len(self.to_translate_file_list)} files to translate.")
 
         # generate text files for all to_translate files
         for script_file in self.to_translate_file_list:
             # parsing
             try:
-                log_message(f"Parsing {script_file.script_file_path}", log_level=LogLevel.INFO)
+                logger.info(f"Parsing {script_file.script_file_path}")
                 script_file.parse(parse_file_function=parse_file, force_single=True)
             except Exception as e:
-                log_message(f"Failed to parse {script_file.script_file_path}. Error: {e}", log_level=LogLevel.ERROR)
+                logger.error(f"Failed to parse {script_file.script_file_path}. Error: {e}")
                 continue
             # generate text file
             # generate the destination path for the text file
@@ -248,10 +246,7 @@ class ChaosRGame(Game):
             shutil.copy2(scriptfile.script_file_path, full_desitnation_path)
             # update the script file information
             scriptfile.script_file_path = full_desitnation_path
-        log_message(
-            f"{len(self.script_file_list):d} raw text files are copied to {self.rawtext_directory}.",
-            log_level=LogLevel.INFO,
-        )
+        logger.info(f"{len(self.script_file_list):d} raw text files are copied to {self.rawtext_directory}.")
 
     def integrate(self):
         """Integrate the text into the game."""

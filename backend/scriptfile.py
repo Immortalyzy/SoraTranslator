@@ -3,14 +3,17 @@
 import datetime
 import os
 from typing import List
-from logger import log_message
-from constants import LogLevel
+from logging import getLogger
+
 from block import Block
 from textfile import TextFile
 
+logger = getLogger(__name__)
+
 
 class ScriptFile:
-    """The GameFile class defines a script file and info around it, the class provides a framework for integration actions defined in the game folders"""
+    """The GameFile class defines a script file and info around it,
+    the class provides a framework for integration actions defined in the game folders"""
 
     def __init__(self, file_path):
         # a list of all blocks in the file, will be filled when parsing
@@ -50,7 +53,8 @@ class ScriptFile:
         self.next_script_file_name = ""
 
         # ordinary info, will add here as generally needed
-        # translation info, will store the translation status (including how the translation was performed and which part caused problem)
+        # translation info, will store the translation status
+        # (including how the translation was performed and which part caused problem)
         self.info = {"translation_info": "not translated yet"}
 
     @classmethod
@@ -227,15 +231,11 @@ class ScriptFile:
         # check if the file exists
         if os.path.exists(self.translated_script_file_path):
             if replace:
-                log_message(
-                    f"Replacing translated script file {self.translated_script_file_path}",
-                    log_level=LogLevel.WARNING,
-                )
+                logger.warning(f"Replacing translated script file {self.translated_script_file_path}")
                 os.remove(self.translated_script_file_path)
             else:
-                log_message(
-                    f"Translated script file {self.translated_script_file_path} already exists, skip creation",
-                    log_level=LogLevel.WARNING,
+                logger.warning(
+                    f"Translated script file {self.translated_script_file_path} already exists, skip creation."
                 )
                 return 1
 
@@ -245,7 +245,7 @@ class ScriptFile:
                 lines_wroten += 1
                 file.write("".join(block.block_content_translated))
 
-        log_message(f"Text file {self.translated_script_file_path} created, {lines_wroten} lines wroten")
+        logger.info(f"Text file {self.translated_script_file_path} created, {lines_wroten} lines wroten")
         return lines_wroten == 0
 
     def is_system_file(self):
@@ -307,7 +307,14 @@ def initiate_script_filelist(listfilepath, replace=False):
 
     with open(listfilepath, "w", encoding="utf_8") as file:
         file.write(
-            "script_file_path\ttext_file_path\tfile_type\tis_translated\tneed_manual_fix\ttranslation_percentage\toriginal_package\tread_date\n"
+            "script_file_path\t"
+            "text_file_path\t"
+            "file_type\t"
+            "is_translated\t"
+            "need_manual_fix\t"
+            "translation_percentage\t"
+            "original_package\t"
+            "read_date\n"
         )
 
 

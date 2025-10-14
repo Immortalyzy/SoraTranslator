@@ -3,8 +3,9 @@
 #!! csv sperator used is tab "\t"
 
 import re
-from logger import log_message
-from constants import LogLevel
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 def default_text_separater(text_translated_whole: str, texts_original: list[str]) -> list[str]:
@@ -219,9 +220,9 @@ class Block:
 
         if len(csv_line) >= 8:
             if csv_line[5].strip() != "Yes" and csv_line[5].strip() != "No":
-                log_message(
-                    f'CSV line {csv_line} has incompatible is_translated entry record. (Accepted record is "Yes" or "No")',
-                    log_level=LogLevel.WARNING,
+                logger.warning(
+                    f"CSV line {csv_line} has incompatible is_translated entry record. "
+                    f'(Accepted record is "Yes" or "No")',
                 )
 
             block.is_translated = csv_line[5].strip() == "Yes"
@@ -295,7 +296,7 @@ class Block:
                 self.selection_translated = re.split(r"[／/]", self.text_translated)
             if len(self.selection_original) != len(self.selection_translated):
                 #! if a problem appears, the original text will be used
-                log_message("Error: selections not matched for block " + self.block_name, log_level=LogLevel.ERROR)
+                logger.error("Error: selections not matched for block " + self.block_name)
             else:
                 temp_block_content = replace_substrings(
                     original=temp_block_content,

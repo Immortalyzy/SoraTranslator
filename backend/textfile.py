@@ -1,13 +1,14 @@
-""" game file class, every instance is a script file of the game """
+"""game file class, every instance is a script file of the game"""
 
 import datetime
 import os
 import json
 from typing import List
-from logger import log_message
-from constants import LogLevel
+from logging import getLogger
+
 from block import Block
 
+logger = getLogger(__name__)
 PROPERTY_LINE_LENGTH = 8
 
 
@@ -151,10 +152,7 @@ class TextFile:
     def generate_galtransl_json(self, dest="", replace=False):
         """Create a json file for Galtransl"""
         if self.is_empty:
-            log_message(
-                f"Skipping {self.text_file_path} as it is empty",
-                log_level=LogLevel.INFO,
-            )
+            logger.info(f"Skipping {self.text_file_path} as it is empty")
             return 1
         # Create the text filepath if not provided
         if dest == "":
@@ -170,10 +168,7 @@ class TextFile:
             if replace:
                 os.remove(dest)
             else:
-                log_message(
-                    f"Skipping {dest}as it already exists",
-                    log_level=LogLevel.WARNING,
-                )
+                logger.warning(f"Skipping {dest} as it already exists")
                 return 1
         with open(dest, "w", encoding="utf_8") as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
@@ -184,10 +179,7 @@ class TextFile:
         """update the content (translation) of the textfile from a galtransl output json"""
         # check if the file is empty
         if self.is_empty:
-            log_message(
-                f"Skipping {self.text_file_path} as it is empty",
-                log_level=LogLevel.INFO,
-            )
+            logger.info(f"Skipping {self.text_file_path} as it is empty")
             return True
 
         if json_file == "":
@@ -195,28 +187,21 @@ class TextFile:
 
         # check if the file exists
         if not os.path.exists(json_file):
-            log_message(
-                f"Text file {json_file} does not exist, cannot update",
-                log_level=LogLevel.ERROR,
-            )
+            logger.error(f"Text file {json_file} does not exist, cannot update")
             return False
         with open(json_file, "r", encoding="utf_8") as file:
             data = json.load(file)
         # implement verification (total lines, etc.)
         if len(data) != len(self.blocks):
-            log_message(
-                f"Json output file {json_file} is not coherent with the script file, cannot update",
-                log_level=LogLevel.ERROR,
-            )
+            logger.error(f"Json output file {json_file} is not coherent with the script file, cannot update")
             return False
 
         # record the translation information in the text file and write them to blocks
         for i, entry in enumerate(data):
             # verify line information
             if self.blocks[i].speaker_original == "" and entry["name"] != "":
-                log_message(
-                    f"Entry {i+1} in json file {json_file} does not match the script file, result might be incorrect",
-                    log_level=LogLevel.WARNING,
+                logger.warning(
+                    f"Entry {i+1} in json file {json_file} does not match the script file, result might be incorrect"
                 )
             self.blocks[i].speaker_translated = entry["name"]
             self.blocks[i].text_translated = entry["message"]
@@ -243,10 +228,7 @@ class TextFile:
         """
         # check if the file is empty
         if self.is_empty:
-            log_message(
-                f"Skipping {self.text_file_path} as it is empty",
-                log_level=LogLevel.INFO,
-            )
+            logger.info(f"Skipping {self.text_file_path} as it is empty")
             return 1
 
         # Create the text filepath if not provided
@@ -267,10 +249,7 @@ class TextFile:
             if replace:
                 os.remove(self.text_file_path)
             else:
-                log_message(
-                    f"Skipping {self.text_file_path} as it already exists",
-                    log_level=LogLevel.WARNING,
-                )
+                logger.warning(f"Skipping {self.text_file_path} as it already exists")
                 return 1  # error
 
         # create the text file
@@ -292,34 +271,25 @@ class TextFile:
                 lines_wroten += 1
                 file.write(block.to_csv_line() + "\n")
 
-        log_message(f"Text file {self.text_file_path} created, {lines_wroten} lines wroten")
+        logger.info(f"Text file {self.text_file_path} created, {lines_wroten} lines wroten")
         return lines_wroten == 0
 
     def update_from_textfile(self) -> bool:
         """update the content (translation) of the script file from the text file"""
         # check if the file is empty
         if self.is_empty:
-            log_message(
-                f"Skipping {self.text_file_path} as it is empty",
-                log_level=LogLevel.INFO,
-            )
+            logger.info(f"Skipping {self.text_file_path} as it is empty")
             return True
 
         # check if the file exists
         if not os.path.exists(self.text_file_path):
-            log_message(
-                f"Text file {self.text_file_path} does not exist, cannot update",
-                log_level=LogLevel.ERROR,
-            )
+            logger.error(f"Text file {self.text_file_path} does not exist, cannot update")
             return False
         with open(self.text_file_path, "r", encoding="utf_8") as file:
             lines = file.readlines()
         # implement verification (total lines, etc.)
         if len(lines) != len(self.blocks) + PROPERTY_LINE_LENGTH:
-            log_message(
-                f"Text file {self.text_file_path} is not coherent with the script file, cannot update",
-                log_level=LogLevel.ERROR,
-            )
+            logger.error(f"Text file {self.text_file_path} is not coherent with the script file, cannot update")
             return False
         # record the translation information in the text file and write them to blocks
         for i, line in enumerate(lines):
@@ -332,9 +302,8 @@ class TextFile:
             # verify line information
             j = i - PROPERTY_LINE_LENGTH
             if block.text_original.strip() != self.blocks[j].text_original.strip():
-                log_message(
-                    f"Line {j+1} in text file {self.text_file_path} does not match the script file, cannot update",
-                    log_level=LogLevel.ERROR,
+                logger.error(
+                    f"Line {j+1} in text file {self.text_file_path} does not match the script file, cannot update"
                 )
                 # WARING
                 # return False
@@ -408,5 +377,12 @@ def initiate_script_filelist(listfilepath, replace=False):
 
     with open(listfilepath, "w", encoding="utf_8") as file:
         file.write(
-            "script_file_path\ttext_file_path\tfile_type\tis_translated\tneed_manual_fix\ttranslation_percentage\toriginal_package\tread_date\n"
+            "script_file_path\t"
+            "text_file_path\t"
+            "file_type\t"
+            "is_translated\t"
+            "need_manual_fix\t"
+            "translation_percentage\t"
+            "original_package\t"
+            "read_date\n"
         )

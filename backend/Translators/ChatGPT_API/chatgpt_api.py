@@ -1,16 +1,18 @@
-""" This file contains the ChatGPT API for translation. """
+"""This file contains the ChatGPT API for translation."""
 
 from datetime import datetime
+from logging import getLogger
 from openai import OpenAI
+
 from textfile import TextFile
 from block import Block
 from config import Config, default_config
 from constants import SuccessStatus as success
-from constants import LogLevel
-from logger import log_message
 from .. import utils
 from .. import utils_post
 from ..translator import Translator
+
+logger = getLogger(__name__)
 
 
 class GPT_Translator(Translator):
@@ -57,10 +59,7 @@ class GPT_Translator(Translator):
             if self.config.record_failure_text:
                 block.text_translated = translation
                 block.translation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            log_message(
-                f"Translation of block {block.block_name} failed.",
-                log_level=LogLevel.DEBUG,
-            )
+            logger.debug(f"Translation of block {block.block_name} failed.")
             return success.ERROR
 
         else:
@@ -72,10 +71,7 @@ class GPT_Translator(Translator):
             block.is_translated = True
             block.translation_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             block.translation_engine = self.config.gpt_model
-            log_message(
-                f"Translated block {block.block_name} successfully.",
-                log_level=LogLevel.DEBUG,
-            )
+            logger.debug(f"Translated block {block.block_name} successfully.")
             return success.SUCCESS
 
     def translate_file_blockbyblock(self, text_file: TextFile) -> success:
@@ -116,9 +112,8 @@ class GPT_Translator(Translator):
             if len(text_file.blocks) > 0
             else success.SUCCESS
         )
-        log_message(
-            f"Translated {success_blocks} of {len(text_file.blocks)} blocks in file {text_file.text_file_path}.",
-            log_level=LogLevel.INFO,
+        logger.info(
+            f"Translated {success_blocks} of {len(text_file.blocks)} blocks in file {text_file.text_file_path}."
         )
 
         # translate blocks
@@ -128,16 +123,15 @@ class GPT_Translator(Translator):
         """This method translates the text_file into the specified language in a single time."""
         # check if the number of blocks exceed line limit
         text_file.need_manual_fix = False
-        log_message(f"Translating file with model: {self.model}", log_level=LogLevel.INFO)
+        logger.info(f"Translating file with model: {self.model}")
         if len(text_file.blocks) > self.config.gpt_max_lines:
             # log
             # if exceed, divide the file into multiple parts
             n_parts = len(text_file.blocks) // self.config.gpt_max_lines + 1
             n_blocks_per_part = len(text_file.blocks) // n_parts + 1
             all_parts = []
-            log_message(
-                f"File {text_file.text_file_path} has too many blocks dividing to {n_parts} parts with each having {n_blocks_per_part} blocks.",
-                log_level=LogLevel.WARNING,
+            logger.warning(
+                f"File {text_file.text_file_path} has too many blocks dividing to {n_parts} parts with each having {n_blocks_per_part} blocks."
             )
             for i in range(n_parts):
                 if i == n_parts - 1:
@@ -166,28 +160,19 @@ class GPT_Translator(Translator):
 
         success_status = success.status_from_ratio(translated_ratio)
         if success_status == success.ALMOST_SUCCESS or success_status == success.SUCCESS:
-            log_message(
-                f"Translated file {text_file.text_file_path} successfully.",
-                log_level=LogLevel.INFO,
-            )
+            logger.info(f"Translated file {text_file.text_file_path} successfully.")
         else:
-            log_message(
-                f"Translated file {text_file.text_file_path} failed.",
-                log_level=LogLevel.WARNING,
-            )
+            logger.warning(f"Translated file {text_file.text_file_path} failed.")
         text_file.is_translated = True
         if text_file.need_manual_fix:
-            log_message(
-                f"Manual fix required for file {text_file.text_file_path}.",
-                log_level=LogLevel.WARNING,
-            )
+            logger.warning(f"Manual fix required for file {text_file.text_file_path}.")
         # write the text file
         text_file.generate_textfile(text_file.text_file_path, replace=True)
         return success_status
 
     def translate_once(self, target: TextFile or list(Block), target_description: str = "") -> success:
         """This method translates the text_file into the specified language in a single time."""
-        log_message(f'Translating target " {target_description} "...', log_level=LogLevel.INFO)
+        logger.info(f'Translating target " {target_description} "...')
         if isinstance(target, TextFile):
             all_blocks = target.blocks
         # if the target is a list of blocks
@@ -251,12 +236,11 @@ class GPT_Translator(Translator):
 
             # if the translation count does not match the block count and the config allows second try
             if len(translations) != total_number_of_blocks_to_translate and self.config.gpt_second_try:
-                log_message(
+                logger.error(
                     f"Translation of target {target_description} failed. (Translation count mismatch)"
-                    + f"{len(translations)} instead of {total_number_of_blocks_to_translate}.",
-                    log_level=LogLevel.ERROR,
+                    + f"{len(translations)} instead of {total_number_of_blocks_to_translate}."
                 )
-                log_message("Making gpt try again.", log_level=LogLevel.ERROR)
+                logger.info("Making gpt try again.")
                 total_message.append({"role": "assistant", "content": translation.strip()})
                 # generating the message again
                 new_message = self.config.fixing_prompt
@@ -281,12 +265,11 @@ class GPT_Translator(Translator):
                 len(translations) != total_number_of_blocks_to_translate
                 and self.config.translate_line_by_line_in_failure
             ):
-                log_message(
+                logger.error(
                     f"Translation of target {target_description} failed. (Translation count mismatch)"
                     + f"{len(translations)} instead of {total_number_of_blocks_to_translate}.",
-                    log_level=LogLevel.ERROR,
                 )
-                log_message("Translating line by line.", log_level=LogLevel.ERROR)
+                logger.warning("Translating line by line.")
                 translation_index = 0
                 for block in all_blocks:
                     if block.is_empty():
@@ -299,10 +282,9 @@ class GPT_Translator(Translator):
 
             if len(translations) != total_number_of_blocks_to_translate:
                 translation_index = 0
-                log_message(
+                logger.error(
                     f"Translation of target {target_description} failed. (Translation count mismatch)"
                     + f"{len(translations)} instead of {total_number_of_blocks_to_translate}.",
-                    log_level=LogLevel.ERROR,
                 )
 
             for block in all_blocks:
@@ -315,18 +297,12 @@ class GPT_Translator(Translator):
             # check success status
             # if the translation response contains one of failure keywords
             if not response.choices[0].finish_reason == "stop":
-                log_message(
-                    f"Translation of target {target_description} failed.",
-                    log_level=LogLevel.DEBUG,
-                )
+                logger.debug(f"Translation of target {target_description} failed.")
                 return success.ERROR
 
             else:
                 # record the result
-                log_message(
-                    f"Translated target {target_description}.",
-                    log_level=LogLevel.DEBUG,
-                )
+                logger.debug(f"Translated target {target_description} successfully.")
                 translation_index = 0
                 for block in all_blocks:
                     if block.is_empty():
@@ -347,6 +323,7 @@ class GPT_Translator(Translator):
 
                 return success.SUCCESS
         except Exception as e:
+            logger.error(f"Exception caught translating target {target_description}: {str(e)}")
             return success.ERROR
 
     @staticmethod

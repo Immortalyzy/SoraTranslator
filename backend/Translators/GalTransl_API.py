@@ -5,22 +5,19 @@ import sys
 import os
 import shutil
 import subprocess
-import signal
-import threading
-import time
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox
+from logging import getLogger
 import yaml
-from datetime import datetime
 from project import Project
 from textfile import TextFile
 from block import Block
 from config import Config, default_config
 from constants import SuccessStatus as success
-from constants import LogLevel
-from logger import log_message
 from .translator import Translator
+
+logger = getLogger(__name__)
 
 
 def sync_config_to_yaml(config: Config, yaml_file: str):
@@ -47,7 +44,7 @@ def sync_config_to_yaml(config: Config, yaml_file: str):
         yaml_object["common"]["gpt.prompt_content"] = ""
 
     except Exception as e:
-        log_message(f"Error: {e}", LogLevel.ERROR)
+        logger.error(f"Error: {e}")
         print(f"Error: {e}")
 
     # save the yaml file
@@ -55,7 +52,7 @@ def sync_config_to_yaml(config: Config, yaml_file: str):
         yaml.dump(yaml_object, file, default_flow_style=False, sort_keys=False, allow_unicode=True)
 
 
-class GalTransl_Translator(Translator):
+class GalTranslTranslator(Translator):
     """API to interact with GalTransl"""
 
     def __init__(self, config: Config = default_config):
@@ -81,7 +78,7 @@ class GalTransl_Translator(Translator):
         self.worker = worker
 
         if not self.worker:
-            log_message("Error: Worker function not found!", LogLevel.ERROR)
+            logger.error("Error: Worker function not found!")
 
     def _import_galtransl_module(self, module_name, attribute_name=None):
         """Dynamically import a module or an attribute from GalTransl"""
@@ -95,7 +92,7 @@ class GalTransl_Translator(Translator):
                 return getattr(module, attribute_name)
             return module
         except Exception as e:
-            log_message(f"Failed to import {module_name}.{attribute_name}: {e}", LogLevel.ERROR)
+            logger.error(f"Failed to import {module_name}.{attribute_name}: {e}")
             return None
 
     def translate_file_whole(self, text_file: TextFile) -> success:
@@ -169,7 +166,7 @@ class GalTransl_Translator(Translator):
                 index = text_file.name_list_original.index(jp_name)
                 text_file.name_list_translated[index] = cn_name
             else:
-                log_message(f"Warning: {jp_name} not found in the original name list", LogLevel.WARNING)
+                logger.warning(f"Warning: {jp_name} not found in the original name list")
 
         # call GalTransl
         self.run_worker(target_folder_path)
@@ -225,7 +222,7 @@ class GalTransl_Translator(Translator):
                 for j, text_file in enumerate(script_file.textfiles):
                     if os.path.join(gt_output_folder, Path(text_file.text_file_path).name + ".json") == json_name:
                         return text_file
-            log_message(f"Error: {json_name} not found in the project", LogLevel.ERROR)
+            logger.error(f"Error: {json_name} not found in the project")
             return None
 
         for i, script_file in enumerate(project.game.script_file_list):
@@ -250,7 +247,7 @@ class GalTransl_Translator(Translator):
                     index = project.game.name_list_original.index(jp_name)
                     project.game.name_list_translated[index] = cn_name
                 else:
-                    log_message(f"Warning: {jp_name} not found in the original name list", LogLevel.WARNING)
+                    logger.warning(f"Warning: {jp_name} not found in the original name list")
         else:
             # create the name file and write current name list
             starting_line = "JP_Name,CN_Name,Count\n"
@@ -288,7 +285,7 @@ class GalTransl_Translator(Translator):
                     index = project.game.name_list_original.index(jp_name)
                     project.game.name_list_translated[index] = cn_name
                 else:
-                    log_message(f"Warning: {jp_name} not found in the original name list", LogLevel.WARNING)
+                    logger.warning(f"Warning: {jp_name} not found in the original name list")
 
         # call GalTransl
         self.run_worker(target_folder_path)
@@ -296,8 +293,8 @@ class GalTransl_Translator(Translator):
         # read the translation results (sync to textfiles instance)
         ## list the files inside the gt_output folder
         output_files = os.listdir(gt_output_folder)
-        log_message("Reading the translation results of GalTransl", LogLevel.INFO)
-        log_message(f"{len(output_files)} files found", LogLevel.INFO)
+        logger.info("Reading the translation results of GalTransl")
+        logger.info(f"{len(output_files)} files found")
         for output_file in output_files:
             output_file_path = os.path.join(gt_output_folder, output_file)
             text_file = json_name_2_textfile(output_file_path)
@@ -315,12 +312,12 @@ class GalTransl_Translator(Translator):
         arg1 = project_path
         arg2 = self.config.galtransl_translation_method
 
-        log_message("Running GalTransl worker in a separate thread", LogLevel.INFO)
+        logger.info("Running GalTransl worker in a separate thread")
         try:
             process = subprocess.Popen(f'start /wait cmd /c "{batch_file}" {arg1} {arg2}', shell=True)
             process.wait()  # Wait for the process to complete
 
-            log_message("GalTransl worker finished", LogLevel.INFO)
+            logger.info("GalTransl worker finished")
 
         except Exception as e:
-            log_message(f"Error running worker: {str(e)}", LogLevel.ERROR)
+            logger.error(f"Error running worker: {str(e)}")
