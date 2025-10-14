@@ -8,3 +8,6 @@ const app = createApp(App);
 app.use(store);
 
 app.mount('#app');
+
+console.log('[renderer] booting...', typeof window.appPing === 'function' ? window.appPing() : 'no-preload');
+

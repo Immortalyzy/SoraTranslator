@@ -11,7 +11,15 @@ const { ipcMain, dialog } = require('electron');
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { secure: true, standard: true } }
+  {
+    scheme: 'app', privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      stream: true
+    }
+  }
 ])
 
 async function createWindow() {
@@ -20,7 +28,8 @@ async function createWindow() {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, '/preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
+      //preload: 'app://./preload.js',
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
@@ -33,9 +42,10 @@ async function createWindow() {
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
     if (!process.env.IS_TEST) win.webContents.openDevTools()
   } else {
-    createProtocol('app')
+    // createProtocol('app')
     // Load the index.html when not in development
-    win.loadURL('app://./index.html')
+    win.loadURL(path.join(__dirname, 'index.html'));
+    //win.loadURL('app://./index.html');
   }
 }
 
@@ -111,7 +121,7 @@ ipcMain.on('open-file-dialog', (event) => {
   });
 });
 
-ipcMain.handle('select-file-dialog', async (event) => {
+ipcMain.handle('select-file-dialog', async () => {
   const result = await dialog.showOpenDialog({
     properties: ['openFile']
   })
@@ -121,7 +131,7 @@ ipcMain.handle('select-file-dialog', async (event) => {
   }
 });
 
-ipcMain.handle('show-confirmation-dialog', async (event, message) => {
+ipcMain.handle('show-confirmation-dialog', async (message) => {
   const options = {
     type: 'warning',
     buttons: ['YES', 'No'],
@@ -148,14 +158,14 @@ const listFilesRecursively = (dir, fileList = [], parentDir = '') => {
   return fileList;
 };
 
-ipcMain.handle('list-files', async (event, directoryPath) => {
+ipcMain.handle('list-files', async (directoryPath) => {
   return listFilesRecursively(directoryPath);
 });
 
 
 // write function to read file raw content
 // text files (table format) should use Python API
-ipcMain.handle('read-file', async (event, filePath) => {
+ipcMain.handle('read-file', async (filePath) => {
   try {
     const content = fs.readFileSync(filePath, 'utf16le');
     return content;

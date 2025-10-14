@@ -9,7 +9,8 @@
     <div class="main-content">
       <SideBar class="side-bar" @change-tree="changeTree" @show-tree="showTree" />
       <DirectoryTree :currentTreeDisplay="treeDisplay" @change-display="changeDisplay" class="directory-tree" />
-      <MainDisplay :displayType="displayType" :filePath="filePath" class="file-display" @change-display="changeDisplay" />
+      <MainDisplay :displayType="displayType" :filePath="filePath" class="file-display"
+        @change-display="changeDisplay" />
       <ActionInfo class="action-info" />
     </div>
     <StatusBar :message="statusMessage" class="status-bar" />
@@ -99,7 +100,7 @@ body {
   right: 0;
   bottom: 0;
   left: 0;
-  background-image: url('./assets/sora.png');
+  background-image: url('~@/assets/sora.png');
   background-size: cover;
   background-position: center;
   opacity: 1;
