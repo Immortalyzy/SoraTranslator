@@ -6,7 +6,7 @@ from openai import OpenAI
 
 from textfile import TextFile
 from block import Block
-from config import Config, default_config
+from config import Config, CONFIG
 from constants import SuccessStatus as success
 from .. import utils
 from .. import utils_post
@@ -18,7 +18,7 @@ logger = getLogger(__name__)
 class GPT_Translator(Translator):
     """This class contains the ChatGPT API for translation."""
 
-    def __init__(self, config: Config = default_config) -> None:
+    def __init__(self, config: Config = CONFIG) -> None:
         """This method initializes the ChatGPT API for translation."""
         super().__init__(config)
         self.client = OpenAI(api_key=config.openai_api_key)

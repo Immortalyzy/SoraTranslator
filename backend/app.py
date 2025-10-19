@@ -11,13 +11,16 @@ from project import Project
 from scriptfile import ScriptFile
 from textfile import TextFile
 from constants import DEFAULT_CONFIG_FILE
-from config import Config
+from config import Config, CONFIG
 from Translators.all_translators import createTranslatorInstance
 from logger import setup_logger
 
 setup_logger()
 logger = logging.getLogger(__name__)
+logger.info("Logger setuped.")
 
+CONFIG.update_from_json_file(DEFAULT_CONFIG_FILE)
+logger.info("Configurations updated.")
 
 app = Flask(__name__)
 CORS(app)
@@ -424,4 +427,5 @@ def get_selected_translator():
 
 
 if __name__ == "__main__":
+    logger.info("Starting Flask server...")
     app.run(debug=False, threaded=True)

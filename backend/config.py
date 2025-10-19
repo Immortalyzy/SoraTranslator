@@ -2,11 +2,15 @@
 
 import json
 import os
+from logging import getLogger
+
 from constants import (
     DEFAULT_INITIATION_PROMPT,
     DEFAULT_FIXING_PROMPT,
     DEFAULT_XP3_UNPACKER,
 )
+
+logger = getLogger(name=__name__)
 
 
 ### Configurations ============================================================
@@ -73,9 +77,30 @@ class Config:
             instance.to_json_file(json_file)
             return instance
         else:
-            with open(json_file, "r") as file:
+            with open(json_file, "r", encoding="utf-8") as file:
                 json_object = json.load(file)
         return instance.from_json_obj(json_object)
+
+    def update_from_json_file(self, json_file):
+        """Update existing attributes from a JSON file and return self."""
+        try:
+            with open(json_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            logger.warning(f"Warning: {json_file} does not exist; no updates applied.")
+            return self
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in {json_file}: {e}") from e
+
+        for key, value in data.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                # Ignore unknown keys but let the user know
+                logger.warning(f"Warning: unknown config key '{key}' in {json_file}; ignored.")
+
+        logger.debug(f"Updated config file {json_file}, current configurations: {self.to_json_obj()}")
+        return self
 
     def from_json_obj(self, json_object):
         """load config from json"""
@@ -118,4 +143,4 @@ class Config:
         pass
 
 
-default_config = Config()
+CONFIG = Config()

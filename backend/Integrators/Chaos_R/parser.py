@@ -130,8 +130,8 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     if text == "":
         # empty block
         speaker = ""
-
-    logger.debug(f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}")
+    # this debug output is expensive, disabled even for debug output
+    # logger.debug(f"Block {block.block_name} parsed, speaker: {speaker}, content: {text}")
     block.speaker_original = speaker
     block.text_original = text
     block.texts_original = texts

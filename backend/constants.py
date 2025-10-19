@@ -1,6 +1,7 @@
 """contants that are used in the backend"""
 
 from enum import Enum
+import os
 
 # Path specific
 DEFAULT_GAME_RESOURCES_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/"
@@ -9,7 +10,9 @@ DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslato
 DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/Text/"
 DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/TranslatedFiles/"
 
-DEFAULT_XP3_UNPACKER = "D:/Work/SoraTranslator/backend/Integrators/utils/xp3_upk.exe"
+# Get the directory of this constants.py file
+_CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_XP3_UNPACKER = os.path.join(_CURRENT_DIR, "Integrators/utils/xp3_upk.exe")
 
 # Log file
 DEFAULT_LOG_FILE = "../backend_log.txt"
@@ -59,7 +62,3 @@ class SuccessStatus(Enum):
             return SuccessStatus.PARTIAL_SUCCESS
         else:
             return SuccessStatus.ERROR
-
-
-# log config, after project.py is implemented, this should be moved to project.py
-RAW_TEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/RawText/"

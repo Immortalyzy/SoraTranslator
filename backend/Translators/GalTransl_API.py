@@ -13,7 +13,7 @@ import yaml
 from project import Project
 from textfile import TextFile
 from block import Block
-from config import Config, default_config
+from config import Config, CONFIG
 from constants import SuccessStatus as success
 from .translator import Translator
 
@@ -55,7 +55,7 @@ def sync_config_to_yaml(config: Config, yaml_file: str):
 class GalTranslTranslator(Translator):
     """API to interact with GalTransl"""
 
-    def __init__(self, config: Config = default_config):
+    def __init__(self, config: Config = CONFIG):
         super().__init__(config)
 
         # generate the roor path of GalTransl

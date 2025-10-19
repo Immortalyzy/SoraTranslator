@@ -15,7 +15,7 @@ import os
 import shutil
 from logging import getLogger
 
-from config import default_config
+from config import CONFIG
 from game import Game
 from scriptfile import ScriptFile, update_script_filelist
 from ..utils.encoding_fix import fix_allfiles
@@ -28,7 +28,7 @@ logger = getLogger(__name__)
 class MagicalGirlGame(Game):
     """Game class for Chaos_R games."""
 
-    def __init__(self, paths, name="Chaos_R", config=default_config):
+    def __init__(self, paths, name="Chaos_R", config=CONFIG):
         super().__init__(paths=paths, name=name, config=config)
         self.unpacker = NSDEC
         self.unpacker_fy = NSDEC_PYFUN
@@ -49,7 +49,7 @@ class MagicalGirlGame(Game):
         self.first_block = "*n0101"
 
     @classmethod
-    def from_pythonfile(cls, paths, python_file, config=default_config):
+    def from_pythonfile(cls, paths, python_file, config=CONFIG):
         """
         Create an Game object from a python file. This is the recommended way since you can select which files to upzip.
         """

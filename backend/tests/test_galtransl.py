@@ -5,7 +5,7 @@ import shutil
 import os
 from scriptfile import ScriptFile
 from block import Block
-from config import Config, default_config
+from config import Config, CONFIG
 from constants import DEFAULT_CONFIG_FILE
 from project import Project
 from pathlib import Path

@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 import importlib
 import os
 from typing import List
-from config import default_config
+from config import CONFIG
 from scriptfile import ScriptFile
 from pickle import dump, load
 
@@ -48,7 +48,7 @@ class Game(ABC):
 
     @classmethod
     @abstractmethod
-    def from_pythonfile(cls, paths, python_file, config=default_config):
+    def from_pythonfile(cls, paths, python_file, config=CONFIG):
         """create a game instance from a python file"""
         pass
 

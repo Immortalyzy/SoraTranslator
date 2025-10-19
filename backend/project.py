@@ -5,11 +5,14 @@ import os
 import pickle
 import importlib.util
 import shutil
+from logging import getLogger
 
 from game import Game
-from config import default_config
+from config import CONFIG
 from Integrators.Chaos_R.chaosr_game import ChaosRGame
 from Integrators.Magical_Girl.magical_girl_game import MagicalGirlGame
+
+logger = getLogger(__name__)
 
 supported_game_engines = {
     "ChaosR": ChaosRGame,
@@ -49,7 +52,7 @@ class Project:
     def __init__(self):
         self.start_date = dt.datetime.now()
         self.game = None
-        self.config = default_config
+        self.config = CONFIG
 
     @classmethod
     def from_json(cls, json_data):
@@ -95,30 +98,40 @@ class Project:
     def initiate_game(self):
         """create a game instance, store it in self.game"""
         # create paths for the project
+        logger.debug("Creating paths for the project.")
         paths = self.create_paths(self.project_path)
 
         if self.game_path.endswith(".py"):
+            # load the file and check engine
+            if not os.path.exists(self.game_path):
+                raise FileNotFoundError(f"Game file {self.game_path} not found.")
+
             # copy this flle to the original files directory
             shutil.copyfile(
                 self.game_path,
                 os.path.join(paths["original_files_directory"], "game.py"),
             )
 
-            # load the file and check engine
-            if not os.path.exists(self.game_path):
-                raise FileNotFoundError(f"Game file {self.game_path} not found.")
+            logger.debug("Reading game definition file in %s", self.game_path)
             spec = importlib.util.spec_from_file_location("game_module", self.game_path)
             game_module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(game_module)
+            # Read file with utf-8 encoding
+            with open(self.game_path, "r", encoding="utf-8") as f:
+                code = f.read()
+            exec(code, game_module.__dict__)
+            logger.debug("Game definition file read.")
+
             if not hasattr(game_module, "Game"):
                 # print("Game class not defined in the game file. Check if using supported game engine.")
                 if not hasattr(game_module, "GAME_ENGINE"):
-                    print("GAME_ENGINE not defined in the game file. Check if using supported game engine.")
+                    logger.error("GAME_ENGINE not defined in the game file. Check if using supported game engine.")
                     return False
                 else:
                     self.game_engine = game_module.GAME_ENGINE
                     if self.game_engine not in supported_game_engines:
-                        print(f"Game engine {self.game_engine} not supported. Check if using supported game engine.")
+                        logger.error(
+                            f"Game engine {self.game_engine} not supported. Check if using supported game engine."
+                        )
                         return False
                     else:
                         # create game instance using python file
@@ -128,22 +141,24 @@ class Project:
                             python_file=self.game_path,
                             config=self.config,
                         )
-                        print(self.game.rawtext_directory)
+                        logger.info(f"Raw text directory: {self.game.rawtext_directory}")
             else:
+                logger.info("Using user-custom game class.")
                 GameClass = getattr(game_module, "Game")
                 self.game = GameClass()
         else:
-            print("Not supported")
+            logger.error("Not supported")
             return False
 
         # prepare translation
         try:
-            print("Preparing translation...")
+            logger.info("Preparing translation...")
             success = self.game.prepare_translation(replace=True)
             if success:
                 self.is_initialized = True
             return success
         except Exception as e:
+            logger.error(f"Failed to prepare translation. Error: {e}")
             return False
 
     def integrate_game(self):
@@ -161,6 +176,7 @@ class Project:
             self.save_project_to(full_path)
             return True
         except:
+            logger.error(f"Failed to save project to {full_path}.")
             return False
 
     def save_project_to(self, project_path):

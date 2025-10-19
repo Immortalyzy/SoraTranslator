@@ -2,9 +2,12 @@
 
 import importlib.util
 import os
+import subprocess
 import shutil
 from logging import getLogger
-from config import default_config
+from pathlib import Path
+
+from config import CONFIG
 from game import Game
 from scriptfile import ScriptFile, update_script_filelist
 from ..utils.encoding_fix import fix_allfiles
@@ -16,7 +19,7 @@ logger = getLogger(__name__)
 class ChaosRGame(Game):
     """Game class for Chaos_R games."""
 
-    def __init__(self, paths, name="Chaos_R", config=default_config):
+    def __init__(self, paths, name="Chaos_R", config=CONFIG):
         super().__init__(paths=paths, name=name, config=config)
         self.unpacker = config.xp3_unpacker
         # extensions of the script files
@@ -49,7 +52,7 @@ class ChaosRGame(Game):
         self.patching_mode = "patching"
 
     @classmethod
-    def from_pythonfile(cls, paths, python_file, config=default_config):
+    def from_pythonfile(cls, paths, python_file, config=CONFIG):
         """
         Create an Game object from a python file. This is the recommended way since you can select which files to upzip.
         """
@@ -60,7 +63,12 @@ class ChaosRGame(Game):
         # load the variables in the python file
         spec = importlib.util.spec_from_file_location("module.name", python_file)
         module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
+
+        # Read file with utf-8 encoding
+        with open(python_file, "r", encoding="utf-8") as f:
+            code = f.read()
+
+        exec(code, module.__dict__)
 
         if hasattr(module, "GAME_NAME"):
             name = module.GAME_NAME
@@ -79,15 +87,15 @@ class ChaosRGame(Game):
         if hasattr(module, "XP3_FILE_LIST"):
             for file in module.XP3_FILE_LIST:
                 # complete to full path
-                file = os.path.join(instance.directory, file)
+                file_path = Path(instance.directory) / file
 
                 # verify the existence of the file
                 # todo: create just a warning instead of raising an error
-                if not os.path.exists(file):
+                if not file_path.exists():
                     raise FileNotFoundError("The file does not exist.")
                 else:
                     # add the file to file list
-                    instance.xp3_file_list.append(file)
+                    instance.xp3_file_list.append(str(file_path))
         else:
             # no FILE_LIST is provided, get the file list from the directory
             instance.xp3_file_list = instance.get_xp3file_list(instance.directory)
@@ -117,7 +125,7 @@ class ChaosRGame(Game):
         return instance
 
     @classmethod
-    def from_directory(cls, paths, name, directory, config=default_config):
+    def from_directory(cls, paths, name, directory, config=CONFIG):
         """
         Create an EncodingFix object from a directory.
         """
@@ -150,7 +158,7 @@ class ChaosRGame(Game):
         Prepare the raw text for Chaos_R games. This method will put all script files into the SoraTranslator/RawText folder.
         """
         # unpack files
-        self.unpack_allfiles(replace=False)
+        self.unpack_allfiles(replace=True)
 
         # read script files
         self.read_script_files()
@@ -269,14 +277,15 @@ class ChaosRGame(Game):
         return f"For security reasons, please replace the original files with the .xp3 files in {self.temp_unpack_directory}."
 
     # ==== methods for packeging ==================================================================
-    def unpack_allfiles(self, replace=False):
+    def unpack_allfiles(self, replace=True):
         """unpack all files in the file list to temp_unpack_directory"""
         # unpack all files
         for file in self.xp3_file_list:
             # extract the .xp3 file
-            success = self.unpack_xp3(self.unpacker, file)
-            if not success:
-                raise ValueError(f"Failed to unpack {file}")
+            try:
+                success = self.unpack_xp3(self.unpacker, file)
+            except Exception as e:
+                logger.error(f"Failed to unpack {file}: {e}")
 
             # move the files to the temp_unpack_directory
             ## get file name without extension
@@ -290,7 +299,7 @@ class ChaosRGame(Game):
                 if replace:
                     shutil.rmtree(after_file_name)
                 else:
-                    print(f"Skipping {file_path} since it already exists.")
+                    logger.warning(f"Skipping {file_path} since it already exists.")
                     continue
             shutil.move(file_path, self.temp_unpack_directory)
 
@@ -406,8 +415,15 @@ class ChaosRGame(Game):
     def unpack_xp3(xp3_unpacker, input_file):
         """Extract the .xp3 file, xp3_u"""
         # extract the .xp3 file
-        return_code = os.system(f'{xp3_unpacker} "{input_file}"')
-        return return_code == 0
+        logger.debug(f'Running unpack command: {xp3_unpacker} "{input_file}"')
+        result = subprocess.run([xp3_unpacker, input_file], capture_output=True)
+        stdout = result.stdout.decode("utf-8", errors="replace")
+        stderr = result.stderr.decode("utf-8", errors="replace")
+        if stdout:
+            logger.debug(f"Returned: {stdout}")
+        if stderr:
+            logger.error(f"Error: {stderr}")
+        return result.returncode == 0
 
     @staticmethod
     def repack_xp3(xp3_packer, input_directory):
