@@ -158,14 +158,14 @@ const listFilesRecursively = (dir, fileList = [], parentDir = '') => {
   return fileList;
 };
 
-ipcMain.handle('list-files', async (directoryPath) => {
+ipcMain.handle('list-files', async (event, directoryPath) => {
   return listFilesRecursively(directoryPath);
 });
 
 
 // write function to read file raw content
 // text files (table format) should use Python API
-ipcMain.handle('read-file', async (filePath) => {
+ipcMain.handle('read-file', async (event, filePath) => {
   try {
     const content = fs.readFileSync(filePath, 'utf16le');
     return content;
