@@ -15,9 +15,8 @@ from pickle import dump, load
 class Game(ABC):
     """Parent class for all games."""
 
-    def __init__(self, paths, name, config):
+    def __init__(self, paths, name):
         self.name = name
-        self.config = config
 
         # Game Resources directory, no matter the original file directory the output will be put under RawText of this folder
         self.game_resources_directory = paths["project_path"]
@@ -48,7 +47,7 @@ class Game(ABC):
 
     @classmethod
     @abstractmethod
-    def from_pythonfile(cls, paths, python_file, config=CONFIG):
+    def from_pythonfile(cls, paths, python_file):
         """create a game instance from a python file"""
         pass
 

@@ -52,7 +52,6 @@ class Project:
     def __init__(self):
         self.start_date = dt.datetime.now()
         self.game = None
-        self.config = CONFIG
 
     @classmethod
     def from_json(cls, json_data):
@@ -139,7 +138,6 @@ class Project:
                         self.game = GameClass.from_pythonfile(
                             paths=paths,
                             python_file=self.game_path,
-                            config=self.config,
                         )
                         logger.info(f"Raw text directory: {self.game.rawtext_directory}")
             else:

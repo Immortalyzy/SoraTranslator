@@ -28,8 +28,8 @@ logger = getLogger(__name__)
 class MagicalGirlGame(Game):
     """Game class for Chaos_R games."""
 
-    def __init__(self, paths, name="Chaos_R", config=CONFIG):
-        super().__init__(paths=paths, name=name, config=config)
+    def __init__(self, paths, name="Chaos_R"):
+        super().__init__(paths=paths, name=name)
         self.unpacker = NSDEC
         self.unpacker_fy = NSDEC_PYFUN
         self.packer = NSCMAKE
@@ -49,7 +49,7 @@ class MagicalGirlGame(Game):
         self.first_block = "*n0101"
 
     @classmethod
-    def from_pythonfile(cls, paths, python_file, config=CONFIG):
+    def from_pythonfile(cls, paths, python_file):
         """
         Create an Game object from a python file. This is the recommended way since you can select which files to upzip.
         """
@@ -67,7 +67,7 @@ class MagicalGirlGame(Game):
         else:
             name = "Chaos_R"
 
-        instance = cls(paths=paths, name=name, config=config)
+        instance = cls(paths=paths, name=name)
 
         # DIRECTORY is required
         instance.directory = module.DIRECTORY

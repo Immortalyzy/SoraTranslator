@@ -19,9 +19,9 @@ logger = getLogger(__name__)
 class ChaosRGame(Game):
     """Game class for Chaos_R games."""
 
-    def __init__(self, paths, name="Chaos_R", config=CONFIG):
-        super().__init__(paths=paths, name=name, config=config)
-        self.unpacker = config.xp3_unpacker
+    def __init__(self, paths, name="Chaos_R"):
+        super().__init__(paths=paths, name=name)
+        self.unpacker = CONFIG.xp3_unpacker
         # extensions of the script files
         self.script_extensions = [
             ".func",
@@ -52,7 +52,7 @@ class ChaosRGame(Game):
         self.patching_mode = "patching"
 
     @classmethod
-    def from_pythonfile(cls, paths, python_file, config=CONFIG):
+    def from_pythonfile(cls, paths, python_file):
         """
         Create an Game object from a python file. This is the recommended way since you can select which files to upzip.
         """
@@ -75,7 +75,7 @@ class ChaosRGame(Game):
         else:
             name = "Chaos_R"
 
-        instance = cls(paths=paths, name=name, config=config)
+        instance = cls(paths=paths, name=name)
 
         # get the variables
         if hasattr(module, "GAME_RESOURCES_DIRECTORY"):
@@ -125,11 +125,11 @@ class ChaosRGame(Game):
         return instance
 
     @classmethod
-    def from_directory(cls, paths, name, directory, config=CONFIG):
+    def from_directory(cls, paths, name, directory):
         """
         Create an EncodingFix object from a directory.
         """
-        instance = cls(paths=paths, name=name, config=config)
+        instance = cls(paths=paths, name=name)
         instance.directory = directory
         # verify the existence of the directory
         if not os.path.exists(instance.directory):
