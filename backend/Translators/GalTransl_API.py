@@ -37,7 +37,7 @@ def sync_config_to_yaml(config: Config, yaml_file: str):
         # token settings
         yaml_object["backendSpecific"]["OpenAI-Compatible"]["tokens"][0]["token"] = config.token
         yaml_object["backendSpecific"]["OpenAI-Compatible"]["tokens"][0]["endpoint"] = config.endpoint
-        yaml_object["backendSpecific"]["OpenAI-Compatible"]["tokens"][0]["model_name"] = config.model_name
+        yaml_object["backendSpecific"]["OpenAI-Compatible"]["tokens"][0]["modelName"] = config.model_name
 
         # common settings
         yaml_object["common"]["gpt.enhance_jailbreak"] = True
