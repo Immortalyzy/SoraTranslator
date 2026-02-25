@@ -3,20 +3,25 @@
 from enum import Enum
 import os
 
-# Path specific
-DEFAULT_GAME_RESOURCES_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/"
-DEFAULT_ENCODING_OUTPUT = "D:/Work/SoraTranslator/SoraTranslator/RawText/"
-DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/RawText/"
-DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/Text/"
-DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY = "D:/Work/SoraTranslator/SoraTranslator/TranslatedFiles/"
-
 # Get the directory of this constants.py file
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.abspath(os.path.join(_CURRENT_DIR, ".."))
+_DEFAULT_GAME_RESOURCES_ROOT = os.path.join(_PROJECT_ROOT, "SoraTranslator")
+
+# Path specific
+DEFAULT_GAME_RESOURCES_DIRECTORY = _DEFAULT_GAME_RESOURCES_ROOT + os.sep
+DEFAULT_ENCODING_OUTPUT = os.path.join(_DEFAULT_GAME_RESOURCES_ROOT, "RawText") + os.sep
+DEFAULT_GAME_RESOURCES_RAWTEXT_DIRECTORY = os.path.join(_DEFAULT_GAME_RESOURCES_ROOT, "RawText") + os.sep
+DEFAULT_GAME_RESOURCES_TEXT_DIRECTORY = os.path.join(_DEFAULT_GAME_RESOURCES_ROOT, "Text") + os.sep
+DEFAULT_GAME_RESOURCES_TRANSLATED_FILES_DIRECTORY = os.path.join(_DEFAULT_GAME_RESOURCES_ROOT, "TranslatedFiles") + os.sep
 DEFAULT_XP3_UNPACKER = os.path.join(_CURRENT_DIR, "Integrators/utils/xp3_upk.exe")
 
-# Log file
-DEFAULT_LOG_FILE = "../backend_log.txt"
-DEFAULT_CONFIG_FILE = "../config.json"
+# Log and config files
+DEFAULT_LOG_FILE = os.path.join(_PROJECT_ROOT, "backend_log.txt")
+DEFAULT_CONFIG_TEMPLATE_FILE = os.path.join(_PROJECT_ROOT, "config.template.json")
+DEFAULT_CONFIG_FILE = os.path.join(_PROJECT_ROOT, "config.json")
+DEFAULT_USER_CONFIG_FILE = os.path.join(_PROJECT_ROOT, "config.user.json")
+DEFAULT_ENV_FILE = os.path.join(_PROJECT_ROOT, ".env")
 
 # GPT API
 LINE_BREAKER = "||"

@@ -44,11 +44,11 @@
 </template>
 
 <script>
-import axios from 'axios';
 import { mapState } from 'vuex';
 import { EventBus } from '@/utils/eventBus'
 import { translateFile, changeFileProperty, translateAllFiles } from '@/utils/fileManagement'
 import { requestFileInfo } from '@/utils/info';
+import { apiGet } from '@/utils/apiClient';
 export default {
     name: 'ActionInfo',
     data() {
@@ -64,7 +64,7 @@ export default {
         async translateAll() {
             // TODO: properly set the translator at program initiation
             // get the current translator, temp solution,
-            const response = await axios.get('http://localhost:5000/preferences');
+            const response = await apiGet('/preferences');
             this.$store.state.currentTranslator = response.data["translator"]
             alert("Translator set to: " + this.$store.state.currentTranslator);
             translateAllFiles(this.temperature, this.max_lines);

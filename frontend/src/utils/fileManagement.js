@@ -1,16 +1,10 @@
-import axios from "axios";
 import store from '../store/store.js'
 import { EventBus } from './eventBus.js';
+import { createApiClient } from './apiClient';
 
 export async function readTextFile(filePath) {
     console.log("file to be read: ", filePath);
-    const http = axios.create({
-        baseURL: "http://localhost:5000",
-        method: "POST",
-        headers: {
-            "Content-type": "application/json",
-        },
-    });
+    const http = createApiClient("POST");
     let response = await http.post("/require_text_json", filePath);
     console.log(response.data);
     const result = response.data;
@@ -25,13 +19,7 @@ export async function readTextFile(filePath) {
 
 export async function changeFileProperty(changeRequest) {
     console.log("file to be changed: ", changeRequest);
-    const http = axios.create({
-        baseURL: "http://localhost:5000",
-        method: "POST",
-        headers: {
-            "Content-type": "application/json",
-        },
-    });
+    const http = createApiClient("POST");
     let response = await http.post("/change_file_property", changeRequest);
     console.log(response.data);
     const result = response.data;
@@ -52,13 +40,7 @@ export async function saveTextFile(file) {
         alert("Editing non-text file is not supported yet.");
         return;
     }
-    const http = axios.create({
-        baseURL: "http://localhost:5000",
-        method: "POST",
-        headers: {
-            "Content-type": "application/json",
-        },
-    });
+    const http = createApiClient("POST");
     let response = await http.post("/save_text_from_json", file);
     console.log(response.data);
     const result = response.data;
@@ -100,16 +82,10 @@ export async function translateFile(filePath, temp_temperature, temp_max_lines) 
         store.dispatch("updateTranslationStatus", false);
         return;
     }
-    const http = axios.create({
-        baseURL: "http://localhost:5000",
-        method: "POST",
-        headers: {
-            "Content-type": "application/json",
-        },
-    });
+    const http = createApiClient("POST");
 
     // send the request
-    await http.post("http://localhost:5000/translate_text", requestT)
+    await http.post("/translate_text", requestT)
         .then(response => {
             // update directory tree to display tranlsation status
             EventBus.emit("updateTranslationStatus")
@@ -176,17 +152,11 @@ export async function translateAllFiles(temp_temperature, temp_max_lines) {
         }
         requestT["project_file_path"] = store.state.project["project_file_path"];
 
-        const http = axios.create({
-            baseURL: "http://localhost:5000",
-            method: "POST",
-            headers: {
-                "Content-type": "application/json",
-            },
-        });
+        const http = createApiClient("POST");
 
         // send the request
         alert("sending request to translate project");
-        await http.post("http://localhost:5000/translate_project", requestT)
+        await http.post("/translate_project", requestT)
             .then(response => {
                 // update directory tree to display tranlsation status
                 EventBus.emit("updateTranslationStatus")

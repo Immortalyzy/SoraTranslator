@@ -88,8 +88,8 @@
 
 <script>
 import { useStore } from 'vuex'
-import axios from 'axios'
 import { computed } from 'vue'
+import { createApiClient } from '@/utils/apiClient';
 export default {
     name: "NewProject",
     props: {
@@ -136,13 +136,7 @@ export default {
                 project_file_path: project_file_path,
             };
             console.log(post_data);
-            const http = axios.create({
-                baseURL: "http://localhost:5000",
-                method: "POST",
-                headers: {
-                    "Content-type": "application/json",
-                },
-            });
+            const http = createApiClient("POST");
             http.post("/open_project", post_data).then((response) => {
                 console.log(response.data);
                 const project = response.data;
@@ -161,8 +155,9 @@ export default {
         async openInitialProject() {
             try {
                 console.log("Fetching initial project...");
-                const response = await fetch("http://127.0.0.1:5000/get_project");
-                const data = await response.json();
+                const http = createApiClient("GET");
+                const response = await http.get("/get_project");
+                const data = response.data;
                 const project_file_path = data.project;
                 if (project_file_path === "default_project") {
                     // no initial project
@@ -196,13 +191,7 @@ export default {
             }
 
             // add code to create the project object using python, and save to the destination path
-            const http = axios.create({
-                baseURL: "http://localhost:5000",
-                method: "POST",
-                headers: {
-                    "Content-type": "application/json",
-                },
-            });
+            const http = createApiClient("POST");
             http.post("/create_project", project).then((response) => {
                 console.log(response.data);
             }).catch((error) => {

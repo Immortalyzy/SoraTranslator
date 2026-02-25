@@ -21,10 +21,10 @@
 
 <script>
 // import { ipcRenderer } from 'electron'
-import axios from 'axios';
 import { EventBus } from '@/utils/eventBus'
 import { mapState } from 'vuex';
 import { mapActions } from 'vuex';
+import { createApiClient } from '@/utils/apiClient';
 export default {
   name: "DirectoryTree",
   props: {
@@ -119,16 +119,10 @@ export default {
         pathsToCheck.push(this.files[i].path);
       }
       const requestT = { "file_paths": pathsToCheck };
-      const http = axios.create({
-        baseURL: "http://localhost:5000",
-        method: "POST",
-        headers: {
-          "Content-type": "application/json",
-        },
-      });
+      const http = createApiClient("POST");
 
       // send the request
-      http.post("http://localhost:5000/require_translation_status", requestT)
+      http.post("/require_translation_status", requestT)
         .then(response => {
           if (response.data["status"] == true) {
             // update info for files

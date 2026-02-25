@@ -1,6 +1,8 @@
 # Special ignore files
 GameResources/
 config.json
+.codex
+openspec
 
 
 # Byte-compiled / optimized / DLL files
@@ -179,6 +181,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+log.txt
+launcher.log.txt
+package.log.txt
 
 # Editor directories and files
 .idea

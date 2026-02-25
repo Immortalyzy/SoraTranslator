@@ -42,6 +42,7 @@ def sync_config_to_yaml(config: Config, yaml_file: str):
         # common settings
         yaml_object["common"]["gpt.enhance_jailbreak"] = True
         yaml_object["common"]["gpt.prompt_content"] = ""
+        yaml_object["common"]["gpt.numPerRequestTranslate"] = config.galtransl_num_per_request
 
     except Exception as e:
         logger.error(f"Error: {e}")
@@ -314,7 +315,11 @@ class GalTranslTranslator(Translator):
 
         logger.info("Running GalTransl worker in a separate thread")
         try:
-            process = subprocess.Popen(f'start /wait cmd /c "{batch_file}" {arg1} {arg2}', shell=True)
+            # activate current environment and run the batch file
+            activate_command = f"call {os.path.join(self.galtransl_path, '../../.venv', 'Scripts', 'activate.bat')}"
+            process = subprocess.Popen(
+                f'start /wait cmd /c "{activate_command} && {batch_file} {arg1} {arg2}"', shell=True
+            )
             process.wait()  # Wait for the process to complete
 
             logger.info("GalTransl worker finished")

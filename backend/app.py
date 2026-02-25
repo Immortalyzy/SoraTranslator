@@ -10,7 +10,7 @@ from flask_cors import CORS
 from project import Project
 from scriptfile import ScriptFile
 from textfile import TextFile
-from constants import DEFAULT_CONFIG_FILE
+from constants import DEFAULT_ENV_FILE, DEFAULT_USER_CONFIG_FILE
 from config import Config, CONFIG
 from Translators.all_translators import createTranslatorInstance
 from logger import setup_logger
@@ -19,11 +19,75 @@ setup_logger()
 logger = logging.getLogger(__name__)
 logger.info("Logger setuped.")
 
-CONFIG.update_from_json_file(DEFAULT_CONFIG_FILE)
-logger.info("Configurations updated.")
+
+def refresh_global_config():
+    runtime_cfg = Config.load_runtime(resolve_env_tokens=True)
+    CONFIG.from_json_obj(runtime_cfg.to_json_obj())
+    return runtime_cfg
+
+
+refresh_global_config()
+logger.info("Runtime configurations loaded.")
 
 app = Flask(__name__)
 CORS(app)
+
+
+def read_env_entries(env_path=DEFAULT_ENV_FILE):
+    """Read KEY=VALUE lines from .env-style file."""
+    entries = {}
+    if not os.path.exists(env_path):
+        return entries
+
+    with open(env_path, "r", encoding="utf-8") as file:
+        for line in file:
+            content = line.strip()
+            if not content or content.startswith("#") or "=" not in content:
+                continue
+            key, value = content.split("=", 1)
+            entries[key.strip()] = value.strip()
+    return entries
+
+
+def write_env_entries(updates, env_path=DEFAULT_ENV_FILE):
+    """Merge updates into .env-style file and current process environment."""
+    existing = read_env_entries(env_path)
+    for key, value in updates.items():
+        if value is None or value == "":
+            existing.pop(key, None)
+            os.environ.pop(key, None)
+        else:
+            existing[key] = value
+            os.environ[key] = value
+
+    with open(env_path, "w", encoding="utf-8") as file:
+        for key in sorted(existing.keys()):
+            file.write(f"{key}={existing[key]}\n")
+
+
+def save_user_config(partial_updates):
+    """Merge updates into config.user.json and persist."""
+    current = Config._load_json_dict(DEFAULT_USER_CONFIG_FILE) or {}
+    current.update(partial_updates)
+    with open(DEFAULT_USER_CONFIG_FILE, "w", encoding="utf-8") as file:
+        json.dump(current, file, indent=4, ensure_ascii=False)
+
+
+def derive_env_name_for_endpoint(endpoint_name, token_value):
+    """Derive environment variable name for endpoint tokens."""
+    if isinstance(token_value, str) and token_value.startswith("ENV:"):
+        return token_value.split(":", 1)[1]
+
+    sanitized = "".join(char if char.isalnum() else "_" for char in endpoint_name.upper()).strip("_")
+    if not sanitized:
+        sanitized = "SORA_ENDPOINT"
+    return f"{sanitized}_API_KEY"
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    """Lightweight readiness probe for launcher health checks."""
+    return {"status": "ok"}
 
 
 @app.route("/get_project", methods=["GET"])
@@ -225,7 +289,7 @@ def translate_text():
     # data is file path
     data = request.json
     # some translation settings are sent from the frontend
-    config = Config.from_json_file(DEFAULT_CONFIG_FILE)
+    config = Config.load_runtime(resolve_env_tokens=True)
     config.gpt_temperature = float(data["temperature"])
     config.gpt_max_lines = int(data["max_lines"])
 
@@ -253,7 +317,7 @@ def translate_project():
     data = request.json
     project = Project().from_pickle(data["project_file_path"])
     # some translation settings are sent from the frontend
-    config = Config.from_json_file(DEFAULT_CONFIG_FILE)
+    config = Config.load_runtime(resolve_env_tokens=True)
 
     # create translator instance
     translator = createTranslatorInstance(config.translator, config=config)
@@ -312,65 +376,155 @@ def request_file_info():
 def preferences():
     """require or save settings"""
     if request.method == "POST":
-        new_settings = request.json
-        setting_passed = request.json
-        config = Config.from_json_file(DEFAULT_CONFIG_FILE)
-        config.from_json_obj(setting_passed)
-        config.to_json_file(DEFAULT_CONFIG_FILE, replace=True)
-        return jsonify(new_settings)
-    else:  # GET request
-        setting_from_file = Config.from_json_file(DEFAULT_CONFIG_FILE)
-        return jsonify(setting_from_file.to_json_obj())
+        setting_passed = request.get_json(force=True) or {}
+        filtered = {}
+        for key, value in setting_passed.items():
+            if hasattr(CONFIG, key):
+                if Config._is_plaintext_secret(key, value):
+                    logger.warning(
+                        "Legacy plaintext secret received in /preferences for key '%s'. Consider ENV:<KEY> migration.",
+                        key,
+                    )
+                filtered[key] = value
+            else:
+                logger.warning("Unknown /preferences key '%s' ignored.", key)
+
+        save_user_config(filtered)
+        refresh_global_config()
+        return jsonify({"status": True, "saved_keys": list(filtered.keys())})
+
+    setting_from_file = Config.load_runtime(resolve_env_tokens=False)
+    return jsonify(setting_from_file.to_json_obj())
 
 
 TRANSLATORS_PATH = os.path.join(os.path.dirname(__file__), "..", "translators.json")
 
 
-def load_translators():
+def load_translators(resolve_tokens=True):
     """load translators from translators.json"""
     with open(TRANSLATORS_PATH, "r", encoding="utf-8") as f:
         cfg = json.load(f)
-    for ep in cfg.get("endpoints", []):
-        tok = ep.get("token", "")
-        if isinstance(tok, str) and tok.startswith("ENV:"):
-            env_name = tok.split(":", 1)[1]
-            ep["token"] = os.getenv(env_name, "")
+    if resolve_tokens:
+        for ep in cfg.get("endpoints", []):
+            tok = ep.get("token", "")
+            if isinstance(tok, str) and tok.startswith("ENV:"):
+                env_name = tok.split(":", 1)[1]
+                ep["token"] = os.getenv(env_name, "")
     return cfg
 
 
 def save_selected(name: str, model_name: str):
-    """update config file with the selected translator name"""
-    config = Config.from_json_file(DEFAULT_CONFIG_FILE)
-    # get the endpoint and token from translators.json
-    items = load_translators()
+    """update user config with selected translator name"""
+    items = load_translators(resolve_tokens=False)
     for t in items["endpoints"]:
         if t["name"] == name:
-            config.endpoint_name = name
-            config.endpoint = t.get("endpoint", "")
-            config.token = t.get("token", "")
-            config.model_name = model_name if model_name else t.get("model_names", ["gpt-4o-mini"])[0]
+            selected_model = model_name if model_name else (t.get("models") or ["gpt-4o-mini"])[0]
+            updates = {
+                "endpoint_name": name,
+                "endpoint": t.get("endpoint", ""),
+                "token": t.get("token", ""),
+                "model_name": selected_model,
+            }
+            if name == "OpenAI":
+                updates["openai_api_key"] = t.get("token", "")
+
+            save_user_config(updates)
+            refresh_global_config()
             break
-    config.to_json_file(DEFAULT_CONFIG_FILE, replace=True)
+
+
+@app.get("/setup/options")
+def setup_options():
+    """return simple setup options for first-run key onboarding"""
+    cfg = load_translators(resolve_tokens=False)
+    current = Config.load_runtime(resolve_env_tokens=False)
+    return jsonify(
+        {
+            "endpoints": [
+                {
+                    "name": ep.get("name"),
+                    "models": ep.get("models", []),
+                }
+                for ep in cfg.get("endpoints", [])
+            ],
+            "current": {
+                "endpoint": current.endpoint_name,
+                "model": current.model_name,
+                "proxy": current.proxy,
+            },
+        }
+    )
+
+
+@app.post("/setup/save")
+def setup_save():
+    """save essential first-run settings with env-backed key storage"""
+    data = request.get_json(force=True) or {}
+    endpoint_name = str(data.get("endpoint") or "").strip()
+    model_name = str(data.get("model") or "").strip()
+    api_key = str(data.get("api_key") or "").strip()
+    proxy = str(data.get("proxy") or "").strip()
+
+    if not endpoint_name:
+        return jsonify({"ok": False, "error": "Endpoint is required"}), 400
+    if not model_name:
+        return jsonify({"ok": False, "error": "Model is required"}), 400
+    if not api_key:
+        return jsonify({"ok": False, "error": "API key is required"}), 400
+
+    translators = load_translators(resolve_tokens=False)
+    endpoint_cfg = next((ep for ep in translators.get("endpoints", []) if ep.get("name") == endpoint_name), None)
+    if not endpoint_cfg:
+        return jsonify({"ok": False, "error": "Unknown endpoint"}), 400
+
+    models = endpoint_cfg.get("models") or []
+    if model_name not in models:
+        return jsonify({"ok": False, "error": "Model not available for selected endpoint"}), 400
+
+    env_name = derive_env_name_for_endpoint(endpoint_name, endpoint_cfg.get("token", ""))
+    env_updates = {env_name: api_key}
+    if proxy:
+        env_updates["SORA_PROXY"] = proxy
+    else:
+        env_updates["SORA_PROXY"] = None
+
+    write_env_entries(env_updates)
+
+    user_updates = {
+        "endpoint_name": endpoint_name,
+        "model_name": model_name,
+        "endpoint": endpoint_cfg.get("endpoint", ""),
+        "token": f"ENV:{env_name}",
+        "proxy": proxy if proxy else None,
+    }
+    if endpoint_name == "OpenAI":
+        user_updates["openai_api_key"] = "ENV:OPENAI_API_KEY" if env_name == "OPENAI_API_KEY" else f"ENV:{env_name}"
+
+    save_user_config(user_updates)
+    refresh_global_config()
+
+    return jsonify({"ok": True, "endpoint": endpoint_name, "model": model_name})
 
 
 @app.get("/endpoints")
 def list_endpoints():
     """return available endpoints and the current one"""
     cfg = load_translators()
-    sel = {"endpoint": Config.from_json_file(DEFAULT_CONFIG_FILE).endpoint_name}
+    sel = {"endpoint": Config.load_runtime(resolve_env_tokens=False).endpoint_name}
     return jsonify({"endpoints": [e["name"] for e in cfg.get("endpoints", [])], "current": sel["endpoint"]})
 
 
 @app.get("/endpoints/<endpoint_name>/models")
 def list_models(endpoint_name):
     """return available models for an endpoint and the current one"""
-    cfg = load_translators()
+    cfg = load_translators(resolve_tokens=False)
     ep = next((e for e in cfg.get("endpoints", []) if e["name"] == endpoint_name), None)
     if not ep:
         return jsonify({"error": "Unknown endpoint"}), 404
+    runtime_cfg = Config.load_runtime(resolve_env_tokens=False)
     sel = {
-        "endpoint": Config.from_json_file(DEFAULT_CONFIG_FILE).endpoint_name,
-        "model": Config.from_json_file(DEFAULT_CONFIG_FILE).model_name,
+        "endpoint": runtime_cfg.endpoint_name,
+        "model": runtime_cfg.model_name,
     }
     current_model = sel["model"] if sel["endpoint"] == endpoint_name else (ep["models"][0] if ep["models"] else None)
     return jsonify({"models": ep.get("models", []), "current": current_model})
@@ -379,7 +533,7 @@ def list_models(endpoint_name):
 @app.get("/translators/full")
 def get_translators_full():
     """(Optional) Return full entries (backend use only)."""
-    return jsonify(load_translators())
+    return jsonify(load_translators(resolve_tokens=False))
 
 
 @app.post("/endpoints/select")
@@ -387,7 +541,7 @@ def select_endpoint():
     """select an endpoint"""
     data = request.get_json(force=True) or {}
     name = data.get("endpoint")
-    cfg = load_translators()
+    cfg = load_translators(resolve_tokens=False)
     ep = next((e for e in cfg.get("endpoints", []) if e["name"] == name), None)
     if not ep:
         return jsonify({"ok": False, "error": "Unknown endpoint"}), 400
@@ -402,10 +556,11 @@ def select_model():
     """select a model for the current endpoint"""
     data = request.get_json(force=True) or {}
     model = data.get("model")
-    cfg = load_translators()
+    cfg = load_translators(resolve_tokens=False)
+    runtime_cfg = Config.load_runtime(resolve_env_tokens=False)
     sel = {
-        "endpoint": Config.from_json_file(DEFAULT_CONFIG_FILE).endpoint_name,
-        "model": Config.from_json_file(DEFAULT_CONFIG_FILE).model_name,
+        "endpoint": runtime_cfg.endpoint_name,
+        "model": runtime_cfg.model_name,
     }
     ep = next((e for e in cfg.get("endpoints", []) if e["name"] == sel["endpoint"]), None)
     if not ep:
@@ -419,9 +574,10 @@ def select_model():
 @app.get("/translators/selected")
 def get_selected_translator():
     """return the current selected translator"""
+    runtime_cfg = Config.load_runtime(resolve_env_tokens=False)
     sel = {
-        "endpoint": Config.from_json_file(DEFAULT_CONFIG_FILE).endpoint_name,
-        "model": Config.from_json_file(DEFAULT_CONFIG_FILE).model_name,
+        "endpoint": runtime_cfg.endpoint_name,
+        "model": runtime_cfg.model_name,
     }
     return jsonify(sel)
 

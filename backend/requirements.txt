@@ -45,7 +45,7 @@ jiter
 jsonschema
 jsonschema-specifications
 langid
-litellm[aiohttp]
+litellm
 lxml
 markdown-it-py
 MarkupSafe

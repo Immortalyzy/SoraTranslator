@@ -55,18 +55,50 @@ Each directory is designed to handle a different stage of the translation proces
 ##### Requirements
 - Python >= 3.8
 - Node.js >= 20.0.0
-- A ChatGPT API key
+- API key for your selected endpoint (OpenAI/Gemini/Grok/etc.)
 
 If you use the released version, the requirements may not be necessary.
 
 ##### Installation
-1. Clone the repository
-or
-1. Download the latest version from release.
-2, unzip.
+1. Clone the repository, or download the latest release zip and unzip it.
+2. If using source mode, build frontend executable (`npm run electron:build` inside `frontend`) and package with `package.bat`.
+3. For portable releases, use the deterministic layout documented in [docs/release-layout.md](docs/release-layout.md).
 
 #### How to Use
-Simply install the required packages and run the program by running `run.bat`
+##### Portable release (recommended)
+1. Unzip the release folder.
+2. Run `setup-config.bat` once and enter endpoint/model/API key.
+3. Run `run.bat`.
+
+##### Source/development mode
+1. Install backend/frontend dependencies as needed.
+2. Run `run.bat --dev`.
+
+The launcher now:
+- auto-detects Python (`py -3` fallback to `python`)
+- creates `backend/.venv` if missing
+- skips `pip install` when requirements and Python version are unchanged
+- waits for backend health before launching frontend
+- cleans backend process on frontend exit
+
+##### Troubleshooting
+- `Python 3 not found`: install Python 3.8+ and ensure `py` or `python` is in `PATH`.
+- `Backend did not become ready`: check `backend/backend.log` and verify local firewall/antivirus rules.
+- Endpoint auth errors: rerun `setup-config.bat` and verify the key for the selected endpoint.
+- To run launcher checks without frontend, use `run.bat --smoke`.
+- For quick local checks without package reinstall work, use `run.bat --smoke --skip-install`.
+- Launcher execution details are written to `log.txt` in the app root (mirrored to `launcher.log.txt` for compatibility).
+- Dev/smoke runs have a default hard runtime limit; use `--max-runtime-seconds <N>` to override.
+- Release runs are unlimited by default; set `--max-runtime-seconds <N>` if you want an enforced hard stop.
+- Release mode uses backend port `5000` by default for compatibility; override with `--backend-port <N>`.
+- Startup/install wait time is independently bounded; tune with `--startup-timeout-seconds <N>`.
+- Packaging logs are written to `package.log.txt`.
+
+##### Secret Handling Policy
+- Do not commit plaintext API keys.
+- Store runtime keys in `.env` (created by setup) and reference them with `ENV:<KEY_NAME>` in config files.
+- `config.template.json`, `translators.json`, and docs are secret-safe defaults only.
+- Legacy plaintext keys are still read for compatibility, but migration to env-backed values is recommended.
 
 A usage tutorial video can be found at [here](https://www.bilibili.com/video/BV1eM4m1z7bw/).
 

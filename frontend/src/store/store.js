@@ -1,6 +1,7 @@
 import { createStore } from 'vuex'
 import axios from 'axios'
-const API = 'http://localhost:5000'
+import { getApiBase } from '../utils/apiClient'
+const API = getApiBase()
 
 const store = createStore({
     state() {

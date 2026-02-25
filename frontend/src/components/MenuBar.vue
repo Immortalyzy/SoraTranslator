@@ -22,7 +22,7 @@
 <script>
 import { initializeGame } from '@/utils/projectManagement'
 import { mapState } from 'vuex'
-import axios from 'axios'
+import { createApiClient } from '@/utils/apiClient'
 export default {
     name: 'MenuBar',
     data() {
@@ -66,13 +66,7 @@ export default {
             let integrateRequest = {};
             integrateRequest.project_file_path = this.$store.state.project.project_file_path;
             alert("Integrating project: " + integrateRequest.project_file_path)
-            const http = axios.create({
-                baseURL: "http://localhost:5000",
-                method: "POST",
-                headers: {
-                    "Content-type": "application/json",
-                },
-            });
+            const http = createApiClient("POST");
             await http.post("/integrate_game", integrateRequest).then((response) => {
                 console.log(response.data);
                 const reponseInfo = response.data;

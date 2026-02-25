@@ -6,8 +6,19 @@ import installExtension, { VUEJS3_DEVTOOLS } from 'electron-devtools-installer'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const path = require('path');
 const fs = require('fs');
+const { URL } = require('url');
 
 const { ipcMain, dialog } = require('electron');
+
+function resolveApiBase() {
+  const configured = process.env.SORA_API_BASE;
+  if (configured && configured.trim()) {
+    return configured.replace(/\/+$/, '');
+  }
+
+  const fallbackPort = process.env.SORA_BACKEND_PORT || '5000';
+  return `http://127.0.0.1:${fallbackPort}`;
+}
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -23,29 +34,34 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 async function createWindow() {
+  const apiBase = resolveApiBase();
+  process.env.SORA_API_BASE = apiBase;
+  const encodedApiBase = encodeURIComponent(apiBase);
+
   // Create the browser window.
   const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
+      additionalArguments: [`--sora-api-base=${encodedApiBase}`],
       //preload: 'app://./preload.js',
-      // Use pluginOptions.nodeIntegration, leave this alone
-      // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
-      nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
-      contextIsolation: !process.env.ELECTRON_NODE_INTEGRATION
+      nodeIntegration: false,
+      contextIsolation: true
     }
   })
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
-    await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
+    const devUrl = new URL(process.env.WEBPACK_DEV_SERVER_URL);
+    devUrl.searchParams.set('sora_api_base', encodedApiBase);
+    await win.loadURL(devUrl.toString())
     if (!process.env.IS_TEST) win.webContents.openDevTools()
   } else {
-    // createProtocol('app')
     // Load the index.html when not in development
-    win.loadURL(path.join(__dirname, 'index.html'));
-    //win.loadURL('app://./index.html');
+    const indexUrl = new URL(`file://${path.join(__dirname, 'index.html')}`);
+    indexUrl.searchParams.set('sora_api_base', encodedApiBase);
+    await win.loadURL(indexUrl.toString());
   }
 }
 
