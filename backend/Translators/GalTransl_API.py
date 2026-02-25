@@ -5,6 +5,7 @@ import sys
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 import tkinter as tk
 from tkinter import messagebox
@@ -58,6 +59,7 @@ class GalTranslTranslator(Translator):
 
     def __init__(self, config: Config = CONFIG):
         super().__init__(config)
+        self._progress_callback = None
 
         # generate the roor path of GalTransl
         self.this_path = os.path.dirname(os.path.abspath(__file__))
@@ -80,6 +82,49 @@ class GalTranslTranslator(Translator):
 
         if not self.worker:
             logger.error("Error: Worker function not found!")
+
+    def set_progress_callback(self, callback):
+        """Set callback used to emit translation progress updates."""
+        self._progress_callback = callback
+
+    def _report_progress(self, **payload):
+        """Emit progress payload to app-level progress tracker."""
+        if not callable(self._progress_callback):
+            return
+        try:
+            self._progress_callback(payload)
+        except Exception as e:
+            logger.warning(f"Failed to report GalTransl progress: {e}")
+
+    @staticmethod
+    def _clear_json_files(folder_path):
+        """Delete stale json files so progress reflects current run only."""
+        if not os.path.isdir(folder_path):
+            return
+        for file_name in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file_name)
+            if os.path.isfile(file_path) and file_name.lower().endswith(".json"):
+                os.remove(file_path)
+
+    @staticmethod
+    def _collect_output_progress(output_folder, total_count):
+        """Return completed file count and latest file name in gt_output."""
+        if not os.path.isdir(output_folder):
+            return 0, ""
+
+        output_files = []
+        for file_name in os.listdir(output_folder):
+            file_path = os.path.join(output_folder, file_name)
+            if not os.path.isfile(file_path) or not file_name.lower().endswith(".json"):
+                continue
+            output_files.append((os.path.getmtime(file_path), file_name))
+
+        output_files.sort(key=lambda item: item[0])
+        completed = len(output_files)
+        if total_count > 0:
+            completed = min(completed, total_count)
+        latest_file = output_files[-1][1] if output_files else ""
+        return completed, latest_file
 
     def _import_galtransl_module(self, module_name, attribute_name=None):
         """Dynamically import a module or an attribute from GalTransl"""
@@ -211,6 +256,9 @@ class GalTranslTranslator(Translator):
         # mkdir the folders
         os.makedirs(gt_input_folder, exist_ok=True)
         os.makedirs(gt_output_folder, exist_ok=True)
+        # clean stale json files to make progress counts deterministic
+        self._clear_json_files(gt_input_folder)
+        self._clear_json_files(gt_output_folder)
 
         # create the json files in the gt_input folder under the project directory
         def textfile_2_json_name(tf):
@@ -226,11 +274,20 @@ class GalTranslTranslator(Translator):
             logger.error(f"Error: {json_name} not found in the project")
             return None
 
-        for i, script_file in enumerate(project.game.script_file_list):
-            for j, text_file in enumerate(script_file.textfiles):
+        generated_json_count = 0
+        for _, script_file in enumerate(project.game.script_file_list):
+            for _, text_file in enumerate(script_file.textfiles):
                 if text_file.is_empty:
                     continue
                 text_file.generate_galtransl_json(dest=textfile_2_json_name(text_file), replace=True)
+                generated_json_count += 1
+
+        self._report_progress(
+            phase="running",
+            totalCount=generated_json_count,
+            completedCount=0,
+            currentFile="",
+        )
 
         # prepare the dictionary of characters' names
         namelist_file_path = os.path.join(target_folder_path, "人名替换表.csv")
@@ -289,11 +346,18 @@ class GalTranslTranslator(Translator):
                     logger.warning(f"Warning: {jp_name} not found in the original name list")
 
         # call GalTransl
-        self.run_worker(target_folder_path)
+        self.run_worker(target_folder_path, generated_json_count)
+
+        self._report_progress(
+            phase="applying_results",
+            totalCount=generated_json_count,
+            completedCount=generated_json_count,
+            currentFile="",
+        )
 
         # read the translation results (sync to textfiles instance)
         ## list the files inside the gt_output folder
-        output_files = os.listdir(gt_output_folder)
+        output_files = [name for name in os.listdir(gt_output_folder) if name.lower().endswith(".json")]
         logger.info("Reading the translation results of GalTransl")
         logger.info(f"{len(output_files)} files found")
         for output_file in output_files:
@@ -305,13 +369,20 @@ class GalTranslTranslator(Translator):
             # mark the file as translated, this will make the file appear as green in the GUI
             text_file.is_translated = True
             text_file.generate_textfile(text_file.text_file_path, replace=True)
+            self._report_progress(
+                phase="applying_results",
+                totalCount=generated_json_count,
+                completedCount=generated_json_count,
+                currentFile=output_file,
+            )
 
-    def run_worker(self, project_path: str):
+    def run_worker(self, project_path: str, total_count=0):
         """run the worker function in a separate thread, wait for the worker to finish"""
 
         batch_file = os.path.join(self.galtransl_path, "run_GalTransl_zh.bat")
         arg1 = project_path
         arg2 = self.config.galtransl_translation_method
+        gt_output_folder = os.path.join(project_path, "gt_output")
 
         logger.info("Running GalTransl worker in a separate thread")
         try:
@@ -320,9 +391,29 @@ class GalTranslTranslator(Translator):
             process = subprocess.Popen(
                 f'start /wait cmd /c "{activate_command} && {batch_file} {arg1} {arg2}"', shell=True
             )
+            while process.poll() is None:
+                completed_count, latest_file = self._collect_output_progress(gt_output_folder, total_count)
+                self._report_progress(
+                    phase="running",
+                    totalCount=total_count,
+                    completedCount=completed_count,
+                    currentFile=latest_file,
+                )
+                time.sleep(1)
             process.wait()  # Wait for the process to complete
+
+            completed_count, latest_file = self._collect_output_progress(gt_output_folder, total_count)
+            self._report_progress(
+                phase="running",
+                totalCount=total_count,
+                completedCount=completed_count,
+                currentFile=latest_file,
+            )
+            if process.returncode not in (0, None):
+                raise RuntimeError(f"GalTransl worker exited with code {process.returncode}")
 
             logger.info("GalTransl worker finished")
 
         except Exception as e:
             logger.error(f"Error running worker: {str(e)}")
+            raise

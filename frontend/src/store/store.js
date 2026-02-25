@@ -37,8 +37,10 @@ const store = createStore({
             currentTranslation: {
                 translating: false,
                 filePath: "",
-                thisCount: 1,
-                totalCount: 1,
+                thisCount: 0,
+                totalCount: 0,
+                phase: "idle",
+                error: "",
             },
             stopSignal: false,
             endpoints: [],
@@ -70,10 +72,42 @@ const store = createStore({
         },
         updateTranslationStatus(state, newStatus) {
             state.currentTranslation.translating = newStatus;
+            if (!newStatus && ["preparing", "running", "applying_results"].includes(state.currentTranslation.phase)) {
+                state.currentTranslation.phase = "idle";
+            }
         },
         updateTranslationProgress(state, newProgress) {
-            state.currentTranslation.thisCount = newProgress["thisCount"];
-            state.currentTranslation.totalCount = newProgress["totalCount"];
+            if (Object.prototype.hasOwnProperty.call(newProgress, "thisCount")) {
+                state.currentTranslation.thisCount = newProgress["thisCount"];
+            }
+            if (Object.prototype.hasOwnProperty.call(newProgress, "totalCount")) {
+                state.currentTranslation.totalCount = newProgress["totalCount"];
+            }
+            if (Object.prototype.hasOwnProperty.call(newProgress, "filePath")) {
+                state.currentTranslation.filePath = newProgress["filePath"];
+            }
+            if (Object.prototype.hasOwnProperty.call(newProgress, "phase")) {
+                state.currentTranslation.phase = newProgress["phase"];
+            }
+            if (Object.prototype.hasOwnProperty.call(newProgress, "error")) {
+                state.currentTranslation.error = newProgress["error"];
+            }
+        },
+        updateTranslationPhase(state, newPhase) {
+            state.currentTranslation.phase = newPhase || "idle";
+        },
+        updateTranslationError(state, errorText) {
+            state.currentTranslation.error = errorText || "";
+        },
+        resetTranslationState(state) {
+            state.currentTranslation = {
+                translating: false,
+                filePath: "",
+                thisCount: 0,
+                totalCount: 0,
+                phase: "idle",
+                error: "",
+            };
         },
         setEndpoints(state, names) { state.endpoints = names || [] },
         setModels(state, names) { state.models = names || [] },
@@ -106,6 +140,15 @@ const store = createStore({
         },
         updateTranslationProgress(context, newProgress) {
             context.commit('updateTranslationProgress', newProgress);
+        },
+        updateTranslationPhase(context, newPhase) {
+            context.commit('updateTranslationPhase', newPhase);
+        },
+        updateTranslationError(context, errorText) {
+            context.commit('updateTranslationError', errorText);
+        },
+        resetTranslationState(context) {
+            context.commit('resetTranslationState');
         },
         async loadEndpoints({ commit, dispatch }) {
             const { data } = await axios.get(`${API}/endpoints`)

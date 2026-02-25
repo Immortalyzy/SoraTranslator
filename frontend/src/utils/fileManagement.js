@@ -2,6 +2,43 @@ import store from '../store/store.js'
 import { EventBus } from './eventBus.js';
 import { createApiClient } from './apiClient';
 
+const GALTRANSL_PROGRESS_POLL_MS = 1000;
+
+function toSafeCount(value, fallback = 0) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        return fallback;
+    }
+    return Math.floor(parsed);
+}
+
+function applyGalTranslProgress(progress) {
+    if (!progress || typeof progress !== "object") {
+        return;
+    }
+    const current = store.state.currentTranslation;
+    const totalCount = toSafeCount(progress.totalCount, current.totalCount || 0);
+    const completedCount = toSafeCount(progress.completedCount, current.thisCount || 0);
+    const thisCount = totalCount > 0 ? Math.min(completedCount, totalCount) : completedCount;
+    const phase = progress.phase || current.phase || "idle";
+    const filePath = progress.currentFile || current.filePath || "";
+    const error = progress.error || "";
+    store.dispatch("updateTranslationProgress", {
+        thisCount,
+        totalCount,
+        filePath,
+        phase,
+        error,
+    });
+}
+
+async function requestGalTranslProgress(http) {
+    const response = await http.post("/translate_project_progress", {});
+    if (response.data && response.data.status === true) {
+        applyGalTranslProgress(response.data.progress || {});
+    }
+}
+
 export async function readTextFile(filePath) {
     console.log("file to be read: ", filePath);
     const http = createApiClient("POST");
@@ -68,11 +105,14 @@ export async function translateFile(filePath, temp_temperature, temp_max_lines) 
     requestT["file_path"] = filePath;
     store.dispatch("updateTranslationFile", filePath);
     store.dispatch("updateTranslationStatus", true);
+    store.dispatch("updateTranslationPhase", "running");
+    store.dispatch("updateTranslationError", "");
     console.log("Trying to translate : " + requestT["file_path"]);
     if (requestT["file_path"] == undefined) {
         alert("Please select a file first");
         store.dispatch("updateTranslationFile", "");
         store.dispatch("updateTranslationStatus", false);
+        store.dispatch("updateTranslationPhase", "idle");
         return;
     }
     // if file path doesn't end with .csv, then it's not a csv file
@@ -80,6 +120,7 @@ export async function translateFile(filePath, temp_temperature, temp_max_lines) 
         alert("Please select a text rather than a script file");
         store.dispatch("updateTranslationFile", "");
         store.dispatch("updateTranslationStatus", false);
+        store.dispatch("updateTranslationPhase", "idle");
         return;
     }
     const http = createApiClient("POST");
@@ -91,6 +132,7 @@ export async function translateFile(filePath, temp_temperature, temp_max_lines) 
             EventBus.emit("updateTranslationStatus")
             store.dispatch("updateTranslationFile", "");
             store.dispatch("updateTranslationStatus", false);
+            store.dispatch("updateTranslationPhase", "idle");
             if (response.data["status"] == true) {
                 if (store.state.currentDisplay["filePath"] == requestT["file_path"]) {
                     // if still displaying the same file, update manually the content
@@ -153,24 +195,80 @@ export async function translateAllFiles(temp_temperature, temp_max_lines) {
         requestT["project_file_path"] = store.state.project["project_file_path"];
 
         const http = createApiClient("POST");
+        let stopPolling = false;
+        let pollingTimer = null;
+        const pollProgress = async () => {
+            if (stopPolling) {
+                return;
+            }
+            try {
+                await requestGalTranslProgress(http);
+            } catch (error) {
+                // Keep previous progress and continue polling on temporary failures.
+                console.warn("GalTransl progress poll failed:", error);
+            }
+        };
+        const startPolling = async () => {
+            await pollProgress();
+            pollingTimer = setInterval(() => {
+                pollProgress();
+            }, GALTRANSL_PROGRESS_POLL_MS);
+        };
+        const endPolling = async () => {
+            stopPolling = true;
+            if (pollingTimer !== null) {
+                clearInterval(pollingTimer);
+            }
+            try {
+                await requestGalTranslProgress(http);
+            } catch (error) {
+                console.warn("Final GalTransl progress fetch failed:", error);
+            }
+        };
+
+        store.dispatch("updateTranslationStatus", true);
+        store.dispatch("updateTranslationPhase", "preparing");
+        store.dispatch("updateTranslationError", "");
+        store.dispatch("updateTranslationProgress", {
+            thisCount: 0,
+            totalCount: 0,
+            filePath: "",
+            phase: "preparing",
+            error: "",
+        });
 
         // send the request
         alert("sending request to translate project");
-        await http.post("/translate_project", requestT)
-            .then(response => {
-                // update directory tree to display tranlsation status
-                EventBus.emit("updateTranslationStatus")
-                store.dispatch("updateTranslationFile", "");
-                store.dispatch("updateTranslationStatus", false);
-                if (response.data["status"] == true) {
-                    EventBus.emit("updateFileContent");
-                    return;
-
-                } else {
-                    alert("Translation process unknown, please check the directory tree.");
-                    return;
-                }
-            });
+        try {
+            await startPolling();
+            const response = await http.post("/translate_project", requestT);
+            await endPolling();
+            // update directory tree to display tranlsation status
+            EventBus.emit("updateTranslationStatus")
+            if (response.data["status"] == true) {
+                store.dispatch("updateTranslationPhase", "completed");
+                EventBus.emit("updateFileContent");
+            } else {
+                store.dispatch("updateTranslationPhase", "failed");
+                store.dispatch("updateTranslationError", response.data["error"] || "GalTransl translation failed.");
+                alert("Translation process failed, please check backend logs.");
+            }
+        } catch (error) {
+            await endPolling();
+            if (error.response && error.response.status === 409) {
+                alert(error.response.data?.error || "GalTransl translation is already running.");
+            } else {
+                const errorMessage = error.response?.data?.error || error.message || "Unknown GalTransl error.";
+                store.dispatch("updateTranslationPhase", "failed");
+                store.dispatch("updateTranslationError", errorMessage);
+                alert("Translation process failed: " + errorMessage);
+            }
+        } finally {
+            store.dispatch("updateTranslationStatus", false);
+            if (!["completed", "failed"].includes(store.state.currentTranslation.phase)) {
+                store.dispatch("updateTranslationPhase", "idle");
+            }
+        }
 
     }
 

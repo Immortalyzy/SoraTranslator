@@ -1,9 +1,9 @@
 <template>
     <div class="translation-status">
-        <div v-if="isTranslating" class="text-path">{{ progressStr }} </div>
-        <div v-if="isTranslating" class="text-path"> Translating: </div>
-        <div v-if="!isTranslating" class="text-path">Idle </div>
+        <div v-if="showProgress" class="text-path">{{ progressStr }} </div>
+        <div class="text-path">{{ statusLabel }}</div>
         <div class="text-path">{{ displayPath }}</div>
+        <div v-if="showError" class="text-path error-text">{{ errorText }}</div>
         <div class="animation-container">
             <div v-if="isTranslating" class="loader"></div>
         </div>
@@ -22,15 +22,50 @@ export default {
 
         let isTranslating = computed(() => store.state.currentTranslation.translating);
         let currentFile = computed(() => store.state.currentTranslation.filePath);
+        let phase = computed(() => store.state.currentTranslation.phase || "idle");
+        let errorText = computed(() => store.state.currentTranslation.error || "");
         let displayPath = computed(() => {
+            if (!currentFile.value) {
+                return "-";
+            }
             let path = currentFile.value.split(/[/\\]/);
             return path[path.length - 1];
         });
         let progressStr = computed(() => {
             let progress = store.state.currentTranslation;
-            return progress.thisCount + "/" + progress.totalCount;
+            const totalCount = Number(progress.totalCount || 0);
+            const thisCount = Number(progress.thisCount || 0);
+            if (totalCount <= 0) {
+                return "0/0";
+            }
+            return Math.min(thisCount, totalCount) + "/" + totalCount;
         });
-        return { isTranslating, displayPath, progressStr };
+        let showProgress = computed(() => {
+            if (isTranslating.value) {
+                return true;
+            }
+            return Number(store.state.currentTranslation.totalCount || 0) > 0;
+        });
+        let showError = computed(() => phase.value === "failed" && !!errorText.value);
+        let statusLabel = computed(() => {
+            if (isTranslating.value) {
+                if (phase.value === "preparing") {
+                    return "Preparing";
+                }
+                if (phase.value === "applying_results") {
+                    return "Applying results";
+                }
+                return "Translating";
+            }
+            if (phase.value === "completed") {
+                return "Completed";
+            }
+            if (phase.value === "failed") {
+                return "Failed";
+            }
+            return "Idle";
+        });
+        return { isTranslating, displayPath, progressStr, showProgress, showError, statusLabel, errorText };
     }
 };
 </script>
@@ -51,6 +86,13 @@ export default {
     margin: 0px 0px;
     text-align: right;
 
+}
+
+.error-text {
+    max-width: 25vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .animation-container {

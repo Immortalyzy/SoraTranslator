@@ -14,6 +14,7 @@ from constants import DEFAULT_ENV_FILE, DEFAULT_USER_CONFIG_FILE
 from config import Config, CONFIG
 from Translators.all_translators import createTranslatorInstance
 from logger import setup_logger
+from translation_progress import GalTranslProgressTracker
 
 setup_logger()
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ logger.info("Runtime configurations loaded.")
 
 app = Flask(__name__)
 CORS(app)
+GALTRANSL_PROGRESS = GalTranslProgressTracker()
 
 
 def read_env_entries(env_path=DEFAULT_ENV_FILE):
@@ -312,26 +314,57 @@ def translate_text():
 @app.route("/translate_project", methods=["POST"])
 def translate_project():
     """translate the project, for better integration with GalTransl"""
-    # read project
-    # data is project path
     data = request.json
-    project = Project().from_pickle(data["project_file_path"])
-    # some translation settings are sent from the frontend
     config = Config.load_runtime(resolve_env_tokens=True)
+    is_galtransl = config.translator == "galtransl"
 
-    # create translator instance
-    translator = createTranslatorInstance(config.translator, config=config)
+    if is_galtransl:
+        project_hint = data.get("project_file_path", "")
+        if not GALTRANSL_PROGRESS.try_start(project_hint):
+            return {
+                "status": False,
+                "busy": True,
+                "error": "A GalTransl project translation is already running.",
+            }, 409
+        GALTRANSL_PROGRESS.update(
+            phase="preparing",
+            totalCount=0,
+            completedCount=0,
+            currentFile="",
+            error="",
+        )
 
+    project = None
     try:
+        project = Project().from_pickle(data["project_file_path"])
+        # create translator instance
+        translator = createTranslatorInstance(config.translator, config=config)
+        if is_galtransl and hasattr(translator, "set_progress_callback"):
+            GALTRANSL_PROGRESS.update(projectPath=project.project_path)
+            translator.set_progress_callback(GALTRANSL_PROGRESS.update)
+
         logger.info("Translating project " + project.project_path)
         translator.translate_project(project)
+        if is_galtransl:
+            snapshot = GALTRANSL_PROGRESS.snapshot()
+            final_total = max(snapshot.get("totalCount", 0), snapshot.get("completedCount", 0))
+            GALTRANSL_PROGRESS.complete(force_total=final_total)
         result = {"status": True}
         return result
     except Exception as e:
-        logger.error("ERROR when trying to translate project " + project.project_path + " " + str(e))
-        result = {"status": False}
+        project_path = project.project_path if project is not None else data.get("project_file_path", "")
+        logger.error("ERROR when trying to translate project " + project_path + " " + str(e))
+        if is_galtransl:
+            GALTRANSL_PROGRESS.fail(str(e))
+        result = {"status": False, "error": str(e)}
         # get text json
         return result
+
+
+@app.route("/translate_project_progress", methods=["GET", "POST"])
+def translate_project_progress():
+    """return current GalTransl project translation progress"""
+    return {"status": True, "progress": GALTRANSL_PROGRESS.snapshot()}
 
 
 @app.route("/request_file_info", methods=["POST"])
