@@ -60,7 +60,21 @@ function Get-EndpointEnvName {
     return "${sanitized}_API_KEY"
 }
 
-$root = (Resolve-Path $RootPath).Path
+if ([string]::IsNullOrWhiteSpace($RootPath)) {
+    throw "RootPath is empty."
+}
+
+$normalizedRootPath = $RootPath.Trim().Trim('"').TrimEnd('\', '/')
+if ([string]::IsNullOrWhiteSpace($normalizedRootPath)) {
+    throw "RootPath is invalid: '$RootPath'"
+}
+
+try {
+    $root = (Resolve-Path -Path $normalizedRootPath -ErrorAction Stop).Path
+} catch {
+    throw "Unable to resolve RootPath '$RootPath'. Normalized value: '$normalizedRootPath'"
+}
+
 $translatorsPath = Join-Path $root "translators.json"
 $configUserPath = Join-Path $root "config.user.json"
 $envPath = Join-Path $root ".env"

@@ -1,8 +1,8 @@
 @echo off
 setlocal
 
-set "ROOT=%~dp0"
-set "SETUP_SCRIPT=%ROOT%scripts\setup-config.ps1"
+for %%I in ("%~dp0.") do set "ROOT=%%~fI"
+set "SETUP_SCRIPT=%ROOT%\scripts\setup-config.ps1"
 
 if not exist "%SETUP_SCRIPT%" (
     echo [setup] ERROR: Missing setup script at "%SETUP_SCRIPT%".
