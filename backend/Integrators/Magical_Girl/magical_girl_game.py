@@ -172,6 +172,7 @@ class MagicalGirlGame(Game):
                     index = self.name_list_original.index(name)
                     self.name_list_count[index] += script_file.name_list_count[i]
 
+        self.refresh_global_name_replacement_table()
         self.update_script_filelist()
         return True
 

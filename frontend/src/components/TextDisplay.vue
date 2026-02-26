@@ -44,6 +44,7 @@ export default defineComponent({
                 { name: "183", speaker_original: "玲奈", text_original: "「決まってるじゃない、昨日の女の子の正体を暴くのよ！」", speaker_translated: "", text_translated: "「你不是知道吗，就是要揭开昨天那个女孩的真正身份！", is_edited: false },
             ],
             specialRows: [],
+            currentFileType: "content",
             hotSettings: {
                 width: '100%',
                 height: '100%',
@@ -141,6 +142,34 @@ export default defineComponent({
             //     colWidths: this.calculateColumnWidths(),
             // };
         },
+        applyFileTypeSettings(fileType) {
+            const isNameReplacement = fileType === "name_replacement";
+            const settingsForType = isNameReplacement
+                ? {
+                    colHeaders: ["#", "Original Name", "Use Count", "Replacement", "Notes"],
+                    columns: [
+                        { data: "name", readOnly: true },
+                        { data: "speaker_original", readOnly: true },
+                        { data: "text_original", readOnly: true },
+                        { data: "speaker_translated", readOnly: false },
+                        { data: "text_translated", readOnly: true },
+                    ],
+                }
+                : {
+                    colHeaders: ["name", "Sp_O", "Original Text", "Sp_T", "Translated Text"],
+                    columns: [
+                        { data: "name", readOnly: true },
+                        { data: "speaker_original", readOnly: true },
+                        { data: "text_original", readOnly: true },
+                        { data: "speaker_translated", readOnly: false },
+                        { data: "text_translated", readOnly: false },
+                    ],
+                };
+            this.hotSettings = Object.assign({}, this.hotSettings, settingsForType);
+            if (this.$refs.hotInstance && this.$refs.hotInstance.hotInstance) {
+                this.$refs.hotInstance.hotInstance.updateSettings(settingsForType);
+            }
+        },
         async getFileContent() {
             // clear the rowData
             if (this.filePath === "" || this.$store.state.currentDisplay.type !== "text")
@@ -150,6 +179,8 @@ export default defineComponent({
             this.blocks = [];
             const fileJson = await readTextFile(this.filePath);
             if (fileJson["status"] === true) {
+                this.currentFileType = fileJson["file_type"] || "content";
+                this.applyFileTypeSettings(this.currentFileType);
                 // Process your file data here
                 const newBlocks = fileJson["blocks"].map(block => ({
                     name: block.name,

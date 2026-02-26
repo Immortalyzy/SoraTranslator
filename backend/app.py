@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from block import Block
 from project import Project
 from scriptfile import ScriptFile
 from textfile import TextFile
@@ -15,6 +16,16 @@ from config import Config, CONFIG
 from Translators.all_translators import createTranslatorInstance
 from logger import setup_logger
 from translation_progress import GalTranslProgressTracker
+from global_name_replacement import (
+    GLOBAL_NAME_REPLACEMENT_FILE_TYPE,
+    GLOBAL_NAME_REPLACEMENT_SCRIPT_PATH,
+    NameReplacementRow,
+    build_name_replacement_mapping,
+    global_name_replacement_path,
+    is_global_name_replacement_file,
+    normalize_name_replacement_rows,
+    sort_name_replacement_rows_by_appearance,
+)
 
 setup_logger()
 logger = logging.getLogger(__name__)
@@ -33,6 +44,107 @@ logger.info("Runtime configurations loaded.")
 app = Flask(__name__)
 CORS(app)
 GALTRANSL_PROGRESS = GalTranslProgressTracker()
+
+
+def build_global_name_replacement_textfile(file_path: str, rows: list[NameReplacementRow]):
+    """Build canonical TextFile payload for global name replacement table."""
+    text_file = TextFile()
+    text_file.text_file_path = file_path
+    text_file.script_file_path = GLOBAL_NAME_REPLACEMENT_SCRIPT_PATH
+    text_file.file_type = GLOBAL_NAME_REPLACEMENT_FILE_TYPE
+    text_file.original_package = "global"
+    text_file.is_translated = True
+    text_file.need_manual_fix = False
+    text_file.translation_percentage = 100.0
+    text_file.blocks = []
+
+    for index, row in enumerate(rows, start=1):
+        block = Block(str(index), "")
+        block.is_parsed = True
+        block.speaker_original = row.source_name
+        block.text_original = row.source_count
+        block.speaker_translated = row.replacement_name
+        block.text_translated = ""
+        block.is_translated = True
+        block.translation_engine = "manual"
+        text_file.blocks.append(block)
+
+    text_file.generate_name_list()
+    return text_file
+
+
+def canonicalize_global_name_replacement_file(file_path, rows=None):
+    """
+    Canonicalize global name replacement file using normalization policy:
+    duplicate sources keep last row, empty replacement means no replacement.
+    """
+    if rows is None:
+        if os.path.exists(file_path):
+            source_textfile = TextFile.from_textfile(file_path)
+            rows = normalize_name_replacement_rows(source_textfile.blocks)
+        else:
+            rows = []
+    else:
+        rows = normalize_name_replacement_rows(rows)
+
+    rows = sort_name_replacement_rows_by_appearance(rows)
+    text_file = build_global_name_replacement_textfile(file_path, rows)
+    text_file.generate_textfile(dest=file_path, replace=True)
+    return text_file
+
+
+def find_global_name_replacement_table_path(file_path):
+    """Find nearest global name replacement table path for a given text file."""
+    current_directory = os.path.dirname(file_path)
+    while True:
+        candidate = global_name_replacement_path(current_directory)
+        if os.path.exists(candidate):
+            return candidate
+        parent = os.path.dirname(current_directory)
+        if parent == current_directory:
+            return ""
+        current_directory = parent
+
+
+def load_global_name_replacement_mapping_for_file(file_path):
+    """Load global name replacement mapping for a text file path."""
+    table_path = find_global_name_replacement_table_path(file_path)
+    if table_path == "":
+        return {}
+    table_file = TextFile.from_textfile(table_path)
+    return build_name_replacement_mapping(table_file.blocks)
+
+
+def apply_name_mapping_to_text_directory(text_directory, mapping):
+    """Apply name mapping to all text csv files under text_directory."""
+    if not mapping:
+        return 0, 0
+
+    updated_file_count = 0
+    updated_block_count = 0
+    for root, _, files in os.walk(text_directory):
+        for file_name in files:
+            if not file_name.lower().endswith(".csv"):
+                continue
+            full_path = os.path.join(root, file_name)
+            if is_global_name_replacement_file(full_path):
+                continue
+            try:
+                text_file = TextFile.from_textfile(full_path)
+            except Exception as error:
+                logger.warning("Skipping name propagation for %s due to load error: %s", full_path, error)
+                continue
+            if text_file.file_type == GLOBAL_NAME_REPLACEMENT_FILE_TYPE:
+                continue
+
+            changed_blocks = text_file.update_name_translation(mapping)
+            if changed_blocks <= 0:
+                continue
+            text_file.generate_textfile(text_file.text_file_path, replace=True)
+            updated_file_count += 1
+            updated_block_count += changed_blocks
+
+    return updated_file_count, updated_block_count
 
 
 def read_env_entries(env_path=DEFAULT_ENV_FILE):
@@ -208,12 +320,16 @@ def require_text_json():
     # read project
     data = request.json
     try:
-        script_file = TextFile.from_textfile(data)
+        if is_global_name_replacement_file(data):
+            script_file = canonicalize_global_name_replacement_file(data)
+        else:
+            script_file = TextFile.from_textfile(data)
         print("Reading text file" + script_file.text_file_path)
         result = script_file.to_json()
         result["status"] = True
         return result
-    except:
+    except Exception as e:
+        logger.error("ERROR trying to load text json for %s: %s", data, e)
         result = {"status": False}
         return result
 
@@ -232,6 +348,10 @@ def require_tranlsation_status():
     logger.debug("Loading translation status")
     for file_path in file_list:
         try:
+            if is_global_name_replacement_file(file_path):
+                status_list.append("name_replacement")
+                continue
+
             script_file = TextFile.from_textfile(file_path)
             if not script_file.is_translated:
                 status_list.append("not_translated")
@@ -258,6 +378,22 @@ def save_text_from_json():
     try:
         blocks = data["blocks"]
         file_path = data["filePath"]
+        if is_global_name_replacement_file(file_path):
+            normalized_rows = normalize_name_replacement_rows(blocks)
+            mapping = build_name_replacement_mapping(normalized_rows)
+            canonicalize_global_name_replacement_file(file_path, normalized_rows)
+            updated_files, updated_blocks = apply_name_mapping_to_text_directory(os.path.dirname(file_path), mapping)
+            logger.info(
+                "Saving global name replacement table %s: %d rows, %d active mappings, %d files/%d blocks updated.",
+                file_path,
+                len(normalized_rows),
+                len(mapping),
+                updated_files,
+                updated_blocks,
+            )
+            result = {"status": True}
+            return result
+
         script_file = TextFile.from_textfile(file_path=file_path)
         if len(blocks) != len(script_file.blocks):
             logger.error(
@@ -298,15 +434,34 @@ def translate_text():
     # create translator instance
     translator = createTranslatorInstance(config.translator, config=config)
 
+    text_file = None
     try:
+        if is_global_name_replacement_file(data["file_path"]):
+            result = {
+                "status": False,
+                "filePath": data["file_path"],
+                "error": "Global name replacement table is settings-only and cannot be translated.",
+            }
+            return result
+
         text_file = TextFile.from_textfile(data["file_path"])
         logger.info("Translating file" + text_file.text_file_path)
         translator.translate_file_whole(text_file)
+        mapping = load_global_name_replacement_mapping_for_file(text_file.text_file_path)
+        changed_name_count = text_file.update_name_translation(mapping)
+        if changed_name_count > 0:
+            logger.info(
+                "Applied %d global name updates after translating %s",
+                changed_name_count,
+                text_file.text_file_path,
+            )
+            text_file.generate_textfile(text_file.text_file_path, replace=True)
         result = {"status": True, "filePath": text_file.text_file_path}
         return result
     except Exception as e:
-        logger.error("ERROR when trying to translate file " + text_file.text_file_path + " " + str(e))
-        result = {"status": False, "filePath": text_file.text_file_path}
+        file_hint = text_file.text_file_path if text_file is not None else data.get("file_path", "")
+        logger.error("ERROR when trying to translate file %s %s", file_hint, str(e))
+        result = {"status": False, "filePath": file_hint}
         # get text json
         return result
 
@@ -345,6 +500,17 @@ def translate_project():
 
         logger.info("Translating project " + project.project_path)
         translator.translate_project(project)
+        if project.game is not None:
+            mapping = project.game.load_global_name_replacement_mapping()
+            updated_files, updated_blocks = apply_name_mapping_to_text_directory(project.game.text_directory, mapping)
+        else:
+            updated_files, updated_blocks = (0, 0)
+        if updated_files > 0:
+            logger.info(
+                "Applied global name propagation after project translation: %d files, %d blocks.",
+                updated_files,
+                updated_blocks,
+            )
         if is_galtransl:
             snapshot = GALTRANSL_PROGRESS.snapshot()
             final_total = max(snapshot.get("totalCount", 0), snapshot.get("completedCount", 0))
@@ -381,17 +547,31 @@ def request_file_info():
             result["File path"] = script_file.original_file_path
         elif file_type == "text":
             script_file = TextFile.from_textfile(file_path)
-            result["Info"] = script_file.info
-            # info is a dict, so add N of parts, N of blocks each part and parts that have problems here
+            if script_file.file_type == GLOBAL_NAME_REPLACEMENT_FILE_TYPE or is_global_name_replacement_file(file_path):
+                replacement_map = build_name_replacement_mapping(script_file.blocks)
+                result["Info"] = {
+                    "table": "Global name replacement table for Chaos-R integration.",
+                    "rules": "Duplicate source rows use the last row. Empty replacement means no replacement.",
+                    "active_replacements": len(replacement_map),
+                }
+                result["Trnslted?"] = True
+                result["Need fix?"] = False
+                result["Percent"] = 100.0
+                result["Parsed on"] = script_file.read_date
+                result["File type"] = GLOBAL_NAME_REPLACEMENT_FILE_TYPE
+                result["Package"] = "global"
+            else:
+                result["Info"] = script_file.info
+                # info is a dict, so add N of parts, N of blocks each part and parts that have problems here
 
-            result["Trnslted?"] = script_file.is_translated
-            result["Need fix?"] = script_file.need_manual_fix
-            result["Percent"] = script_file.translation_percentage
+                result["Trnslted?"] = script_file.is_translated
+                result["Need fix?"] = script_file.need_manual_fix
+                result["Percent"] = script_file.translation_percentage
 
-            # result["Script file"] = script_file.original_file_path
-            result["Parsed on"] = script_file.read_date
-            result["File type"] = script_file.file_type
-            result["Package"] = script_file.original_package
+                # result["Script file"] = script_file.original_file_path
+                result["Parsed on"] = script_file.read_date
+                result["File type"] = script_file.file_type
+                result["Package"] = script_file.original_package
         else:
             result["info"] = "Unsupported info type"
         response = {

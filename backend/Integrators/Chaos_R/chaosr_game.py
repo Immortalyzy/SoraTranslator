@@ -11,6 +11,10 @@ from config import CONFIG
 from game import Game
 from scriptfile import ScriptFile, update_script_filelist
 from ..utils.encoding_fix import fix_allfiles
+from global_name_replacement import (
+    apply_name_replacement_to_text,
+    compile_name_replacement_pattern,
+)
 from .parser import guess_file_type, parse_file, possible_content_re_default
 
 logger = getLogger(__name__)
@@ -223,6 +227,7 @@ class ChaosRGame(Game):
                     index = self.name_list_original.index(name)
                     self.name_list_count[index] += script_file.name_list_count[i]
 
+        self.refresh_global_name_replacement_table()
         self.update_script_filelist()
         return True
 
@@ -267,12 +272,9 @@ class ChaosRGame(Game):
 
             script_file.generate_translated_rawfile(dest=translated_path, replace=True, encoding=self.target_encoding)
 
-            # get the relative path
-            relative_path = os.path.relpath(script_file.translated_script_file_path, self.translated_files_directory)
-            desitnation_path = os.path.join(self.temp_unpack_directory, relative_path)
-
-            # copy the file to the temp folder, overwrite if exists
-            shutil.copyfile(script_file.translated_script_file_path, desitnation_path)
+        self.populate_untranslated_script_files()
+        self.apply_global_name_replacement_to_translated_files()
+        self.sync_translated_files_to_temp_unpack()
         self.repack_all_files()
         return f"For security reasons, please replace the original files with the .xp3 files in {self.temp_unpack_directory}."
 
@@ -392,6 +394,77 @@ class ChaosRGame(Game):
     def update_to_translate_filelist(self):
         """update the to_translate_file_list to the local from memory"""
         update_script_filelist(self.to_translate_file_list_file, self.to_translate_file_list)
+
+    def apply_global_name_replacement_to_translated_files(self):
+        """
+        Apply global name replacement to translated decoded script files.
+        Empty replacements are treated as no replacement.
+        """
+        mapping = self.load_global_name_replacement_mapping()
+        if not mapping:
+            logger.info("Skipping global name replacement because no valid mappings were found.")
+            return 0
+
+        pattern = compile_name_replacement_pattern(mapping)
+        if pattern is None:
+            logger.info("Skipping global name replacement because mapping pattern is empty.")
+            return 0
+
+        translated_file_paths = self.select_files(self.translated_files_directory, self.script_extensions)
+        updated_file_count = 0
+        for translated_path in translated_file_paths:
+            if not os.path.exists(translated_path):
+                continue
+
+            with open(translated_path, "r", encoding=self.target_encoding, errors="ignore") as file:
+                original_text = file.read()
+
+            replaced_text = apply_name_replacement_to_text(original_text, mapping, pattern)
+            if replaced_text == original_text:
+                continue
+
+            with open(translated_path, "w", encoding=self.target_encoding, errors="ignore") as file:
+                file.write(replaced_text)
+            updated_file_count += 1
+
+        logger.info(
+            "Applied global name replacement with %d mappings to %d files.",
+            len(mapping),
+            updated_file_count,
+        )
+        return updated_file_count
+
+    def sync_translated_files_to_temp_unpack(self):
+        """Copy translated files (already globally rewritten) to temp unpack directory."""
+        translated_file_paths = self.select_files(self.translated_files_directory, self.script_extensions)
+        for translated_path in translated_file_paths:
+            if not os.path.exists(translated_path):
+                continue
+
+            relative_path = os.path.relpath(translated_path, self.translated_files_directory)
+            destination_path = os.path.join(self.temp_unpack_directory, relative_path)
+            destination_directory = os.path.dirname(destination_path)
+            if not os.path.exists(destination_directory):
+                os.makedirs(destination_directory, exist_ok=True)
+            shutil.copyfile(translated_path, destination_path)
+
+    def populate_untranslated_script_files(self):
+        """
+        Ensure TranslatedFiles contains all decoded script files.
+        Non-translated files are copied from RawText so global replacement can touch them.
+        """
+        to_translate_paths = {file.script_file_path for file in self.to_translate_file_list}
+        for script_file in self.script_file_list:
+            if script_file.script_file_path in to_translate_paths:
+                continue
+
+            relative_path = os.path.relpath(script_file.script_file_path, self.rawtext_directory)
+            translated_path = os.path.join(self.translated_files_directory, relative_path)
+            translated_directory = os.path.dirname(translated_path)
+            if not os.path.exists(translated_directory):
+                os.makedirs(translated_directory, exist_ok=True)
+
+            shutil.copyfile(script_file.script_file_path, translated_path)
 
     # ==== utility methods =========================================================================
     @staticmethod

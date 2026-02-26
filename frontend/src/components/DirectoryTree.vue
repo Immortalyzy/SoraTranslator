@@ -10,7 +10,8 @@
           'need-manual-fix': file.needManualFix,
           'not-translated': file.notTranslated,
           'translated': file.translated,
-          'invalid-file': file.invaildFile
+          'invalid-file': file.invaildFile,
+          'name-replacement': file.nameReplacement
         }">
           {{ file.displayPath }}
         </li>
@@ -25,6 +26,7 @@ import { EventBus } from '@/utils/eventBus'
 import { mapState } from 'vuex';
 import { mapActions } from 'vuex';
 import { createApiClient } from '@/utils/apiClient';
+import { isGlobalNameReplacementFilePath } from '@/utils/fileManagement';
 export default {
   name: "DirectoryTree",
   props: {
@@ -89,6 +91,22 @@ export default {
       }
       let resultReturned = await window.electron.ipcRenderer.invoke("list-files", tempTree);
       console.log("Result Returned", resultReturned);
+      if (this.currentTreeDisplay === "T") {
+        const pinnedFiles = [];
+        const normalFiles = [];
+        for (const file of resultReturned) {
+          if (isGlobalNameReplacementFilePath(file.path)) {
+            pinnedFiles.push({
+              ...file,
+              displayPath: "[Global Name Replacement]",
+              nameReplacement: true,
+            });
+          } else {
+            normalFiles.push(file);
+          }
+        }
+        resultReturned = [...pinnedFiles, ...normalFiles];
+      }
       //this.files = resultReturned;
       this.updateFileList(resultReturned);
       this.updateTranslationStatus();
@@ -127,10 +145,12 @@ export default {
           if (response.data["status"] == true) {
             // update info for files
             for (let i = 0; i < this.files.length; i++) {
-              this.files[i].needManualFix = response.data["status_list"][i] == "need_manual_fix";
-              this.files[i].notTranslated = response.data["status_list"][i] == "not_translated";
-              this.files[i].translated = response.data["status_list"][i] == "translated";
-              this.files[i].invaildFile = response.data["status_list"][i] == "invalid_file";
+              const currentStatus = response.data["status_list"][i];
+              this.files[i].nameReplacement = currentStatus == "name_replacement";
+              this.files[i].needManualFix = currentStatus == "need_manual_fix";
+              this.files[i].notTranslated = currentStatus == "not_translated";
+              this.files[i].translated = currentStatus == "translated";
+              this.files[i].invaildFile = currentStatus == "invalid_file";
             }
           } else {
             alert("Failed to load translation status, please check the text folder. It should not contain any files other than .csv files");
@@ -247,5 +267,9 @@ export default {
 
 .invalid-file {
   color: rgb(255, 0, 0);
+}
+
+.name-replacement {
+  color: rgb(0, 255, 255);
 }
 </style>

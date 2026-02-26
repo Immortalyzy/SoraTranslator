@@ -209,6 +209,39 @@ class TextFile:
         self.is_translated = True
         return True
 
+    def update_name_translation(self, name_mapping: dict[str, str]) -> int:
+        """
+        Update speaker translated names using a global mapping.
+
+        Rules:
+        - Empty replacement means no replacement (skip).
+        - Only rows with existing speaker_original are considered.
+        """
+        if not name_mapping:
+            return 0
+
+        updated_blocks = 0
+        for block in self.blocks:
+            speaker_original = block.speaker_original.strip()
+            if speaker_original == "":
+                continue
+            if speaker_original not in name_mapping:
+                continue
+
+            translated_name = str(name_mapping[speaker_original]).strip()
+            if translated_name == "":
+                continue
+            if block.speaker_translated == translated_name:
+                continue
+            block.speaker_translated = translated_name
+            updated_blocks += 1
+
+        self.generate_name_list()
+        self.name_list_translated = [
+            str(name_mapping.get(name, "")).strip() for name in self.name_list_original
+        ]
+        return updated_blocks
+
     def generate_textfile(
         self,
         dest="",

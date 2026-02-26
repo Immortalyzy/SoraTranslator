@@ -3,6 +3,14 @@ import { EventBus } from './eventBus.js';
 import { createApiClient } from './apiClient';
 
 const GALTRANSL_PROGRESS_POLL_MS = 1000;
+export const GLOBAL_NAME_REPLACEMENT_FILENAME = "__global_name_replacement__.csv";
+
+export function isGlobalNameReplacementFilePath(filePath) {
+    if (!filePath || typeof filePath !== "string") {
+        return false;
+    }
+    return filePath.toLowerCase().endsWith(GLOBAL_NAME_REPLACEMENT_FILENAME.toLowerCase());
+}
 
 function toSafeCount(value, fallback = 0) {
     const parsed = Number(value);
@@ -118,6 +126,13 @@ export async function translateFile(filePath, temp_temperature, temp_max_lines) 
     // if file path doesn't end with .csv, then it's not a csv file
     if (!requestT["file_path"].endsWith(".csv")) {
         alert("Please select a text rather than a script file");
+        store.dispatch("updateTranslationFile", "");
+        store.dispatch("updateTranslationStatus", false);
+        store.dispatch("updateTranslationPhase", "idle");
+        return;
+    }
+    if (isGlobalNameReplacementFilePath(requestT["file_path"])) {
+        alert("Global name replacement table is settings-only and cannot be translated.");
         store.dispatch("updateTranslationFile", "");
         store.dispatch("updateTranslationStatus", false);
         store.dispatch("updateTranslationPhase", "idle");
