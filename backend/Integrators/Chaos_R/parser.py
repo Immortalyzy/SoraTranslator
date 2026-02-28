@@ -11,6 +11,8 @@ from scriptfile import ScriptFile
 from block import Block
 
 logger = getLogger(__name__)
+SELECTION_COMMAND_PATTERN = re.compile(r"""\[sel\d+[^\]]*?\btext=(['"])(.*?)\1[^\]]*\]""", re.IGNORECASE)
+SELECTION_TARGET_PATTERN = re.compile(r"^SEL\d+_\d+$", re.IGNORECASE)
 
 
 def parse_file(script_file: ScriptFile, encoding="utf_16") -> List[Block]:
@@ -21,6 +23,7 @@ def parse_file(script_file: ScriptFile, encoding="utf_16") -> List[Block]:
             lines = file.readlines()
     except FileNotFoundError:
         logger.warning(f"File {file_path} not found for parsing")
+        return 1
 
     # list of all blocks in this file
     block_list = []
@@ -77,6 +80,18 @@ BLOCK_NAME_INDICATOR = r"\*.*\n"
 
 def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     """parse the block"""
+    if is_selection_source_block(block):
+        selections, selection_positions = parse_selection("".join(block.block_content))
+        block.block_type = "selection"
+        block.selection_original = selections
+        block.selection_positions = selection_positions
+        block.text_original = "/".join(selections)
+        block.texts_original = selections.copy()
+        block.is_parsed = True
+        if block.text_original == "":
+            block.is_translated = True
+        return True
+
     speaker = ""
     speaker_line = 0
     speaker_start_end = (0, 0)
@@ -86,16 +101,6 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     text_start_end = (0, 0)
     # indicator for "other" speakers, this MUST be kept in this order
     # Keep replacing innermost brackets until there are none left
-
-    # check if the block is a selection block
-    # selection blocks for choas-r games has a name start with \*SEL***
-    if block.block_name.startswith("*SEL"):
-        block.block_type = "selection"
-        for i, line in enumerate(block.block_content):
-            # skip the block name line
-            if "*" in line:
-                continue
-        return speaker, text, speaker_line, speaker_start_end, text_line, text_start_end
 
     texts, text_lines, text_positions = parse_text("".join(block.block_content))
     text = "".join(texts)
@@ -140,6 +145,9 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     block.text_lines = text_lines
     block.text_positions = text_positions
     block.texts = texts
+    block.is_parsed = True
+    if block.text_original == "":
+        block.is_translated = True
 
     return True
 
@@ -223,6 +231,72 @@ def parse_text(text):
     positions = filtered_positions
 
     return text_array, line_numbers, positions
+
+
+def normalize_block_name(block_name: str) -> str:
+    """return the label identifier without inline caption text"""
+    return block_name.split("|", 1)[0].strip()
+
+
+def is_selection_target_block(block_name: str) -> bool:
+    """return if the label is a selection branch target"""
+    return bool(SELECTION_TARGET_PATTERN.fullmatch(normalize_block_name(block_name)))
+
+
+def is_selection_source_block(block: Block) -> bool:
+    """return if the block contains a selectable choice definition"""
+    block_label = normalize_block_name(block.block_name)
+    if not block_label.upper().startswith("SEL"):
+        return False
+    block_text = "".join(block.block_content)
+    if SELECTION_COMMAND_PATTERN.search(block_text):
+        return True
+    return "|" in block.block_name and not is_selection_target_block(block.block_name)
+
+
+def parse_selection(text):
+    """extract choice text and positions from a Chaos_R selection block"""
+    texts = []
+    text_positions = []
+
+    for match in SELECTION_COMMAND_PATTERN.finditer(text):
+        texts.append(match.group(2))
+        text_positions.append((match.start(2), match.end(2)))
+
+    if texts:
+        return texts, text_positions
+
+    first_line_end = text.find("\n")
+    first_line = text if first_line_end == -1 else text[:first_line_end]
+    return parse_selection_label(first_line)
+
+
+def parse_selection_label(label_line):
+    """extract fallback choices from a label line such as *SEL01|Choice A/Choice B"""
+    pipe_index = label_line.find("|")
+    if pipe_index == -1:
+        return [], []
+
+    labels_text = label_line[pipe_index + 1 :]
+    if labels_text.strip() == "":
+        return [], []
+
+    texts = []
+    text_positions = []
+    current_start = pipe_index + 1
+
+    for index in range(pipe_index + 1, len(label_line)):
+        if label_line[index] in "/／":
+            if current_start < index:
+                texts.append(label_line[current_start:index])
+                text_positions.append((current_start, index))
+            current_start = index + 1
+
+    if current_start < len(label_line):
+        texts.append(label_line[current_start:])
+        text_positions.append((current_start, len(label_line)))
+
+    return texts, text_positions
 
 
 possible_content_re_default = [r"^(?!_).*dakr.*\.ks", r"^(?!_)luna.*\.ks", r"est.*\.ks"]

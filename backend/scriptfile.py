@@ -190,7 +190,8 @@ class ScriptFile:
     def update_from_textfiles(self, strict_verfication=False) -> bool:
         """update the content (translation) of the script file from the text file"""
         for textfile in self.textfiles:
-            textfile.update_from_textfile()
+            if not textfile.update_from_textfile():
+                return False
 
         # repalce the blocks with the updated blocks
         temp_blocks = []

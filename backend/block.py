@@ -6,6 +6,7 @@ import re
 from logging import getLogger
 
 logger = getLogger(__name__)
+SELECTION_DELIMITER_RE = re.compile(r"[／/]")
 
 
 def default_text_separater(text_translated_whole: str, texts_original: list[str]) -> list[str]:
@@ -140,6 +141,13 @@ def replace_substrings(original, positions, new_texts):
     return results
 
 
+def split_selection_text(text: str) -> list[str]:
+    """Split a serialized selection row into option strings."""
+    if text.strip() == "":
+        return []
+    return SELECTION_DELIMITER_RE.split(text)
+
+
 class Block:
     """A block is a unit of text in a script file that controls the text that is shown at one time"""
 
@@ -185,7 +193,7 @@ class Block:
 
     @classmethod
     def from_csv_line(cls, csv_line):
-        """create a block instance from a csv line, note this can only be used for translation"""
+        """Create a block instance from a csv line without engine-specific type inference."""
         # check if csv_line is a list
         if not isinstance(csv_line, list):
             # if not, split it
@@ -201,22 +209,10 @@ class Block:
         block = cls(block_name, block_content)
         # a block read from csv file is always parsed
         block.is_parsed = True
-        if block_name.startswith("sel"):
-            block.block_type = "selection"
-        # if there is only 1 selection, this will be problematic
-        # verify there is same number of selections
         block.speaker_original = csv_line[1].strip()
         block.text_original = csv_line[2].strip()
         block.speaker_translated = csv_line[3].strip()
         block.text_translated = csv_line[4].strip()
-        if block.is_selection():
-            block.selection_original = re.split(r"[/／／]", csv_line[2])
-            block.selection_translated = re.split(r"[/／／]", csv_line[4])
-            if (
-                len(block.selection_original) != len(block.selection_translated)
-                and block.selection_translated[0].strip() != ""
-            ):
-                raise ValueError("Selections not matched for block:" + block_name)
 
         if len(csv_line) >= 8:
             if csv_line[5].strip() != "Yes" and csv_line[5].strip() != "No":
@@ -292,8 +288,7 @@ class Block:
         # replace the selections, do as the same as for the text
         if self.is_selection():
             if not self.selection_translated and self.text_translated.strip() != "":
-                # ! this might not be needed as the split has been done in csv -> block function
-                self.selection_translated = re.split(r"[／/]", self.text_translated)
+                self.selection_translated = split_selection_text(self.text_translated)
             if len(self.selection_original) != len(self.selection_translated):
                 #! if a problem appears, the original text will be used
                 logger.error("Error: selections not matched for block " + self.block_name)
@@ -334,6 +329,12 @@ class Block:
     def is_empty(self):
         """return if the block is empty"""
         return self.is_parsed and self.text_original.strip() == "" and (not self.selection_original)
+
+    def is_exportable(self):
+        """return if the block should be exported to translation files"""
+        if not self.is_parsed:
+            return True
+        return not self.is_empty()
 
     def is_text_separated(self):
         """return if the text is separated"""

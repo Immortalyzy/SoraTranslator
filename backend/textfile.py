@@ -6,7 +6,7 @@ import json
 from typing import List
 from logging import getLogger
 
-from block import Block
+from block import Block, split_selection_text
 
 logger = getLogger(__name__)
 PROPERTY_LINE_LENGTH = 8
@@ -53,16 +53,16 @@ class TextFile:
         """create a game file instance from a file path"""
         textfile = cls()
         textfile.blocks = blocks
-        textfile.is_empty = True
-        for block in blocks:
-            if not block.is_empty():
-                textfile.is_empty = False
-                break
+        textfile.is_empty = len(textfile.exportable_blocks()) == 0
 
         # generate the name list
         textfile.generate_name_list()
 
         return textfile
+
+    def exportable_blocks(self) -> List[Block]:
+        """return the subset of blocks that should be serialized for translation"""
+        return [block for block in self.blocks if block.is_exportable()]
 
     def generate_name_list(self):
         """count the speaker names in the text file"""
@@ -102,7 +102,9 @@ class TextFile:
                     # skip the first few lines
                     continue
                 # cannot call stirp() here because the line may be empty
-                textfile.blocks.append(Block.from_csv_line(line))
+                block = Block.from_csv_line(line)
+                if block.is_exportable():
+                    textfile.blocks.append(block)
         # print(f"Text file {file_path} loaded, {len(textfile.blocks)} blocks found")
 
         # verifications
@@ -130,7 +132,7 @@ class TextFile:
         data["translation_percentage"] = self.translation_percentage
         data["translation_info"] = self.info["translation_info"]
         blocks_json = []
-        for block in self.blocks:
+        for block in self.exportable_blocks():
             blocks_json.append(block.to_json())
         data["blocks"] = blocks_json
         return data
@@ -160,7 +162,7 @@ class TextFile:
             dest = self.text_file_path.append(".json")
 
         # start creating the json file
-        data = [{"name": block.speaker_original, "message": block.text_original} for block in self.blocks]
+        data = [{"name": block.speaker_original, "message": block.text_original} for block in self.exportable_blocks()]
 
         # write the json file, replace if needed
         # check if the file exists
@@ -192,19 +194,20 @@ class TextFile:
         with open(json_file, "r", encoding="utf_8") as file:
             data = json.load(file)
         # implement verification (total lines, etc.)
-        if len(data) != len(self.blocks):
+        exportable_blocks = self.exportable_blocks()
+        if len(data) != len(exportable_blocks):
             logger.error(f"Json output file {json_file} is not coherent with the script file, cannot update")
             return False
 
         # record the translation information in the text file and write them to blocks
         for i, entry in enumerate(data):
             # verify line information
-            if self.blocks[i].speaker_original == "" and entry["name"] != "":
+            if exportable_blocks[i].speaker_original == "" and entry["name"] != "":
                 logger.warning(
                     f"Entry {i+1} in json file {json_file} does not match the script file, result might be incorrect"
                 )
-            self.blocks[i].speaker_translated = entry["name"]
-            self.blocks[i].text_translated = entry["message"]
+            exportable_blocks[i].speaker_translated = entry["name"]
+            exportable_blocks[i].text_translated = entry["message"]
 
         self.is_translated = True
         return True
@@ -300,7 +303,7 @@ class TextFile:
             file.write(self.from_property("need_manual_fix") + "\n")
             file.write(self.from_property("translation_percentage") + "\n")
             lines_wroten += PROPERTY_LINE_LENGTH
-            for block in self.blocks:
+            for block in self.exportable_blocks():
                 lines_wroten += 1
                 file.write(block.to_csv_line() + "\n")
 
@@ -320,10 +323,8 @@ class TextFile:
             return False
         with open(self.text_file_path, "r", encoding="utf_8") as file:
             lines = file.readlines()
-        # implement verification (total lines, etc.)
-        if len(lines) != len(self.blocks) + PROPERTY_LINE_LENGTH:
-            logger.error(f"Text file {self.text_file_path} is not coherent with the script file, cannot update")
-            return False
+        exportable_blocks = self.exportable_blocks()
+        file_blocks = []
         # record the translation information in the text file and write them to blocks
         for i, line in enumerate(lines):
             if i < PROPERTY_LINE_LENGTH:
@@ -332,25 +333,47 @@ class TextFile:
                 # skip the first few lines
                 continue
             block = Block.from_csv_line(line)
-            # verify line information
-            j = i - PROPERTY_LINE_LENGTH
-            if block.text_original.strip() != self.blocks[j].text_original.strip():
+            if block.is_exportable():
+                file_blocks.append(block)
+
+        if len(file_blocks) != len(exportable_blocks):
+            logger.error(f"Text file {self.text_file_path} is not coherent with the script file, cannot update")
+            return False
+
+        for j, block in enumerate(file_blocks):
+            if block.text_original.strip() != exportable_blocks[j].text_original.strip():
                 logger.error(
                     f"Line {j+1} in text file {self.text_file_path} does not match the script file, cannot update"
                 )
                 # WARING
                 # return False
+            if not self._is_valid_block_update(exportable_blocks[j], block):
+                return False
 
+        for j, block in enumerate(file_blocks):
             # update the block, cannot copy because there is no parsing information in "block"
-            self.blocks[j].text_translated = block.text_translated
-            self.blocks[j].speaker_translated = (
-                block.speaker_translated if block.speaker_translated != "" else self.blocks[j].speaker_original
+            exportable_blocks[j].text_translated = block.text_translated
+            exportable_blocks[j].speaker_translated = (
+                block.speaker_translated if block.speaker_translated != "" else exportable_blocks[j].speaker_original
             )
             # update tanslation information
-            self.blocks[j].is_translated = True if block.text_translated != "" else False
-            if self.blocks[j].is_translated:
-                self.blocks[j].translation_date = block.translation_date
-                self.blocks[j].translation_engine = block.translation_engine
+            exportable_blocks[j].is_translated = True if block.text_translated != "" else False
+            if exportable_blocks[j].is_translated:
+                exportable_blocks[j].translation_date = block.translation_date
+                exportable_blocks[j].translation_engine = block.translation_engine
+
+        return True
+
+    @staticmethod
+    def _is_valid_block_update(target_block: Block, source_block: Block) -> bool:
+        """Validate a CSV row against the already-parsed in-memory block."""
+        if not target_block.is_selection():
+            return True
+
+        translated_selections = split_selection_text(source_block.text_translated)
+        if translated_selections and len(translated_selections) != len(target_block.selection_original):
+            logger.error(f"Selections not matched for block {target_block.block_name}")
+            return False
 
         return True
 

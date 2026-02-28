@@ -3,6 +3,7 @@ GameResources/
 config.json
 .codex
 openspec
+*/tests/data/*
 
 
 # Byte-compiled / optimized / DLL files
