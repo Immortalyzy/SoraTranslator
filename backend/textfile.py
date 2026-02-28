@@ -53,7 +53,7 @@ class TextFile:
         """create a game file instance from a file path"""
         textfile = cls()
         textfile.blocks = blocks
-        textfile.is_empty = len(textfile.exportable_blocks()) == 0
+        textfile.is_empty = len(textfile.translation_rows()) == 0
 
         # generate the name list
         textfile.generate_name_list()
@@ -63,6 +63,16 @@ class TextFile:
     def exportable_blocks(self) -> List[Block]:
         """return the subset of blocks that should be serialized for translation"""
         return [block for block in self.blocks if block.is_exportable()]
+
+    def translation_rows(self) -> List[Block]:
+        """return the rows exposed to translators, flattening selection choices"""
+        rows = []
+        for block in self.exportable_blocks():
+            if block.is_selection() and block.selection_original:
+                rows.extend(block.create_selection_row(i) for i in range(len(block.selection_original)))
+            else:
+                rows.append(block)
+        return rows
 
     def generate_name_list(self):
         """count the speaker names in the text file"""
@@ -132,7 +142,7 @@ class TextFile:
         data["translation_percentage"] = self.translation_percentage
         data["translation_info"] = self.info["translation_info"]
         blocks_json = []
-        for block in self.exportable_blocks():
+        for block in self.translation_rows():
             blocks_json.append(block.to_json())
         data["blocks"] = blocks_json
         return data
@@ -162,7 +172,7 @@ class TextFile:
             dest = self.text_file_path.append(".json")
 
         # start creating the json file
-        data = [{"name": block.speaker_original, "message": block.text_original} for block in self.exportable_blocks()]
+        data = [{"name": block.speaker_original, "message": block.text_original} for block in self.translation_rows()]
 
         # write the json file, replace if needed
         # check if the file exists
@@ -194,20 +204,33 @@ class TextFile:
         with open(json_file, "r", encoding="utf_8") as file:
             data = json.load(file)
         # implement verification (total lines, etc.)
+        translation_rows = self.translation_rows()
+        if len(data) == len(translation_rows):
+            for i, entry in enumerate(data):
+                if translation_rows[i].speaker_original == "" and entry["name"] != "":
+                    logger.warning(
+                        f"Entry {i+1} in json file {json_file} does not match the script file, result might be incorrect"
+                    )
+                self._apply_json_entry(translation_rows[i], entry)
+            self.is_translated = True
+            return True
+
         exportable_blocks = self.exportable_blocks()
         if len(data) != len(exportable_blocks):
             logger.error(f"Json output file {json_file} is not coherent with the script file, cannot update")
             return False
 
-        # record the translation information in the text file and write them to blocks
         for i, entry in enumerate(data):
-            # verify line information
             if exportable_blocks[i].speaker_original == "" and entry["name"] != "":
                 logger.warning(
                     f"Entry {i+1} in json file {json_file} does not match the script file, result might be incorrect"
                 )
-            exportable_blocks[i].speaker_translated = entry["name"]
-            exportable_blocks[i].text_translated = entry["message"]
+            if exportable_blocks[i].is_selection():
+                translated_selections = split_selection_text(entry["message"])
+                if translated_selections and len(translated_selections) != len(exportable_blocks[i].selection_original):
+                    logger.error(f"Selections not matched for block {exportable_blocks[i].block_name}")
+                    return False
+            self._apply_json_entry(exportable_blocks[i], entry)
 
         self.is_translated = True
         return True
@@ -303,7 +326,7 @@ class TextFile:
             file.write(self.from_property("need_manual_fix") + "\n")
             file.write(self.from_property("translation_percentage") + "\n")
             lines_wroten += PROPERTY_LINE_LENGTH
-            for block in self.exportable_blocks():
+            for block in self.translation_rows():
                 lines_wroten += 1
                 file.write(block.to_csv_line() + "\n")
 
@@ -323,7 +346,6 @@ class TextFile:
             return False
         with open(self.text_file_path, "r", encoding="utf_8") as file:
             lines = file.readlines()
-        exportable_blocks = self.exportable_blocks()
         file_blocks = []
         # record the translation information in the text file and write them to blocks
         for i, line in enumerate(lines):
@@ -336,6 +358,17 @@ class TextFile:
             if block.is_exportable():
                 file_blocks.append(block)
 
+        translation_rows = self.translation_rows()
+        if len(file_blocks) == len(translation_rows):
+            for j, block in enumerate(file_blocks):
+                if block.text_original.strip() != translation_rows[j].text_original.strip():
+                    logger.error(
+                        f"Line {j+1} in text file {self.text_file_path} does not match the script file, cannot update"
+                    )
+                self._apply_block_update(translation_rows[j], block)
+            return True
+
+        exportable_blocks = self.exportable_blocks()
         if len(file_blocks) != len(exportable_blocks):
             logger.error(f"Text file {self.text_file_path} is not coherent with the script file, cannot update")
             return False
@@ -351,16 +384,7 @@ class TextFile:
                 return False
 
         for j, block in enumerate(file_blocks):
-            # update the block, cannot copy because there is no parsing information in "block"
-            exportable_blocks[j].text_translated = block.text_translated
-            exportable_blocks[j].speaker_translated = (
-                block.speaker_translated if block.speaker_translated != "" else exportable_blocks[j].speaker_original
-            )
-            # update tanslation information
-            exportable_blocks[j].is_translated = True if block.text_translated != "" else False
-            if exportable_blocks[j].is_translated:
-                exportable_blocks[j].translation_date = block.translation_date
-                exportable_blocks[j].translation_engine = block.translation_engine
+            self._apply_block_update(exportable_blocks[j], block)
 
         return True
 
@@ -376,6 +400,60 @@ class TextFile:
             return False
 
         return True
+
+    @staticmethod
+    def _normalized_selection_translations(block: Block) -> list[str]:
+        """return a selection translation list sized to the original option count"""
+        translations = list(block.selection_translated[: len(block.selection_original)])
+        if len(translations) < len(block.selection_original):
+            translations.extend([""] * (len(block.selection_original) - len(translations)))
+        return translations
+
+    @classmethod
+    def _apply_json_entry(cls, target_block: Block, entry: dict[str, str]) -> None:
+        """Apply one json translation entry to a parsed target block or synthetic row."""
+        source_block = Block.from_csv_line(
+            [
+                target_block.block_name,
+                target_block.speaker_original,
+                target_block.text_original,
+                entry["name"],
+                entry["message"],
+                "Yes" if entry["message"] else "No",
+                "",
+                "Undefined or manual",
+            ]
+        )
+        cls._apply_block_update(target_block, source_block)
+
+    @classmethod
+    def _apply_block_update(cls, target_block: Block, source_block: Block) -> None:
+        """Apply a CSV/json row update to either a real block or a synthetic selection row."""
+        if target_block.is_selection_row():
+            parent_block = target_block.selection_parent
+            if parent_block is None or target_block.selection_index is None:
+                return
+
+            parent_block.selection_translated = cls._normalized_selection_translations(parent_block)
+            parent_block.selection_translated[target_block.selection_index] = source_block.text_translated
+            parent_block.text_translated = "/".join(parent_block.selection_translated)
+            parent_block.is_translated = any(text.strip() for text in parent_block.selection_translated)
+            if source_block.text_translated:
+                parent_block.translation_date = source_block.translation_date
+                parent_block.translation_engine = source_block.translation_engine
+            return
+
+        if target_block.is_selection():
+            target_block.selection_translated = split_selection_text(source_block.text_translated)
+
+        target_block.text_translated = source_block.text_translated
+        target_block.speaker_translated = (
+            source_block.speaker_translated if source_block.speaker_translated != "" else target_block.speaker_original
+        )
+        target_block.is_translated = True if source_block.text_translated != "" else False
+        if target_block.is_translated:
+            target_block.translation_date = source_block.translation_date
+            target_block.translation_engine = source_block.translation_engine
 
     def check_coherence_with_textfile(self, text_file_path=None):
         """check if the script file is coherent with the text file"""

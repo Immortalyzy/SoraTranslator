@@ -86,10 +86,13 @@ class ScriptFile:
         """create a entry in the scriptlist.csv"""
         entry = ""
         entry += self.script_file_path + "\t"
-        if len(self.textfiles) == 1:
-            entry += self.textfiles[0].text_file_path + "\t"
+        generated_textfiles = self.generated_textfiles()
+        if len(generated_textfiles) == 1:
+            entry += generated_textfiles[0].text_file_path + "\t"
+        elif len(generated_textfiles) == 0:
+            entry += "\t"
         else:
-            entry += f"{len(self.textfiles):d} files" + "\t"
+            entry += f"{len(generated_textfiles):d} files" + "\t"
         entry += self.file_type + "\t"
         entry += str(int(self.is_translated)) + "\t"
         entry += str(int(self.need_manual_fix)) + "\t"
@@ -147,6 +150,14 @@ class ScriptFile:
             textfile.script_file_path = self.script_file_path
             self.textfiles.append(textfile)
             self.blocks_count_in_textfile.append(len(self.blocks))
+
+    def generated_textfiles(self) -> List[TextFile]:
+        """Return textfiles that actually materialize into translation outputs."""
+        return [textfile for textfile in self.textfiles if not textfile.is_empty]
+
+    def has_generated_textfiles(self) -> bool:
+        """Return whether this script produced at least one non-empty textfile."""
+        return len(self.generated_textfiles()) > 0
 
     def generate_textfiles(
         self,

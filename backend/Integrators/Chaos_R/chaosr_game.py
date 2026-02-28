@@ -184,20 +184,15 @@ class ChaosRGame(Game):
             scriptfile.file_type = guess_file_type(scriptfile, possible_content_re=self.content_indicators)
         self.update_script_filelist()
 
-        # update to_translate_file_list
+        provisional_to_translate = []
+        self.to_translate_file_list = []
+        self.dangerous_file_list = []
         for script_file in self.script_file_list:
             if script_file.is_to_translate():
-                self.to_translate_file_list.append(script_file)
-        self.update_to_translate_filelist()
-
-        for script_file in self.to_translate_file_list:
-            if script_file.is_Hcontent():
-                self.dangerous_file_list.append(script_file)
-
-        logger.info(f"Identified {len(self.to_translate_file_list)} files to translate.")
+                provisional_to_translate.append(script_file)
 
         # generate text files for all to_translate files
-        for script_file in self.to_translate_file_list:
+        for script_file in provisional_to_translate:
             # parsing
             try:
                 logger.info(f"Parsing {script_file.script_file_path}")
@@ -207,15 +202,22 @@ class ChaosRGame(Game):
                 continue
             # generate text file
             # generate the destination path for the text file
-            # get the base name of the file without the extension
-            file_name = os.path.basename(script_file.script_file_path)
-            file_name = os.path.splitext(file_name)[0]
             # remove file extension from original package
             relative_path = os.path.relpath(script_file.script_file_path, self.rawtext_directory)
             text_path = os.path.join(self.text_directory, relative_path)
             text_path = os.path.splitext(text_path)[0] + ".csv"
 
             script_file.generate_textfiles(dest=text_path, replace=replace)
+            if not script_file.has_generated_textfiles():
+                logger.warning(
+                    "Skipping %s because parsing found no exportable text.",
+                    script_file.script_file_path,
+                )
+                continue
+
+            self.to_translate_file_list.append(script_file)
+            if script_file.is_Hcontent():
+                self.dangerous_file_list.append(script_file)
 
             # update the names list
             for i, name in enumerate(script_file.name_list_original):
@@ -227,6 +229,8 @@ class ChaosRGame(Game):
                     index = self.name_list_original.index(name)
                     self.name_list_count[index] += script_file.name_list_count[i]
 
+        logger.info(f"Identified {len(self.to_translate_file_list)} files to translate.")
+        self.update_to_translate_filelist()
         self.refresh_global_name_replacement_table()
         self.update_script_filelist()
         return True

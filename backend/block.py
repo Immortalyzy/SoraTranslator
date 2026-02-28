@@ -165,6 +165,8 @@ class Block:
         self.text_translated = ""
         self.selection_original = []
         self.selection_translated = []
+        self.selection_parent = None
+        self.selection_index = None
         self.block_name_line = ""
 
         ## for integration
@@ -343,6 +345,29 @@ class Block:
     def is_selection(self):
         """return if the block is a choice"""
         return self.block_type == "selection"
+
+    def is_selection_row(self):
+        """return if the block is a synthetic export row for a selection option"""
+        return self.selection_parent is not None and self.selection_index is not None
+
+    def create_selection_row(self, selection_index: int):
+        """Create a synthetic row that exposes one selection option for translation surfaces."""
+        if not self.is_selection():
+            raise ValueError("Selection rows can only be created from selection blocks.")
+        if selection_index < 0 or selection_index >= len(self.selection_original):
+            raise IndexError("Selection index out of range.")
+
+        row = Block(f"{self.block_name}#{selection_index + 1}", [])
+        row.is_parsed = True
+        row.selection_parent = self
+        row.selection_index = selection_index
+        row.text_original = self.selection_original[selection_index]
+        if selection_index < len(self.selection_translated):
+            row.text_translated = self.selection_translated[selection_index]
+        row.is_translated = bool(row.text_translated.strip())
+        row.translation_date = self.translation_date
+        row.translation_engine = self.translation_engine
+        return row
 
     def text_to_translate(self, add_speaker: bool = False):
         """return the text to translate"""
