@@ -15,6 +15,14 @@ SELECTION_COMMAND_PATTERN = re.compile(r"""\[sel\d+[^\]]*?\btext=(['"])(.*?)\1[^
 SELECTION_TARGET_PATTERN = re.compile(r"^SEL\d+_\d+$", re.IGNORECASE)
 
 
+def find_label_marker_index(line: str):
+    """Return the index of a label marker when the first non-whitespace character is '*'."""
+    stripped_line = line.lstrip(" \t")
+    if not stripped_line.startswith("*"):
+        return None
+    return len(line) - len(stripped_line)
+
+
 def parse_file(script_file: ScriptFile, encoding="utf_16") -> List[Block]:
     """this function will parse a script file to parsed blocks, this parser will omit the text at the beging of file outside of any blocks"""
     file_path = script_file.script_file_path
@@ -38,7 +46,8 @@ def parse_file(script_file: ScriptFile, encoding="utf_16") -> List[Block]:
         if line.strip().startswith(";"):
             continue
         # Check if the line is the start of a block
-        if line.strip().startswith("*"):
+        label_marker_index = find_label_marker_index(line)
+        if label_marker_index is not None:
             # If there is an ongoing block, save its content first
             if block_content:
                 # if there is a block being recorded, save it to the block list
@@ -47,7 +56,7 @@ def parse_file(script_file: ScriptFile, encoding="utf_16") -> List[Block]:
                 # reset the block content
                 block_content = []
             # Save the new block name
-            block_name = line[1:].strip()  # remove '*' and strip whitespace
+            block_name = line[label_marker_index + 1 :].strip()  # remove '*' and strip whitespace
             block_content.append(line)
         else:
             # Add line to the current block's content
@@ -182,14 +191,16 @@ def find_structural_spans(text):
                 cursor = speaker_end
                 continue
 
-        if text[cursor] == "*" and (cursor == 0 or text[cursor - 1] == "\n"):
-            line_end = text.find("\n", cursor)
-            if line_end == -1:
-                spans.append((cursor, text_length))
-                break
-            spans.append((cursor, line_end + 1))
-            cursor = line_end + 1
-            continue
+        if text[cursor] == "*":
+            line_start = text.rfind("\n", 0, cursor) + 1
+            if text[line_start:cursor].strip(" \t") == "":
+                line_end = text.find("\n", cursor)
+                if line_end == -1:
+                    spans.append((line_start, text_length))
+                    break
+                spans.append((line_start, line_end + 1))
+                cursor = line_end + 1
+                continue
 
         if text[cursor] == "[":
             command_end = find_command_span_end(text, cursor)

@@ -190,6 +190,119 @@ function Test-PipInstallOutcome {
     return $false
 }
 
+function Get-RequirementEntryCount {
+    param([string]$Path)
+
+    if (-not (Test-Path $Path)) {
+        return 0
+    }
+
+    return @(
+        Get-Content -Path $Path -Encoding UTF8 |
+        Where-Object {
+            $trimmed = $_.Trim()
+            $trimmed -and -not $trimmed.StartsWith("#")
+        }
+    ).Count
+}
+
+function Get-PipInstallProgressSnapshot {
+    param(
+        [string]$StdOutPath,
+        [int]$RequirementCount
+    )
+
+    $snapshot = @{
+        Percent = 5
+        Status  = "Preparing dependency install..."
+    }
+
+    if (-not (Test-Path $StdOutPath)) {
+        return $snapshot
+    }
+
+    try {
+        $content = Get-Content -Path $StdOutPath -Raw -Encoding UTF8
+    } catch {
+        return $snapshot
+    }
+
+    if ([string]::IsNullOrWhiteSpace($content)) {
+        return $snapshot
+    }
+
+    $collectingCount = [regex]::Matches($content, "(?m)^Collecting ").Count
+    $installingStarted = $content -match "(?m)^Installing collected packages:"
+    $successfullyInstalled = $content -match "(?m)^Successfully installed "
+
+    if ($successfullyInstalled) {
+        $snapshot.Percent = 98
+        $snapshot.Status = "Finalizing dependency install..."
+        return $snapshot
+    }
+
+    if ($installingStarted) {
+        $snapshot.Percent = 90
+        $snapshot.Status = "Installing downloaded packages..."
+        return $snapshot
+    }
+
+    if ($RequirementCount -gt 0 -and $collectingCount -gt 0) {
+        $resolvedCount = [Math]::Min($collectingCount, $RequirementCount)
+        $snapshot.Percent = [Math]::Min(85, (10 + [int](($resolvedCount / $RequirementCount) * 75)))
+        $snapshot.Status = "Resolving dependencies ($resolvedCount/$RequirementCount)..."
+        return $snapshot
+    }
+
+    if ($collectingCount -gt 0) {
+        $snapshot.Percent = 25
+        $snapshot.Status = "Resolving dependencies..."
+    }
+
+    return $snapshot
+}
+
+function Wait-ProcessWithProgress {
+    param(
+        [System.Diagnostics.Process]$Process,
+        [int]$TimeoutSeconds,
+        [string]$Name,
+        [string]$Activity,
+        [scriptblock]$ProgressSnapshotProvider,
+        [int]$ProgressId = 1
+    )
+
+    if ($TimeoutSeconds -le 0) {
+        throw "$Name exceeded runtime budget before start."
+    }
+
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    try {
+        while (-not $Process.HasExited) {
+            $remaining = [int][Math]::Ceiling(($deadline - (Get-Date)).TotalSeconds)
+            if ($remaining -le 0) {
+                Stop-ProcessTree -ProcessId $Process.Id
+                throw "$Name exceeded hard timeout (${TimeoutSeconds}s)."
+            }
+
+            $snapshot = & $ProgressSnapshotProvider
+            $status = "{0} ({1}s left)" -f $snapshot.Status, $remaining
+            Write-Progress -Id $ProgressId -Activity $Activity -Status $status -PercentComplete $snapshot.Percent
+
+            $waitMs = [Math]::Min(1000, $remaining * 1000)
+            $null = $Process.WaitForExit($waitMs)
+        }
+
+        $Process.WaitForExit()
+        Write-Progress -Id $ProgressId -Activity $Activity -Completed
+        return [int]$Process.ExitCode
+    } finally {
+        if (-not $Process.HasExited) {
+            Write-Progress -Id $ProgressId -Activity $Activity -Completed
+        }
+    }
+}
+
 function Reserve-TcpPort {
     param([int]$Port)
 
@@ -366,9 +479,12 @@ try {
             Write-LauncherLog "Installing backend dependencies..."
             $pipOut = Join-Path $backendDir "pip.install.out.log"
             $pipErr = Join-Path $backendDir "pip.install.err.log"
+            $requirementCount = Get-RequirementEntryCount -Path $reqFile
             $pipProc = Start-Process -FilePath $venvPy -ArgumentList @("-m", "pip", "install", "--disable-pip-version-check", "-r", $reqFile) -WorkingDirectory $backendDir -PassThru -WindowStyle Hidden -RedirectStandardOutput $pipOut -RedirectStandardError $pipErr
             $remaining = Get-RemainingSeconds -BudgetSeconds $startupTimeoutSeconds
-            $pipCode = Wait-ProcessWithTimeout -Process $pipProc -TimeoutSeconds $remaining -Name "pip install"
+            $pipCode = Wait-ProcessWithProgress -Process $pipProc -TimeoutSeconds $remaining -Name "pip install" -Activity "Installing Python dependencies" -ProgressSnapshotProvider {
+                Get-PipInstallProgressSnapshot -StdOutPath $pipOut -RequirementCount $requirementCount
+            } -ProgressId 17
             if (-not (Test-PipInstallOutcome -ExitCode $pipCode -StdOutPath $pipOut -StdErrPath $pipErr)) {
                 throw "Dependency installation failed. See $pipOut and $pipErr"
             }

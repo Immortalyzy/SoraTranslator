@@ -306,3 +306,45 @@ def test_nested_bracket_command_before_scene_start_round_trips_cleanly(tmp_path)
     assert translated_text.index(translated_line) < translated_text.index(eval_line) < translated_text.index("*scene_start")
     assert translated_line + "\n" + eval_line in translated_text
     assert "He held her softly from behind['SRP_' + f.sc]" not in translated_text
+
+
+def test_indented_labels_parse_cleanly_and_round_trip(tmp_path):
+    script_file = parse_fixture("indented_label.ks")
+
+    assert [block.block_name for block in script_file.blocks] == ["802|"]
+
+    block = script_file.blocks[0]
+    assert block.speaker_original == "Kyo"
+    assert block.text_original == "(I can fight on my own.)"
+    assert "*802|" not in block.text_original
+
+    text_file = script_file.textfiles[0]
+    exportable_blocks = text_file.exportable_blocks()
+    assert [exportable_block.block_name for exportable_block in exportable_blocks] == ["802|"]
+    assert exportable_blocks[0].text_original == "(I can fight on my own.)"
+
+    csv_path = tmp_path / "indented_label.csv"
+    text_file.generate_textfile(dest=str(csv_path), replace=True)
+    csv_text = csv_path.read_text(encoding="utf_8")
+
+    assert "802|\tKyo\t(I can fight on my own.)\t" in csv_text
+    assert "*802|\t" not in csv_text
+
+    lines = csv_text.splitlines()
+    row = lines[PROPERTY_LINE_LENGTH].split("\t")
+    row[4] = "(I can fight alone.)"
+    row[5] = "Yes"
+    row[6] = "2026-03-01"
+    row[7] = "manual"
+    lines[PROPERTY_LINE_LENGTH] = "\t".join(row)
+    csv_path.write_text("\n".join(lines) + "\n", encoding="utf_8")
+
+    assert script_file.update_from_textfiles() is True
+
+    translated_path = tmp_path / "indented_label_translated.ks"
+    script_file.generate_translated_rawfile(dest=str(translated_path), replace=True, encoding="utf_8")
+    translated_text = translated_path.read_text(encoding="utf_8")
+
+    assert translated_text.splitlines()[0] == "\t*802|"
+    assert "\t[vo_kyo s=\"KYO_0129\"][ns]Kyo[nse](I can fight alone.)[pcms]" in translated_text
+    assert "*802|(I can fight on my own.)" not in translated_text
