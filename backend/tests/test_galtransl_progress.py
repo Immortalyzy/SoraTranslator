@@ -10,6 +10,7 @@ class DummyConfig:
 class DummyProject:
     def __init__(self):
         self.project_path = ""
+        self.game = None
 
     def from_pickle(self, project_file_path):
         self.project_path = project_file_path

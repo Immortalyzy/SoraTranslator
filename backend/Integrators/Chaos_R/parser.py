@@ -23,6 +23,11 @@ def find_label_marker_index(line: str):
     return len(line) - len(stripped_line)
 
 
+def is_comment_line(line: str) -> bool:
+    """Return whether the first non-whitespace character starts a comment."""
+    return line.lstrip(" \t").startswith(";")
+
+
 def parse_file(script_file: ScriptFile, encoding="utf_16") -> List[Block]:
     """this function will parse a script file to parsed blocks, this parser will omit the text at the beging of file outside of any blocks"""
     file_path = script_file.script_file_path
@@ -42,9 +47,6 @@ def parse_file(script_file: ScriptFile, encoding="utf_16") -> List[Block]:
     block_content = []  # a list of lines
 
     for line in lines:
-        # check if is a comment line
-        if line.strip().startswith(";"):
-            continue
         # Check if the line is the start of a block
         label_marker_index = find_label_marker_index(line)
         if label_marker_index is not None:
@@ -117,7 +119,7 @@ def parse_block(block: Block) -> (str, str, (int, int), (int, int)):
     found_speakers = []
     for i, line in enumerate(block.block_content):
         # check if the line contains the [【speaker】]
-        if "*" in line:
+        if is_comment_line(line) or find_label_marker_index(line) is not None:
             continue
         found_speaker = re.search(search_pattern, line)
         found_speaker2 = re.search(search_pattern2, line)
@@ -189,6 +191,17 @@ def find_structural_spans(text):
                 speaker_end += len(NON_HEROINE_SPEAKER_END)
                 spans.append((cursor, speaker_end))
                 cursor = speaker_end
+                continue
+
+        if text[cursor] == ";":
+            line_start = text.rfind("\n", 0, cursor) + 1
+            if text[line_start:cursor].strip(" \t") == "":
+                line_end = text.find("\n", cursor)
+                if line_end == -1:
+                    spans.append((line_start, text_length))
+                    break
+                spans.append((line_start, line_end + 1))
+                cursor = line_end + 1
                 continue
 
         if text[cursor] == "*":
@@ -291,7 +304,7 @@ def is_selection_source_block(block: Block) -> bool:
     block_label = normalize_block_name(block.block_name)
     if not block_label.upper().startswith("SEL"):
         return False
-    block_text = "".join(block.block_content)
+    block_text = "".join(line for line in block.block_content if not is_comment_line(line))
     if SELECTION_COMMAND_PATTERN.search(block_text):
         return True
     return "|" in block.block_name and not is_selection_target_block(block.block_name)

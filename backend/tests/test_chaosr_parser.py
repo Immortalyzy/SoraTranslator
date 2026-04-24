@@ -93,6 +93,42 @@ def test_preamble_and_control_labels_are_not_exported(tmp_path):
     assert "main\tAlice\tVisible line\t" in csv_text
 
 
+def test_comment_lines_round_trip_without_being_exported(tmp_path):
+    script_file = parse_fixture("comment_preservation.ks")
+    text_file = script_file.textfiles[0]
+
+    exportable_blocks = text_file.exportable_blocks()
+    assert [block.block_name for block in exportable_blocks] == ["1|"]
+    assert exportable_blocks[0].text_original == "Original line."
+
+    csv_path = tmp_path / "comment_preservation.csv"
+    text_file.generate_textfile(dest=str(csv_path), replace=True)
+    csv_text = csv_path.read_text(encoding="utf_8")
+
+    assert "comment header" not in csv_text
+    assert "scene_exp_init" not in csv_text
+    assert "1|\tAlice\tOriginal line.\t" in csv_text
+
+    lines = csv_text.splitlines()
+    row = lines[PROPERTY_LINE_LENGTH].split("\t")
+    row[4] = "Translated line."
+    row[5] = "Yes"
+    row[6] = "2026-03-01"
+    row[7] = "manual"
+    lines[PROPERTY_LINE_LENGTH] = "\t".join(row)
+    csv_path.write_text("\n".join(lines) + "\n", encoding="utf_8")
+
+    assert script_file.update_from_textfiles() is True
+
+    translated_path = tmp_path / "comment_preservation_translated.ks"
+    script_file.generate_translated_rawfile(dest=str(translated_path), replace=True, encoding="utf_8")
+    translated_text = translated_path.read_text(encoding="utf_8")
+
+    assert translated_text.startswith(";//comment header\n")
+    assert "[if exp=\"tf.scene_mode == 1\"]\n\t;†[scene_exp_init]\n[endif]" in translated_text
+    assert "Translated line.[pcms]" in translated_text
+
+
 def test_selection_rows_round_trip_and_preserve_structural_blocks(tmp_path):
     script_file = parse_fixture("selection_inline.ks")
     text_file = script_file.textfiles[0]
