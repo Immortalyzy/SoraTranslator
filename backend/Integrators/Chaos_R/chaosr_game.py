@@ -12,9 +12,9 @@ from game import Game
 from scriptfile import ScriptFile, update_script_filelist
 from ..utils.encoding_fix import fix_allfiles
 from global_name_replacement import (
-    apply_name_replacement_to_text,
     compile_name_replacement_pattern,
 )
+from .name_replacement import apply_chaosr_name_replacement_to_text
 from .parser import guess_file_type, parse_file, possible_content_re_default
 
 logger = getLogger(__name__)
@@ -423,7 +423,7 @@ class ChaosRGame(Game):
             with open(translated_path, "r", encoding=self.target_encoding, errors="ignore") as file:
                 original_text = file.read()
 
-            replaced_text = apply_name_replacement_to_text(original_text, mapping, pattern)
+            replaced_text = apply_chaosr_name_replacement_to_text(original_text, mapping, pattern)
             if replaced_text == original_text:
                 continue
 

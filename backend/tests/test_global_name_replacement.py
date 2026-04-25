@@ -1,7 +1,13 @@
 from pathlib import Path
+import sys
 from types import SimpleNamespace
 
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from block import Block
+from Integrators.Chaos_R.name_replacement import apply_chaosr_name_replacement_to_text
 from Integrators.Chaos_R.chaosr_game import ChaosRGame
 from global_name_replacement import (
     NameReplacementRow,
@@ -58,6 +64,27 @@ def test_deterministic_overlap_replacement_prefers_longer_match():
     pattern = compile_name_replacement_pattern(mapping)
     replaced = apply_name_replacement_to_text("Alice and Al", mapping, pattern)
     assert replaced == "LONG and SHORT"
+
+
+def test_chaosr_replacement_skips_protected_command_payloads():
+    mapping = {"ビアンカ": "比安卡"}
+    pattern = compile_name_replacement_pattern(mapping)
+    text = (
+        '[img_c storage="ビアンカ触手攻撃_L" layer=10]'
+        '[std_alt_l storage="ビアンカ"]'
+        '[std_yui_special storage="ビアンカ"]'
+        '[std_bia storage="ビアンカ"]'
+        "ビアンカが動いた。"
+    )
+
+    replaced = apply_chaosr_name_replacement_to_text(text, mapping, pattern)
+
+    assert '[img_c storage="ビアンカ触手攻撃_L" layer=10]' in replaced
+    assert '[std_alt_l storage="ビアンカ"]' in replaced
+    assert '[std_yui_special storage="ビアンカ"]' in replaced
+    assert '[std_bia storage="比安卡"]' in replaced
+    assert "比安卡が動いた。" in replaced
+    assert "比安卡触手攻撃_L" not in replaced
 
 
 def test_sort_rows_by_appearance_descending():
@@ -147,6 +174,39 @@ def test_integration_replacement_applies_to_non_translated_script_files(tmp_path
     translated_system = Path(paths["translated_files_directory"]) / "k_others" / "_sys_name_macro.ks"
     assert translated_system.read_text(encoding="utf_8") == "Alicia macro"
     assert translated_translated.read_text(encoding="utf_8") == "Alicia translated"
+
+
+def test_integration_replacement_skips_img_c_but_keeps_map_text_replacement(tmp_path):
+    paths = build_paths(tmp_path)
+    game = ChaosRGame(paths=paths, name="Chaos_R")
+
+    translated_script = Path(paths["translated_files_directory"]) / "k_scenario" / "verse.ks"
+    translated_script.parent.mkdir(parents=True, exist_ok=True)
+    translated_script.write_text(
+        '[img_c storage="ビアンカ触手攻撃_L" layer=10]\n'
+        '[std_alt_l storage="ビアンカ"]\n'
+        '[std_yui_special storage="ビアンカ"]\n'
+        "ビアンカは立っている。\n",
+        encoding="utf_8",
+    )
+
+    translated_map = Path(paths["translated_files_directory"]) / "g_image2" / "01_map" / "_佐藤さん宛map.txt"
+    translated_map.parent.mkdir(parents=True, exist_ok=True)
+    translated_map.write_text("map_btn_ch03.png　ビアンカ\n", encoding="utf_8")
+
+    table_rows = [NameReplacementRow(source_name="ビアンカ", replacement_name="比安卡", source_count="1")]
+    table_file = game._create_global_name_replacement_textfile(table_rows, game.get_global_name_replacement_table_path())
+    table_file.generate_textfile(dest=game.get_global_name_replacement_table_path(), replace=True)
+
+    updated_count = game.apply_global_name_replacement_to_translated_files()
+
+    assert updated_count == 2
+    script_text = translated_script.read_text(encoding="utf_8")
+    assert '[img_c storage="ビアンカ触手攻撃_L" layer=10]' in script_text
+    assert '[std_alt_l storage="ビアンカ"]' in script_text
+    assert '[std_yui_special storage="ビアンカ"]' in script_text
+    assert "比安卡は立っている。" in script_text
+    assert translated_map.read_text(encoding="utf_8") == "map_btn_ch03.png　比安卡\n"
 
 
 def test_textfile_update_name_translation_applies_mapping_and_skips_empty():
