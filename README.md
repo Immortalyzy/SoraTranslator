@@ -88,8 +88,8 @@ The launcher now:
 - To run launcher checks without frontend, use `run.bat --smoke`.
 - For quick local checks without package reinstall work, use `run.bat --smoke --skip-install`.
 - Launcher execution details are written to `log.txt` in the app root (mirrored to `launcher.log.txt` for compatibility).
-- Dev/smoke runs have a default hard runtime limit; use `--max-runtime-seconds <N>` to override.
-- Release runs are unlimited by default; set `--max-runtime-seconds <N>` if you want an enforced hard stop.
+- Dev/release runs are unlimited by default; set `--max-runtime-seconds <N>` if you want an enforced hard stop.
+- Smoke runs keep a short default runtime guard for launcher checks.
 - Release mode uses backend port `5000` by default for compatibility; override with `--backend-port <N>`.
 - Startup/install wait time is independently bounded; tune with `--startup-timeout-seconds <N>`.
 - Packaging logs are written to `package.log.txt`.

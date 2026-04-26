@@ -54,7 +54,11 @@ function Stop-ProcessTree {
         return
     }
 
-    & taskkill /PID $ProcessId /T /F *> $null
+    try {
+        & taskkill /PID $ProcessId /T /F 1>$null 2>$null
+    } catch {
+        # Cleanup is best-effort; callers also guard process state before invoking it.
+    }
 }
 
 function Wait-ProcessWithTimeout {
@@ -79,17 +83,25 @@ function Wait-ProcessWithTimeout {
 function Find-PythonLauncher {
     $py = Get-Command py -ErrorAction SilentlyContinue
     if ($py) {
-        & py -3 -c "import sys" *> $null
-        if ($LASTEXITCODE -eq 0) {
-            return @{ Exe = "py"; Args = @("-3") }
+        try {
+            & py -3 -c "import sys" 1>$null 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                return @{ Exe = "py"; Args = @("-3") }
+            }
+        } catch {
+            # A broken py launcher should not prevent falling back to python.exe.
         }
     }
 
     $python = Get-Command python -ErrorAction SilentlyContinue
     if ($python) {
-        & python -c "import sys" *> $null
-        if ($LASTEXITCODE -eq 0) {
-            return @{ Exe = "python"; Args = @() }
+        try {
+            & python -c "import sys" 1>$null 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                return @{ Exe = "python"; Args = @() }
+            }
+        } catch {
+            # Keep probing candidates before reporting that Python is unavailable.
         }
     }
 
@@ -406,18 +418,14 @@ try {
         if ($smokeMode) {
             $maxRuntimeSeconds = 300
         } elseif ($mode -eq "release") {
-            # Production release mode should not be auto-killed unless explicitly requested.
             $maxRuntimeSeconds = 0
         } else {
-            $maxRuntimeSeconds = 900
+            $maxRuntimeSeconds = 0
         }
     }
 
     if ($maxRuntimeSeconds -lt 0) {
         throw "max runtime must be zero or a positive integer"
-    }
-    if ($maxRuntimeSeconds -eq 0 -and $mode -ne "release") {
-        throw "Unlimited runtime (0) is only allowed in --release mode."
     }
     if ($maxRuntimeSeconds -gt 0 -and $maxRuntimeSeconds -lt 30) {
         throw "max runtime must be at least 30 seconds"
@@ -603,9 +611,15 @@ try {
 
         Write-LauncherLog "Launching dev frontend (electron:serve)..."
         $frontendProcess = Start-Process -FilePath $npm.Source -ArgumentList $devArgs -WorkingDirectory $frontendDir -PassThru -NoNewWindow
-        $remaining = Get-RemainingSeconds -BudgetSeconds $maxRuntimeSeconds
-        $frontendCode = Wait-ProcessWithTimeout -Process $frontendProcess -TimeoutSeconds $remaining -Name "dev frontend"
-        $exitCode = $frontendCode
+        if ($maxRuntimeSeconds -eq 0) {
+            Write-LauncherLog "Dev runtime is unlimited by default; waiting for frontend exit."
+            $frontendProcess.WaitForExit()
+            $exitCode = $frontendProcess.ExitCode
+        } else {
+            $remaining = Get-RemainingSeconds -BudgetSeconds $maxRuntimeSeconds
+            $frontendCode = Wait-ProcessWithTimeout -Process $frontendProcess -TimeoutSeconds $remaining -Name "dev frontend"
+            $exitCode = $frontendCode
+        }
     }
 
     Write-LauncherLog "Frontend exited with code $exitCode"

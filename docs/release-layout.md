@@ -32,8 +32,8 @@ The script:
 ## Launcher Runtime Controls
 
 - `run.bat` writes execution logs to `log.txt` (and mirrors to `launcher.log.txt` for compatibility).
-- Dev/smoke runs enforce a default runtime timeout; override with `--max-runtime-seconds <N>`.
-- Release runs are unlimited by default; pass `--max-runtime-seconds <N>` to enforce a hard timeout.
+- Dev/release runs are unlimited by default; pass `--max-runtime-seconds <N>` to enforce a hard timeout.
+- Smoke runs keep a short default runtime guard for launcher checks.
 - Release mode defaults backend port to `5000` for compatibility; override with `--backend-port <N>`.
 - Startup/install timeout is separate and configurable with `--startup-timeout-seconds <N>`.
 - For quick non-install smoke checks, use `run.bat --smoke --skip-install --max-runtime-seconds 180`.
