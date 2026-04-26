@@ -43,7 +43,9 @@
             "endpoint": "https://api.deepseek.com/v1/",
             "token": "ENV:DEEPSEEK_API_KEY",
             "models": [
-                "deepseek-1.0"
+                "deepseek-1.0",
+                "deepseek-v4-flash",
+                "deepseek-v4-pro"
             ]
         }
     ]

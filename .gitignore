@@ -1,6 +1,7 @@
 # Special ignore files
 GameResources/
 config.json
+config.user.json
 .codex
 openspec
 */tests/data/*
